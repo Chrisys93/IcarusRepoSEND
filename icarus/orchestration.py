@@ -229,9 +229,11 @@ def run_scenario(settings, params, curr_exp, n_exp):
             # Cache budget is the cumulative number of cache entries across
             # the whole network
             cachepl_spec['cache_budget'] = workload.n_contents * network_cache
+            
             # Onur: need the full budget to assign to receivers for SIT cache placement
             cachepl_spec['n_contents'] = workload.n_contents
-            CACHE_PLACEMENT[cachepl_name](topology, **cachepl_spec)
+            # NOTE: cache placement is now done together with comp. spot placement!
+            #CACHE_PLACEMENT[cachepl_name](topology, **cachepl_spec)
 
         # Assign contents to sources
         # If there are many contents, after doing this, performing operations
@@ -261,6 +263,9 @@ def run_scenario(settings, params, curr_exp, n_exp):
             logger.error('No implementation of cache policy %s was found.' % cache_policy['name'])
             return None
 
+        # task scheduling policy at the computation spots
+        sched_policy = tree['sched_policy']
+
         # Configuration parameters of network model
         netconf = tree['netconf']
 
@@ -276,7 +281,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
         collectors = {m: {} for m in metrics}
 
         logger.info('Experiment %d/%d | Start simulation', curr_exp, n_exp)
-        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy)
+        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy, sched_policy)
 
         duration = time.time() - start_time
         logger.info('Experiment %d/%d | End simulation | Duration %s.',

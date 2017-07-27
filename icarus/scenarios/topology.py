@@ -98,7 +98,7 @@ class IcnTopology(fnss.Topology):
 
 
 @register_topology_factory('TREE')
-def topology_tree(k, h, delay=0.005, **kwargs):
+def topology_tree(k, h, delay=0.020, **kwargs):
     """Returns a tree topology, with a source at the root, receivers at the
     leafs and caches at all intermediate nodes.
 
@@ -125,6 +125,7 @@ def topology_tree(k, h, delay=0.005, **kwargs):
         else:
             topology.edge[u][v]['delay'] = delay
             print "Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay'])
+
     for v in topology.nodes_iter():
         print "Depth of " + repr(v) + " is " + repr(topology.node[v]['depth'])
     

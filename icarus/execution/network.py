@@ -470,7 +470,7 @@ class NetworkModel(object):
     calls to the network controller.
     """
 
-    def __init__(self, topology, cache_policy, n_services, rate, seed=0, shortest_path=None):
+    def __init__(self, topology, cache_policy, sched_policy, n_services, rate, seed=0, shortest_path=None):
         """Constructor
 
         Parameters
@@ -548,78 +548,23 @@ class NetworkModel(object):
             for node in cache_size:
                 if cache_size[node] < 1:
                     cache_size[node] = 1
+        
+        policy_name = cache_policy['name']
+        policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
+        # The actual cache objects storing the content
+        self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
+                          for node in cache_size}
 
         # Generate the actual services processing requests
         self.services = []
         self.n_services = n_services
         internal_link_delay = 0.001 # This is the delay from receiver to router
         
-        """
-        # Hardcoded generation (for testing): 
-
-        # Service 0 (not used)
-        service_time = 0.5
-        deadline = 0.5+0.040 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 1:
-        service_time = 0.5
-        deadline = 0.5 + 0.035 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 2:
-        service_time = 0.5
-        deadline = 0.5+0.030 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 3:
-        service_time = 0.5
-        deadline = 0.5+0.025 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 4:
-        service_time = 0.5
-        deadline = 0.5+0.020 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 5:
-        service_time = 0.5
-        deadline = 0.5+0.015 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 6:
-        service_time = 0.5
-        deadline = 0.5+0.015 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 7:
-        service_time = 0.5
-        deadline = 0.5+0.015 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 8:
-        service_time = 0.5
-        deadline = 0.5+0.010 + 2*internal_link_delay
-        s = Service(service_time, deadline)
-        self.services.append(s)
-        # Service 9:
-        
-       
-        indx=0
-        for service in self.services:
-            if indx is 0:
-                indx+=1
-                continue
-            print "Service: " + repr(indx) + " Deadline: " +repr(self.services[indx].deadline) + " Service Time: " + repr(self.services[indx].service_time)
-            indx+=1
-        """
-        
-        #""" GENERATE Services automatically using min, max ranges for service times and deadlines
-        service_time_min = 0.001
-        service_time_max = 0.1
+        service_time_min = 0.004 # used to be 0.001
+        service_time_max = 0.004 # used to be 0.1 
         #delay_min = 0.005
-        delay_min = 0.001*2
-        delay_max = 0.052
+        delay_min = 0.001*2 + 0.020 # Remove*10
+        delay_max = 0.202  #NOTE: make sure this is not too large; otherwise all requests go to cloud and are satisfied! 
 
         aFile = open('services.txt', 'w')
         aFile.write("# ServiceID\tserviceTime\tserviceDeadline\tDifference\n")
@@ -638,6 +583,7 @@ class NetworkModel(object):
             service_times.append(service_time)
 
         #deadlines = sorted(deadlines) #Correlate deadline and popularity XXX
+        #deadlines.reverse()
         for service in range(0, n_services):
             service_time = service_times[service_indx]
             deadline = deadlines[service_indx]
@@ -651,14 +597,8 @@ class NetworkModel(object):
         aFile.close()
         #""" #END OF Generating Services
 
-        self.compSpot = {node: ComputationalSpot(comp_size[node], service_size[node], self.services, node,  None) 
+        self.compSpot = {node: ComputationalSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
-
-        policy_name = cache_policy['name']
-        policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
-        # The actual cache objects storing the content
-        self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
-                          for node in cache_size}
 
         # This is for a local un-coordinated cache (currently used only by
         # Hashrouting with edge cache)
@@ -733,8 +673,8 @@ class NetworkController(object):
                             log=log,
                             deadline=deadline)
 
-        if self.collector is not None and self.session[flow_id]['log']:
-            self.collector.start_session(timestamp, receiver, content, flow_id, deadline)
+        #if self.collector is not None and self.session[flow_id]['log']:
+        self.collector.start_session(timestamp, receiver, content, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -814,7 +754,7 @@ class NetworkController(object):
         if self.collector is not None and self.session['log']:
             self.collector.content_hop(u, v, main_path)
 
-    def put_content(self, node):
+    def put_content(self, node, content=0):
         """Store content in the specified node.
 
         The node must have a cache stack and the actual insertion of the
@@ -833,9 +773,9 @@ class NetworkController(object):
             The evicted object or *None* if no contents were evicted.
         """
         if node in self.model.cache:
-            return self.model.cache[node].put(self.session['content'])
+            return self.model.cache[node].put(content)
 
-    def get_content(self, node):
+    def get_content(self, node, content=0):
         """Get a content from a server or a cache.
 
         Parameters
@@ -849,16 +789,16 @@ class NetworkController(object):
             True if the content is available, False otherwise
         """
         if node in self.model.cache:
-            cache_hit = self.model.cache[node].get(self.session['content'])
+            cache_hit = self.model.cache[node].get(content)
             if cache_hit:
-                if self.session['log']:
-                    self.collector.cache_hit(node)
+                #if self.session['log']:
+                self.collector.cache_hit(node)
             else:
-                if self.session['log']:
-                    self.collector.cache_miss(node)
+                #if self.session['log']:
+                self.collector.cache_miss(node)
             return cache_hit
         name, props = fnss.get_stack(self.model.topology, node)
-        if name == 'source' and self.session['content'] in props['contents']:
+        if name == 'source':
             if self.collector is not None and self.session['log']:
                 self.collector.server_hit(node)
             return True
@@ -893,6 +833,12 @@ class NetworkController(object):
         #if self.collector is not None and self.session[flow_id]['log']:
         self.collector.replacement_interval_over(replacement_interval, timestamp)
             
+    def execute_service(self, flow_id, service, node, timestamp, is_cloud):
+        """ Perform execution of the service at node with starting time
+        """
+
+        self.collector.execute_service(flow_id, service, node, timestamp, is_cloud)
+    
     def end_session(self, success=True, timestamp=0, flow_id=0):
         """Close a session
 
@@ -901,8 +847,8 @@ class NetworkController(object):
         success : bool, optional
             *True* if the session was completed successfully, *False* otherwise
         """
-        if self.collector is not None and self.session[flow_id]['log']:
-            self.collector.end_session(success, timestamp, flow_id)
+        #if self.collector is not None and self.session[flow_id]['log']:
+        self.collector.end_session(success, timestamp, flow_id)
         self.session.pop(flow_id, None)
 
     def rewire_link(self, u, v, up, vp, recompute_paths=True):

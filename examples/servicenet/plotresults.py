@@ -286,6 +286,350 @@ def plot_link_load_vs_topology(resultset, alpha, cache_size, topology_range, str
     plot_bar_chart(resultset, desc, 'LINK_LOAD_INTERNAL_A=%s_C=%s.pdf'
                    % (alpha, cache_size), plotdir)
 
+
+def searchDictMultipleCat(lst, category_list, attr_value_pairs, num_pairs, collector, subtype):
+    """
+    Search the resultset list for a particular [category, attribute, value] parameter such as ['strategy', 'extra_quota', 3]. attr_value_pairs include the key-value pairs.
+    and once such a key is found, extract the result for a collector, subtype such as ['CACHE_HIT_RATIO', 'MEAN']
+
+    Returns the result if found in the dictionary lst; otherwise returns None
+
+    """
+    result = None
+    for l in lst:
+        num_match = 0
+        for key, val in l[0].items():
+            #print key + '-and-' + category + '-\n'
+            if key in category_list:
+                if (isinstance(val, dict)):
+                    for key1, val1 in val.items():
+                        for key2, val2 in attr_value_pairs.items():
+                            if key1 == key2 and val1 == val2:
+                                num_match = num_match + 1
+                    if num_match == num_pairs:
+                        result = l[1]
+                        break
+                else:
+                    print 'Something is wrong with the search for attr-value pairs\n'
+                    return None
+
+        if result is not None:
+            break
+    
+    if result is None:
+        print 'Error searched attribute, value pairs:\n' 
+        for k, v in attr_value_pairs.items():
+            print '[ ' + repr(k) + ' , ' + repr(v) + ' ]  '
+        print 'is not found, returning none\n'
+        return None
+    
+    found = None
+    for key, val in result.items():
+        if key == collector:
+            for key1, val1 in val.items():
+                if key1 == subtype:
+                    found = val1
+                    break
+            if found is not None:
+                break
+
+    if found is None:
+        print 'Error searched collector, subtype ' + repr(collector) + ',' + repr(subtype) + 'is not found\n'
+
+    return found
+
+def searchDictMultipleCat1(lst, category_list, attr_value_list, num_pairs, collector, subtype):
+    """
+    Search the resultset list for a particular [category, attribute, value] parameter such as ['strategy', 'extra_quota', 3]. attr_value_pairs include the key-value pairs.
+    and once such a key is found, extract the result for a collector, subtype such as ['CACHE_HIT_RATIO', 'MEAN']
+
+    Returns the result if found in the dictionary lst; otherwise returns None
+
+    """
+    result = None
+    for l in lst:
+        num_match = 0
+        for key, val in l[0].items():
+            #print key + '-and-' + category + '-\n'
+            if key in category_list:
+                if (isinstance(val, dict)):
+                    for key1, val1 in val.items():
+                        for arr in attr_value_list:
+                            key2 = arr[0]
+                            val2 = arr[1]
+                            if key1 == key2 and val1 == val2:
+                                num_match = num_match + 1
+                    if num_match == num_pairs:
+                        result = l[1]
+                        break
+                else:
+                    print 'Something is wrong with the search for attr-value pairs\n'
+                    return None
+
+        if result is not None:
+            break
+    
+    if result is None:
+        print 'Error searched attribute, value pairs:\n' 
+        for arr in attr_value_list:
+            k = arr[0]
+            v = arr[1]
+            print '[ ' + repr(k) + ' , ' + repr(v) + ' ]  '
+        print 'is not found, returning none\n'
+        return None
+    
+    found = None
+    for key, val in result.items():
+        if key == collector:
+            for key1, val1 in val.items():
+                if key1 == subtype:
+                    found = val1
+                    break
+            if found is not None:
+                break
+
+    if found is None:
+        print 'Error searched collector, subtype ' + repr(collector) + ',' + repr(subtype) + 'is not found\n'
+
+    return found
+
+def searchDict(lst, category, attr_value_pairs, num_pairs, collector, subtype):
+    """
+    Search the resultset list for a particular [category, attribute, value] parameter such as ['strategy', 'extra_quota', 3]. attr_value_pairs include the key-value pairs.
+    and once such a key is found, extract the result for a collector, subtype such as ['CACHE_HIT_RATIO', 'MEAN']
+
+    Returns the result if found in the dictionary lst; otherwise returns None
+
+    """
+    result = None
+    for l in lst:
+        for key, val in l[0].items():
+            #print key + '-and-' + category + '-\n'
+            if key == category:
+                if (isinstance(val, dict)):
+                    num_match = 0
+                    for key1, val1 in val.items():
+                        for key2, val2 in attr_value_pairs.items():
+                            if key1 == key2 and val1 == val2:
+                                num_match = num_match + 1
+                    if num_match == num_pairs:
+                        result = l[1]
+                        break
+                else:
+                    print 'Something is wrong with the search for attr-value pairs\n'
+                    return None
+        if result is not None:
+            break
+    
+    if result is None:
+        print 'Error searched attribute, value pairs:\n' 
+        for k, v in attr_value_pairs.items():
+            print '[ ' + repr(k) + ' , ' + repr(v) + ' ]  '
+        print 'is not found, returning none\n'
+        return None
+    
+    found = None
+    for key, val in result.items():
+        if key == collector:
+            for key1, val1 in val.items():
+                if key1 == subtype:
+                    found = val1
+                    break
+            if found is not None:
+                break
+
+    if found is None:
+        print 'Error searched collector, subtype ' + repr(collector) + ',' + repr(subtype) + 'is not found\n'
+
+    return found
+
+def print_lru_probability_results(lst):
+
+    probs = [0.1, 0.25, 0.50, 0.75, 1.0]
+    strategies = ['LRU']
+
+    for strategy in strategies:
+        for p in probs:
+            filename = 'sat_' + str(strategy) + '_' + str(p)
+            f = open(filename, 'w')
+            f.write('# Sat. rate for LRU over time\n')
+            f.write('#\n')
+            f.write('# Time     Sat. Rate\n')
+            sat_times = searchDict(lst, 'strategy', {'name':  strategy, 'p' : p}, 2, 'LATENCY', 'SAT_TIMES')
+            for k in sorted(sat_times):
+                s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+                f.write(s)
+            f.close()
+    
+    for strategy in strategies:
+        for p in probs:
+            filename = 'idle_' + str(strategy) + '_' + str(p)
+            f = open(filename, 'w')
+            f.write('# Idle time of strategies over time\n')
+            f.write('#\n')
+            f.write('# Time     Idle percentage\n')
+            idle_times = searchDict(lst, 'strategy', {'name':  strategy, 'p' : p}, 2, 'LATENCY', 'IDLE_TIMES')
+            for k in sorted(idle_times):
+                s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+                f.write(s)
+            f.close()
+
+def print_strategies_performance(lst):
+
+    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    service_budget = 500
+    alpha = 0.75
+    replacement_interval = 30.0
+    n_services = 1000
+
+    # Print Sat. rates:
+    for strategy in strategies:
+        filename = 'sat_' + str(strategy)
+        f = open(filename, 'w')
+        f.write('# Sat. rate over time\n')
+        f.write('#\n')
+        f.write('# Time     Sat. Rate\n')
+        sat_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : service_budget, 'alpha' : alpha}, 3, 'LATENCY', 'SAT_TIMES')
+        for k in sorted(sat_times):
+            s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+            f.write(s)
+        f.close()
+    
+    # Print Idle times:
+    for strategy in strategies:
+        filename = 'idle_' + str(strategy)
+        f = open(filename, 'w')
+        f.write('# Idle time of strategies over time\n')
+        f.write('#\n')
+        f.write('# Time     Idle percentage\n')
+        idle_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : service_budget, 'alpha' : alpha}, 3, 'LATENCY', 'IDLE_TIMES')
+        for k in sorted(idle_times):
+            s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+            f.write(s)
+        f.close()
+    
+    # Print per-service Sat. rates:
+    for strategy in strategies:
+        filename = 'sat_service_' + str(strategy)
+        f = open(filename, 'w')
+        f.write('# Per-service Sat. rate over time\n')
+        f.write('#\n')
+        f.write('# Time     Sat. Rate\n')
+        sat_services = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : service_budget, 'alpha' : alpha}, 3, 'LATENCY', 'PER_SERVICE_SATISFACTION')
+        #f.write(str(sat_services))
+        for indx in range(1, n_services):
+            s = str(indx) + "\t" + str(sat_services[indx]) + "\n"
+            f.write(s)
+        f.close()
+
+def print_scheduling_experiments(lst):
+    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    schedule_policies = ['EDF', 'FIFO']
+    service_budget = 500
+    alpha = 0.75
+    replacement_interval = 30.0
+
+    # Print Sat. rates:
+    for strategy in strategies:
+        for policy in schedule_policies:
+            filename = 'sat_' + str(strategy) + '_' + str(policy)
+            f = open(filename, 'w')
+            f.write('# Sat. rate over time\n')
+            f.write('#\n')
+            f.write('# Time     Sat. Rate\n')
+            sat_times = searchDictMultipleCat1(lst, ['strategy', 'computation_placement', 'workload', 'sched_policy'], [['name', strategy], ['service_budget', service_budget], ['alpha', alpha], ['name', policy]], 4, 'LATENCY', 'SAT_TIMES')
+            for k in sorted(sat_times):
+                s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+                f.write(s)
+            f.close()
+    
+    # Print idle times:
+    for strategy in strategies:
+        for policy in schedule_policies:
+            filename = 'idle_' + str(strategy) + '_' + str(policy)
+            f = open(filename, 'w')
+            f.write('# Idle times over time\n')
+            f.write('#\n')
+            f.write('# Time     Idle percentage\n')
+            idle_times = searchDictMultipleCat1(lst, ['strategy', 'computation_placement', 'workload', 'sched_policy'], [['name', strategy], ['service_budget', service_budget], ['alpha', alpha], ['name', policy]], 4, 'LATENCY', 'IDLE_TIMES')
+            for k in sorted(idle_times):
+                s = str(k[0][0]) + "\t" + str((1.0*k[1])) + "\n"
+                f.write(s)
+            f.close()
+
+def print_zipf_experiment(lst):
+    
+    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    alphas = [0.1, 0.25, 0.50, 0.75, 1.0]
+    replacement_interval = 30.0
+    service_budget = 500
+
+    # Print Sat. rates:
+    for strategy in strategies:
+        for alpha in alphas:
+            filename = 'sat_' + str(strategy) + '_' + str(alpha)
+            f = open(filename, 'w')
+            f.write('# Sat. rate over time\n')
+            f.write('#\n')
+            f.write('# Time     Sat. Rate\n')
+            sat_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : service_budget, 'alpha' : alpha}, 3, 'LATENCY', 'SAT_TIMES')
+            for k in sorted(sat_times):
+                s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+                f.write(s)
+            f.close()
+    
+    # Print Idle times:
+    for strategy in strategies:
+        for alpha in alphas:
+            filename = 'idle_' + str(strategy) + '_' + str(alpha)
+            f = open(filename, 'w')
+            f.write('# Idle times over time\n')
+            f.write('#\n')
+            f.write('# Time     Idle percentage\n')
+            idle_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : service_budget, 'alpha' : alpha}, 3, 'LATENCY', 'IDLE_TIMES')
+            for k in sorted(sat_times):
+                s = str(k[0][0]) + "\t" + str((1.0*k[1])) + "\n"
+                f.write(s)
+            f.close()
+
+def print_budget_experiment(lst):
+    
+    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    alpha = 0.75
+    replacement_interval = 30.0 
+    N_SERVICES = 1000
+    #budgets = [N_SERVICES, 2*N_SERVICES, 3*N_SERVICES, 4*N_SERVICES, 5*N_SERVICES]
+    budgets = [N_SERVICES/8, N_SERVICES/4, N_SERVICES/2, 0.75*N_SERVICES, N_SERVICES, 2*N_SERVICES]
+
+
+    # Print Sat. rates:
+    for strategy in strategies:
+        for budget in budgets:
+            filename = 'sat_' + str(strategy) + '_' + str(budget)
+            f = open(filename, 'w')
+            f.write('# Sat. rate over time\n')
+            f.write('#\n')
+            f.write('# Time     Sat. Rate\n')
+            sat_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : budget, 'alpha' : alpha}, 3, 'LATENCY', 'SAT_TIMES')
+            for k in sorted(sat_times):
+                s = str(k[0][0]) + "\t" + str(k[1]) + "\n"
+                f.write(s)
+            f.close()
+    
+    # Print Idle times:
+    for strategy in strategies:
+        for budget in budgets:
+            filename = 'idle_' + str(strategy) + '_' + str(budget)
+            f = open(filename, 'w')
+            f.write('# Idle times over time\n')
+            f.write('#\n')
+            f.write('# Time     Idle percentage\n')
+            idle_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : budget, 'alpha' : alpha}, 3, 'LATENCY', 'IDLE_TIMES')
+            for k in sorted(idle_times):
+                s = str(k[0][0]) + "\t" + str((1.0*k[1])) + "\n"
+                f.write(s)
+            f.close()
+
 def printTree(tree, d = 0):
     if (tree == None or len(tree) == 0):
         print "\t" * d, "-"
@@ -317,7 +661,15 @@ def run(config, results, plotdir):
         printTree(l[0])
         print 'RESULTS:\n'
         printTree(l[1])
-    
+
+    #print_lru_probability_results(lst) 
+
+    print_strategies_performance(lst)
+    #print_budget_experiment(lst)
+    #print_scheduling_experiments(lst)
+    #print_zipf_experiment(lst)
+
+    # /home/uceeoas/.local/bin/python ./plotresults.py --results results.pickle --output ./ config.py
     """
     settings = Settings()
     settings.read_from(config)

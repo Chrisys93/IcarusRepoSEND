@@ -13,7 +13,7 @@ from icarus.registry import DATA_COLLECTOR, STRATEGY
 __all__ = ['exec_experiment']
 
 
-def exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy):
+def exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy, sched_policy = {'name': 'EDF'}):
     """Execute the simulation of a specific scenario.
 
     Parameters
@@ -44,7 +44,7 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, collect
     results : Tree
         A tree with the aggregated simulation results from all collectors
     """
-    model = NetworkModel(topology, cache_policy, workload.n_services, workload.rate, **netconf)
+    model = NetworkModel(topology, cache_policy, sched_policy['name'], workload.n_services, workload.rate, **netconf)
     workload.model = model
     view = NetworkView(model)
     controller = NetworkController(model)

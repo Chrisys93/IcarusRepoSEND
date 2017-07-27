@@ -26,7 +26,7 @@ DEADLINE_MISSED = 0
 CONGESTION = 1
 SUCCESS = 2
 CLOUD = 3
-ERROR = 4
+NO_INSTANCES = 4
 
 class Task(object):
     """
@@ -76,7 +76,9 @@ class CpuInfo(object):
         for indx in range(0, self.numOfCores):
             if self.coreFinishTime[indx] < time:
                 self.idleTime += time - self.coreFinishTime[indx]
-    
+                if self.coreFinishTime[indx] < time:
+                    self.coreFinishTime[indx] = time
+        
         return self.idleTime
 
     def get_available_core(self, time):
@@ -105,7 +107,6 @@ class CpuInfo(object):
         if self.coreFinishTime[core_indx] > fin_time:
             raise ValueError("Error in assign_task_to_core: there is a running task")
         
-        print ("Assigning task to core")
         self.coreService[core_indx] = service
         self.coreFinishTime[core_indx] = fin_time
 
@@ -128,7 +129,7 @@ class ComputationalSpot(object):
     Queue. The service time of the Queue is extracted from the service properties. 
     """
 
-    def __init__(self, numOfCores, n_services, services, node, dist=None):
+    def __init__(self, model, numOfCores, n_services, services, node, sched_policy = "EDF", dist=None):
         """Constructor
 
         Parameters
@@ -146,6 +147,7 @@ class ComputationalSpot(object):
             self.is_cloud = False
 
         self.service_population = len(services)
+        self.model = model
 
         print ("Number of VMs @node: " + repr(node) + " " + repr(n_services))
         print ("Number of cores @node: " + repr(node) + " " + repr(numOfCores))
@@ -156,9 +158,11 @@ class ComputationalSpot(object):
         if n_services > self.service_population:
             n_services = self.service_population
 
+        self.sched_policy = sched_policy
+
         # CPU info
         self.cpuInfo = CpuInfo(self.numOfCores)
-        # num. of services in the memory (capacity)
+        # num. of vms (memory capacity) #TODO rename this
         self.n_services = n_services
         # Task queue of the comp. spot
         self.taskQueue = []
@@ -175,6 +179,7 @@ class ComputationalSpot(object):
         self.services = services
         self.view = None
         self.node = node
+        self.rtt_upstream = [0.0 for x in range(0, self.service_population)]
 
         # TODO setup all the variables: numberOfInstances, cpuInfo, etc. ...
 
@@ -186,11 +191,16 @@ class ComputationalSpot(object):
                 if self.numberOfInstances[service_index] == 0:
                     self.numberOfInstances[service_index] = 1
                     num_services += 1
+                    evicted = self.model.cache[node].put(service_index) # HACK: should use controller here   
+                    print ("Evicted: " + repr(evicted))
 
     def schedule(self, time):
         """
         Return the next task to be executed, if there is any.
         """
+
+        # TODO: This methid can simply fetch the task with the smallest finish time
+        # No need to repeat the same computation already carried out by simulate()
 
         core_indx = self.cpuInfo.get_available_core(time)
         
@@ -208,13 +218,13 @@ class ComputationalSpot(object):
                         return aTask
                 else: # This can happen during service replacement transitions
                     self.taskQueue.pop(task_indx)
-                    self.cpuInfo.assign_task_to_core(core_indx, time + aTask.exec_time, service)
+                    self.cpuInfo.assign_task_to_core(core_indx, time + aTask.exec_time, aTask.service)
                     aTask.finishTime = time + aTask.exec_time
                     return aTask
 
         return None
 
-    def simulate_execution(self, aTask, time):
+    def simulate_execution(self, aTask, time, debug):
         """
         Simulate the execution of tasks in the taskQueue and compute each
         task's finish time. 
@@ -228,49 +238,100 @@ class ComputationalSpot(object):
         taskQueueCopy = self.taskQueue[:] #shallow copy
 
 
-        taskQueueCopy.append(aTask)
-        taskQueueSorted = sorted(taskQueueCopy, key=lambda x: x.expiry) #smaller to larger (absolute) deadline
         cpuInfoCopy = copy.deepcopy(self.cpuInfo)
 
         # Check if the queue has any task that misses its deadline (after adding this)
         #coreFinishTimeCopy = self.cpuInfo.coreFinishTime[:]
         #cpuServiceCopy = self.cpuService[:]
         
-        for task_indx in range(0, len(taskQueueSorted)):
-            taskQueueSorted[task_indx].print_task()
+        if debug:
+            for task_indx in range(0, len(taskQueueCopy)):
+                taskQueueCopy[task_indx].print_task()
+            cpuInfoCopy.print_core_status()
 
-        cpuInfoCopy.print_core_status()
         sched_failed = False
         aTask = None
-        while len(taskQueueSorted) > 0:
+        while len(taskQueueCopy) > 0:
             if not sched_failed:
                 core_indx = cpuInfoCopy.get_next_available_core()
             time = cpuInfoCopy.coreFinishTime[core_indx]
             cpuInfoCopy.update_core_status(time)
             sched_failed = False
 
-            for task_indx in range(0, len(taskQueueSorted)):
-                aTask = taskQueueSorted[task_indx]
+            for task_indx in range(0, len(taskQueueCopy)):
+                aTask = taskQueueCopy[task_indx]
                 if self.numberOfInstances[aTask.service] > 0: 
                     serv_count = cpuInfoCopy.coreService.count(aTask.service)
-                    #print ("Service count: " + repr(serv_count))
                     available_cores = self.numberOfInstances[aTask.service] - serv_count
-                    #print ("Available cores: " + repr(available_cores))
                     if available_cores > 0:
-                        taskQueueSorted.pop(task_indx)
+                        taskQueueCopy.pop(task_indx)
                         cpuInfoCopy.assign_task_to_core(core_indx, time + aTask.exec_time, aTask.service)
                         aTask.finishTime = time + aTask.exec_time
                         break
                 else: # This can happen during service replacement transitions
-                    taskQueueSorted.pop(task_indx)
-                    cpuInfoCopy.assign_task_to_core(core_indx, time + aTask.exec_time, service)
+                    taskQueueCopy.pop(task_indx)
+                    cpuInfoCopy.assign_task_to_core(core_indx, time + aTask.exec_time, aTask.service)
                     aTask.finishTime = time + aTask.exec_time
                     break
             else: # for loop concluded without a break
                 sched_failed = True
                 core_indx = cpuInfoCopy.coreService.index(aTask.service)
 
-    def admit_task_EDF(self, service, time, flow_id, deadline, receiver, rtt_delay, controller):
+    def admit_task_FIFO(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):
+        """
+        Parameters
+        ----------
+        service : index of the service requested
+        time    : current time (arrival time of the service job)
+
+        Return
+        ------
+        comp_time : is when the task is going to be finished (after queuing + execution)
+        vm_index : index of the VM that will execute the task
+        """
+        
+        serviceTime = self.services[service].service_time
+        if self.is_cloud:
+            controller.add_event(time+serviceTime, receiver, service, self.node, flow_id, deadline, rtt_delay, TASK_COMPLETE)
+            controller.execute_service(flow_id, service, self.node, time, self.is_cloud)
+            if debug:
+                print ("CLOUD: Accepting TASK")
+            return [True, CLOUD]
+        
+        if self.numberOfInstances[service] == 0:
+            return [False, NO_INSTANCES]
+        
+        aTask = Task(time, deadline, rtt_delay, self.node, service, serviceTime, flow_id, receiver)
+        self.taskQueue.append(aTask)
+        self.cpuInfo.update_core_status(time) #need to call before simulate
+        self.simulate_execution(aTask, time, debug)
+        for task in self.taskQueue:
+            if debug:
+                print("After simulate:")
+                task.print_task()
+            if (task.expiry - task.rtt_delay) < task.finishTime:
+                self.missed_requests[service] += 1
+                if debug:
+                    print("Refusing TASK: Congestion")
+                self.taskQueue.remove(aTask)
+                return [False, CONGESTION]
+
+        # New task can be admitted, add to service Queue
+        self.running_requests[service] += 1
+        # Run the next task (if there is any)
+        newTask = self.schedule(time) 
+        if newTask is not None:
+            controller.add_event(newTask.finishTime, newTask.receiver, newTask.service, self.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE) 
+            controller.execute_service(newTask.flow_id, newTask.service, self.node, time, self.is_cloud)
+        
+        if self.numberOfInstances[service] == 0:
+            print "Error: this should not happen in admit_task_EDF()"
+       
+        if debug:
+            print ("Accepting Task")
+        return [True, SUCCESS]
+
+    def admit_task_EDF(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):
         """
         Parameters
         ----------
@@ -287,51 +348,62 @@ class ComputationalSpot(object):
         if self.is_cloud:
             #aTask = Task(time, deadline, self.node, service, serviceTime, flow_id, receiver)
             controller.add_event(time+serviceTime, receiver, service, self.node, flow_id, deadline, rtt_delay, TASK_COMPLETE)
-            print ("CLOUD: Accepting TASK")
+            controller.execute_service(flow_id, service, self.node, time, self.is_cloud)
+            if debug:
+                print ("CLOUD: Accepting TASK")
             return [True, CLOUD]
         
         if self.numberOfInstances[service] == 0:
-            print ("ERROR no instances in admit_task_EDF")
-            return [False, ERROR]
+            #print ("ERROR no instances in admit_task_EDF")
+            return [False, NO_INSTANCES]
         
-        if deadline - rtt_delay - serviceTime < 0:
-            print ("Refusing TASK: deadline already missed")
+        if deadline - time - rtt_delay - serviceTime < 0:
+            if debug:
+                print ("Refusing TASK: deadline already missed")
             return [False, DEADLINE_MISSED]
             
         aTask = Task(time, deadline, rtt_delay, self.node, service, serviceTime, flow_id, receiver)
+        self.taskQueue.append(aTask)
+        self.taskQueue = sorted(self.taskQueue, key=lambda x: x.expiry) #smaller to larger (absolute) deadline
         self.cpuInfo.update_core_status(time) #need to call before simulate
-        #print ("About to call simulate_execution()")
-        self.simulate_execution(aTask, time)
-        #print ("Done calling simulate_execution()")
+        self.simulate_execution(aTask, time, debug)
         for task in self.taskQueue:
+            if debug:
+                print("After simulate:")
+                task.print_task()
             if (task.expiry - task.rtt_delay) < task.finishTime:
                 self.missed_requests[service] += 1
-                print("Refusing TASK: Congestion")
+                if debug:
+                    print("Refusing TASK: Congestion")
+                self.taskQueue.remove(aTask)
                 return [False, CONGESTION]
         
         # New task can be admitted, add to service Queue
-        self.taskQueue.append(aTask)
-        self.taskQueue = sorted(self.taskQueue, key=lambda x: x.expiry) 
         self.running_requests[service] += 1
         # Run the next task (if there is any)
         newTask = self.schedule(time) 
         if newTask is not None:
             controller.add_event(newTask.finishTime, newTask.receiver, newTask.service, self.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE) 
+            controller.execute_service(newTask.flow_id, newTask.service, self.node, time, self.is_cloud)
 
         if self.numberOfInstances[service] == 0:
             print "Error: this should not happen in admit_task_EDF()"
-        
-        print ("Accepting Task")
+       
+        if debug:
+            print ("Accepting Task")
         return [True, SUCCESS]
+
+    def admit_task(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):
+        ret = None
+        if self.sched_policy == "EDF":
+            ret = self.admit_task_EDF(service, time, flow_id, deadline, receiver, rtt_delay, controller, debug)
+        elif self.sched_policy == "FIFO":
+            ret = self.admit_task_FIFO(service, time, flow_id, deadline, receiver, rtt_delay, controller, debug)
+        else:
+            print ("Error: This should not happen in admit_task(): " +repr(self.sched_policy))
+            
+        return ret
     
-    def update_counters(self, time):
-        
-        for service in range(0, self.n_services):
-            if self.vm_counts[service] > 0:
-                self.getFinishTime(service, time)
-            else:
-                self.getVirtualTailFinishTime(service, time)
-                
     def reassign_vm(self, serviceToReplace, newService, debug):
         """
         Instantiate service at the given vm
@@ -339,7 +411,7 @@ class ComputationalSpot(object):
         if self.numberOfInstances[serviceToReplace] == 0:
             raise ValueError("Error in reassign_vm: the service to replace has no instances")
             
-        if True: #debug:
+        if debug:
             print "Replacing service: " + repr(serviceToReplace) + " with: " + repr(newService) + " at node: " + repr(self.node)
         self.numberOfInstances[newService] += 1
         self.numberOfInstances[serviceToReplace] -= 1
