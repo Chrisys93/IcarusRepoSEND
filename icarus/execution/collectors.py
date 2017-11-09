@@ -356,6 +356,8 @@ class LatencyCollector(DataCollector):
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):
         if is_cloud:
             self.flow_cloud[flow_id] = True
+        else:
+            self.flow_cloud[flow_id] = False
 
     @inheritdoc(DataCollector)
     def replacement_interval_over(self, replacement_interval, timestamp):

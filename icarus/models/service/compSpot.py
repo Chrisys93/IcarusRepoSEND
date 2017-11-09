@@ -76,8 +76,7 @@ class CpuInfo(object):
         for indx in range(0, self.numOfCores):
             if self.coreFinishTime[indx] < time:
                 self.idleTime += time - self.coreFinishTime[indx]
-                if self.coreFinishTime[indx] < time:
-                    self.coreFinishTime[indx] = time
+                self.coreFinishTime[indx] = time
         
         return self.idleTime
 
@@ -114,8 +113,8 @@ class CpuInfo(object):
         
         for indx in range(0, len(self.coreService)):
             if self.coreFinishTime[indx] <= time:
-                self.coreFinishTime[indx] = time
                 self.idleTime += time - self.coreFinishTime[indx]
+                self.coreFinishTime[indx] = time
                 self.coreService[indx] = None
 
     def print_core_status(self):
