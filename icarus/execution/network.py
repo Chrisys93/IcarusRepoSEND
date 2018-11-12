@@ -23,7 +23,7 @@ import heapq
 
 from icarus.registry import CACHE_POLICY
 from icarus.util import path_links, iround
-from icarus.models.service.compSpot import ComputationalSpot
+from icarus.models.service.compSpot import ComputationSpot
 
 __all__ = [
     'Service',
@@ -537,7 +537,9 @@ class NetworkModel(object):
                     comp_size[node] = stack_props['computation_size']
                 if 'service_size' in stack_props:
                     service_size[node] = stack_props['service_size']
-            elif stack_name == 'source':
+            elif stack_name == 'source': # A Cloud with infinite resources
+                comp_size[node] = float('inf')
+                service_size[node] = float('inf')
                 contents = stack_props['contents']
                 self.source_node[node] = contents
                 for content in contents:
@@ -560,11 +562,11 @@ class NetworkModel(object):
         self.n_services = n_services
         internal_link_delay = 0.001 # This is the delay from receiver to router
         
-        service_time_min = 0.004 # used to be 0.001
-        service_time_max = 0.004 # used to be 0.1 
+        service_time_min = 0.10 # used to be 0.001
+        service_time_max = 0.10 # used to be 0.1 
         #delay_min = 0.005
-        delay_min = 0.001*2 + 0.020 # Remove*10
-        delay_max = 0.202  #NOTE: make sure this is not too large; otherwise all requests go to cloud and are satisfied! 
+        delay_min = 3*topology.graph['receiver_access_delay'] + service_time_max
+        delay_max = delay_min + topology.graph['depth']*topology.graph['link_delay'] 
 
         aFile = open('services.txt', 'w')
         aFile.write("# ServiceID\tserviceTime\tserviceDeadline\tDifference\n")
@@ -597,7 +599,7 @@ class NetworkModel(object):
         aFile.close()
         #""" #END OF Generating Services
 
-        self.compSpot = {node: ComputationalSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
+        self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
 
         # This is for a local un-coordinated cache (currently used only by
@@ -615,7 +617,6 @@ class NetworkModel(object):
         self.removed_sources = {}
         self.removed_caches = {}
         self.removed_local_caches = {}
-
 
 class NetworkController(object):
     """Network controller

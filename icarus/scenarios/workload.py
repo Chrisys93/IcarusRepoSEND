@@ -123,8 +123,8 @@ class StationaryWorkload(object):
         if self.first: #TODO remove this first variable, this is not necessary here
             random.seed(self.seed)
             self.first=False
-        aFile = open('workload.txt', 'w')
-        aFile.write("# Time\tNodeID\tserviceID\n")
+        #aFile = open('workload.txt', 'w')
+        #aFile.write("# Time\tNodeID\tserviceID\n")
         eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
         while req_counter < self.n_warmup + self.n_measured or len(self.model.eventQ) > 0:
             t_event += (random.expovariate(self.rate))
@@ -133,6 +133,7 @@ class StationaryWorkload(object):
                 heapq.heappop(self.model.eventQ)
                 log = (req_counter >= self.n_warmup)
                 event = {'receiver' : eventObj.receiver, 'content': eventObj.service, 'log' : log, 'node' : eventObj.node, 'flow_id' : eventObj.flow_id, 'deadline' : eventObj.deadline, 'rtt_delay' : eventObj.rtt_delay,'status' : eventObj.status}
+
                 yield (eventObj.time, event)
                 eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
 
@@ -152,12 +153,12 @@ class StationaryWorkload(object):
             event = {'receiver': receiver, 'content' : content, 'log' : log, 'node' : node ,'flow_id': flow_id, 'rtt_delay' : 0, 'deadline': deadline, 'status' : REQUEST}
             neighbors = self.topology.neighbors(receiver)
             s = str(t_event) + "\t" + str(neighbors[0]) + "\t" + str(content) + "\n"
-            aFile.write(s)
+            #aFile.write(s)
             yield (t_event, event)
             req_counter += 1
         
         print "End of iteration: len(eventObj): " + repr(len(self.model.eventQ))
-        aFile.close()
+        #aFile.close()
         raise StopIteration()
 
 @register_workload('GLOBETRAFF')

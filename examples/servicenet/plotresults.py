@@ -8,6 +8,8 @@ import collections
 import logging
 
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 from icarus.util import Settings, Tree, config_logging, step_cdf
@@ -476,9 +478,10 @@ def print_lru_probability_results(lst):
 
 def print_strategies_performance(lst):
 
-    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    strategies = ['SDF', 'HYBRID', 'MFU', 'COORDINATED'] 
+    #strategies = ['HYBRID'] 
     service_budget = 500
-    alpha = 0.75
+    alpha = 0.5 #0.75
     replacement_interval = 30.0
     n_services = 1000
 

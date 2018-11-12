@@ -116,6 +116,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     topology : IcnTopology
         The topology object
     """
+
+    receiver_access_delay = 0.001
     topology = fnss.k_ary_tree_topology(k, h)
     for u, v in topology.edges_iter():
         topology.edge[u][v]['type'] = 'internal'
@@ -146,7 +148,7 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     n_receivers = len(edge_routers)
     receivers = ['rec_%d' % i for i in range(n_receivers)]
     for i in range(n_receivers):
-        topology.add_edge(receivers[i], edge_routers[i], delay=0.001, type='internal')
+        topology.add_edge(receivers[i], edge_routers[i], delay=receiver_access_delay, type='internal')
     n_sources = len(root) 
     sources = ['src_%d' % i for i in range(n_sources)]
     for i in range(n_sources):
@@ -154,6 +156,9 @@ def topology_tree(k, h, delay=0.020, **kwargs):
 
     print "The number of sources: " + repr(n_sources)
     print "The number of receivers: " + repr(n_receivers)
+    topology.graph['receiver_access_delay'] = receiver_access_delay 
+    topology.graph['link_delay'] = delay
+    topology.graph['depth'] = h
     for v in sources:
         fnss.add_stack(topology, v, 'source')
     for v in receivers:
@@ -161,8 +166,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     for v in routers:
         fnss.add_stack(topology, v, 'router')
     # label links as internal
-    return IcnTopology(topology)
 
+    return IcnTopology(topology)
 
 @register_topology_factory('PATH')
 def topology_path(n, delay=1, **kwargs):

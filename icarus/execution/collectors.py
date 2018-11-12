@@ -361,10 +361,14 @@ class LatencyCollector(DataCollector):
 
     @inheritdoc(DataCollector)
     def replacement_interval_over(self, replacement_interval, timestamp):
-        self.satrate_times[timestamp] = self.n_satisfied_interval/self.interval_sess_count
+        if self.interval_sess_count == 0:
+            self.satrate_times[timestamp] = 0.0
+        else:
+            self.satrate_times[timestamp] = self.n_satisfied_interval/self.interval_sess_count
         print ("Number of requests in interval: " + repr(self.interval_sess_count))
         
         total_idle_time = 0.0
+        total_cores = 0 # total number of cores in the network
         for node, cs in self.css.items():
             if cs.is_cloud:
                 continue
@@ -372,16 +376,24 @@ class LatencyCollector(DataCollector):
             idle_time = cs.getIdleTime(timestamp)
             idle_time /= cs.numOfCores
             total_idle_time += idle_time
+           
+            total_cores += cs.numOfCores 
 
             if node not in self.node_idle_times.keys():
                 self.node_idle_times[node] = []
 
             self.node_idle_times[node].append(idle_time) 
 
-        self.idle_times[timestamp] = total_idle_time
-        self.latency_times[timestamp] = self.latency_interval/self.n_satisfied_interval
-        self.deadline_metric_times[timestamp] = self.deadline_metric_interval/self.n_satisfied_interval
-        self.cloud_sat_times[timestamp] = self.n_sat_cloud_interval/self.n_satisfied_interval
+        #self.idle_times[timestamp] = total_idle_time
+        self.idle_times[timestamp] = total_idle_time / (total_cores*replacement_interval)
+        if self.n_satisfied_interval == 0:
+            self.latency_times[timestamp] = 0.0
+            self.deadline_metric_times[timestamp] = 0.0
+            self.cloud_sat_times[timestamp] = 0.0
+        else:
+            self.latency_times[timestamp] = self.latency_interval/self.n_satisfied_interval
+            self.deadline_metric_times[timestamp] = self.deadline_metric_interval/self.n_satisfied_interval
+            self.cloud_sat_times[timestamp] = (1.0*self.n_sat_cloud_interval)/self.n_satisfied_interval
         #self.per_service_idle_times[timestamp] = [avg_idle_times[x]/replacement_interval for x in range(0, self.n_services)]
 
         # Initialise interval counts

@@ -4,6 +4,7 @@
 from multiprocessing import cpu_count
 from collections import deque
 import copy
+from math import pow
 from icarus.util import Tree
 
 # GENERAL SETTINGS
@@ -53,7 +54,7 @@ DATA_COLLECTORS = ['LATENCY']
 # This would give problems while trying to plot the results because if for
 # example I wanted to filter experiment with alpha=0.8, experiments with
 # alpha = 0.799999999999 would not be recognized 
-ALPHA = 0.75
+ALPHA = 0.5 #0.75
 #ALPHA = [0.00001]
 
 # Total size of network cache as a fraction of content population
@@ -68,6 +69,9 @@ N_SERVICES = N_CONTENTS
 # Number of requests per second (over the whole network)
 NETWORK_REQUEST_RATE = 10000.0
 
+# Number of cores for each node in the experiment
+NUM_CORES = 50
+
 # Number of content requests generated to prepopulate the caches
 # These requests are not logged
 N_WARMUP_REQUESTS = 0 #30000
@@ -77,7 +81,7 @@ N_WARMUP_REQUESTS = 0 #30000
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 5.5
+MINS = 10.0 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
@@ -85,6 +89,7 @@ N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 TOPOLOGIES =  ['TREE']
 TREE_DEPTH = 3
 BRANCH_FACTOR = 2
+NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH) -1) 
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30
@@ -92,11 +97,8 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['SDF', 'HYBRID', 'MFU']  # service-based routing
-#STRATEGIES = ['MFU'] 
-#STRATEGIES = ['SDF']  
-#STRATEGIES = ['HYBRID'] 
-#STRATEGIES = ['LRU']  
+STRATEGIES = ['SDF', 'HYBRID', 'MFU', 'COORDINATED']  # service-based routing
+#STRATEGIES = ['HYBRID']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
@@ -124,9 +126,9 @@ default['cache_placement']['name'] = 'UNIFORM'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['name'] = 'UNIFORM'
 #default['computation_placement']['name'] = 'CENTRALITY'
-default['computation_placement']['service_budget'] = N_SERVICES/2 #N_SERVICES/2  #*2
+default['computation_placement']['service_budget'] = N_SERVICES/2 #N_SERVICES/2 
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
-default['computation_placement']['computation_budget'] = N_SERVICES/40 #2 cores each
+default['computation_placement']['computation_budget'] = (NUM_NODES-1)*NUM_CORES  # NUM_CORES for each node 
 default['content_placement']['name'] = 'UNIFORM'
 default['cache_policy']['name'] = CACHE_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
@@ -138,6 +140,7 @@ default['topology']['h'] = TREE_DEPTH
 default['warmup_strategy']['name'] = WARMUP_STRATEGY
 
 # Create experiments multiplexing all desired parameters
+"""
 for strategy in ['LRU']: # STRATEGIES:
     for p in [0.1, 0.25, 0.50, 0.75, 1.0]:
         experiment = copy.deepcopy(default)
@@ -147,18 +150,21 @@ for strategy in ['LRU']: # STRATEGIES:
         experiment['desc'] = "strategy: %s, prob: %s" \
                              % (strategy, str(p))
         EXPERIMENT_QUEUE.append(experiment)
-
+"""
 # Compare SDF, LFU, Hybrid for default values
+#"""
 for strategy in STRATEGIES:
     experiment = copy.deepcopy(default)
+    if strategy == 'COORDINATED':
+        default['computation_placement']['service_budget'] = 10*N_SERVICES
     experiment['strategy']['name'] = strategy
-    experiment['desc'] = "strategy: %s, prob: %s" \
-                         % (strategy, str(p))
+    experiment['desc'] = "strategy: %s" \
+                         % (strategy)
     EXPERIMENT_QUEUE.append(experiment)
-
 #"""
-budgets = [N_SERVICES/8, N_SERVICES/4, N_SERVICES/2, 0.75*N_SERVICES, N_SERVICES, 2*N_SERVICES]
 # Experiment with different budgets
+"""
+budgets = [N_SERVICES/8, N_SERVICES/4, N_SERVICES/2, 0.75*N_SERVICES, N_SERVICES, 2*N_SERVICES]
 for strategy in STRATEGIES:
     for budget in budgets:
         experiment = copy.deepcopy(default)
@@ -170,9 +176,9 @@ for strategy in STRATEGIES:
         experiment['desc'] = "strategy: %s, budget: %s" \
                              % (strategy, str(budget))
         EXPERIMENT_QUEUE.append(experiment)
-#"""
+"""
 # Experiment comparing FIFO with EDF 
-#"""
+"""
 for schedule_policy in ['EDF', 'FIFO']:
     for strategy in STRATEGIES:
         experiment = copy.deepcopy(default)
@@ -182,9 +188,9 @@ for schedule_policy in ['EDF', 'FIFO']:
         experiment['desc'] = "strategy: %s, schedule policy: %s" \
                              % (strategy, str(schedule_policy))
         EXPERIMENT_QUEUE.append(experiment)
-#"""
+"""
 # Experiment with various zipf values
-#"""
+"""
 for alpha in [0.1, 0.25, 0.50, 0.75, 1.0]:
     for strategy in STRATEGIES:
         experiment = copy.deepcopy(default)
@@ -193,5 +199,5 @@ for alpha in [0.1, 0.25, 0.50, 0.75, 1.0]:
         experiment['desc'] = "strategy: %s, zipf: %s" \
                          % (strategy, str(alpha))
         EXPERIMENT_QUEUE.append(experiment)
-#"""
+"""
 # Experiment with various request rates (for sanity checking)

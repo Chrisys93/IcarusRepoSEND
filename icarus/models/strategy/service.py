@@ -5,16 +5,19 @@ from __future__ import print_function
 
 import networkx as nx
 import random
+import sys
 
 from icarus.registry import register_strategy
 from icarus.util import inheritdoc, path_links
 from .base import Strategy
+from icarus.models.service import Task
 
 __all__ = [
        'StrictestDeadlineFirst',
        'MostFrequentlyUsed',
        'Hybrid',
-       'Lru'
+       'Lru',
+       'Coordinated'
            ]
 
 # Status codes
@@ -27,6 +30,133 @@ CONGESTION = 1
 SUCCESS = 2
 CLOUD = 3
 NO_INSTANCES = 4
+
+# 
+@register_strategy('COORDINATED')
+class Coordinated(Strategy):
+    """
+    A coordinated approach to route requests:
+    i) Use global congestion information on Computation Spots to route requests.
+    ii) Use global demand distribution to place services on Computation Spots.
+    """
+    def __init__(self, view, controller, replacement_interval=10, debug=False, p = 0.5, **kwargs):
+        super(Coordinated, self).__init__(view,controller)
+        self.last_replacement = 0
+        self.replacement_interval = replacement_interval
+        self.receivers = view.topology().receivers()
+        self.compSpots = self.view.service_nodes()
+        self.num_nodes = len(self.compSpots.keys())
+        self.num_services = self.view.num_services()
+        self.debug = debug
+        self.p = p
+    
+    def initialise_metrics(self):
+        """
+        Initialise metrics/counters to 0
+        """
+        for node in self.compSpots.keys():
+            cs = self.compSpots[node]
+            cs.running_requests = [0 for x in range(0, self.num_services)]
+            cs.missed_requests = [0 for x in range(0, self.num_services)]
+            cs.cpuInfo.idleTime = 0.0
+
+    def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
+        """
+        finds fathest comp. spot to schedule a request using current 
+        congestion information at each upstream comp. spot.
+        The goal is to carry out computations at the farthest node to create space for
+        tasks that require closer comp. spots.
+        """
+        debug = False
+        source = self.view.content_source(service)
+        # start from the upper-most node in the path and check feasibility
+        upstream_node = source
+        for n in reversed(path[1:-1]):
+            cs = self.compSpots[n]
+            if cs.is_cloud:
+                continue
+            delay = self.view.path_delay(receiver, n)
+            rtt_to_cs = rtt_delay + 2*delay
+            serviceTime = cs.services[service].service_time
+            if deadline - time - rtt_to_cs < serviceTime:
+                continue
+            aTask = Task(time, deadline, rtt_to_cs, n, service, serviceTime, flow_id, receiver, time+delay)
+            cs.upcomingTaskQueue.append(aTask)
+            cs.upcomingTaskQueue = sorted(cs.upcomingTaskQueue, key=lambda x: x.arrivalTime)
+            cs.compute_completion_times(time)
+            for task in cs.taskQueue + cs.upcomingTaskQueue:
+                if debug:
+                    print("After compute_completion_times:")
+                    task.print_task()
+                if (task.expiry - task.rtt_delay/2) < task.completionTime:
+                    cs.upcomingTaskQueue.remove(aTask)
+                    break
+            else:
+                source = n
+                return source
+
+        return source
+
+    # Corrdinated            
+    @inheritdoc(Strategy)
+    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):
+        """
+        response : True, if this is a response from the cloudlet/cloud
+        deadline : deadline for the request 
+        flow_id : Id of the flow that the request/response is part of
+        node : the current node at which the request/response arrived
+        """
+        service = content
+        source = self.view.content_source(service)
+        if time - self.last_replacement > self.replacement_interval:
+            #self.print_stats()
+            self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
+            #self.replace_services(self.n_replacements, time)
+            self.last_replacement = time
+            self.initialise_metrics()
+        # Process request based on status
+        if receiver == node and status == REQUEST:
+            self.controller.start_session(time, receiver, service, log, flow_id, deadline)
+            path = self.view.shortest_path(node, source)
+            upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline, rtt_delay)
+            delay = self.view.path_delay(node, upstream_node)
+            rtt_delay += delay*2
+            if upstream_node != source:
+                self.controller.add_event(time+delay, receiver, service, upstream_node, flow_id, deadline, rtt_delay, REQUEST)
+            else: #request is to be executed in the cloud and returned to receiver
+                services = self.view.services() 
+                serviceTime = services[service].service_time
+                self.controller.add_event(time+rtt_delay+serviceTime, receiver, service, receiver, flow_id, deadline, rtt_delay, RESPONSE)
+            return
+        elif status == REQUEST and node != source:
+            compSpot = self.view.compSpot(node)
+            #check if the request is in the upcomingTaskQueue
+            for thisTask in compSpot.upcomingTaskQueue:
+                if thisTask.flow_id == flow_id:
+                    break
+            else: # task for the flow_id is not in the Queue
+                raise ValueError("No task with the given flow id in the upcomingTaskQueue")
+            compSpot.upcomingTaskQueue.remove(thisTask)
+            compSpot.taskQueue.append(thisTask)
+            newTask = compSpot.schedule(time)
+            if newTask is not None:
+                self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, compSpot.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE) 
+                self.controller.execute_service(newTask.flow_id, newTask.service, compSpot.node, time, compSpot.is_cloud)
+        elif status == TASK_COMPLETE:
+            compSpot = self.view.compSpot(node)
+            newTask = compSpot.schedule(time)
+            if newTask is not None:
+                self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, compSpot.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE) 
+                self.controller.execute_service(newTask.flow_id, newTask.service, compSpot.node, time, compSpot.is_cloud)
+            
+            delay = self.view.path_delay(node, receiver)
+            self.controller.add_event(time+delay, receiver, service, receiver, flow_id, deadline, rtt_delay, RESPONSE)
+        elif status == RESPONSE and node == receiver:
+            self.controller.end_session(True, time, flow_id) #TODO add flow_time
+            return
+        else:
+            print("This should not happen in Coordinated")
+            sys.exit("Unexpected request in Coordinated strategy")
 
 # LRU
 @register_strategy('LRU')
@@ -115,7 +245,8 @@ class Lru(Strategy):
             task = compSpot.schedule(time)
             #schedule the next queued task at this node
             if task is not None:
-                self.controller.add_event(task.finishTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+                self.controller.add_event(task.completionTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+                self.controller.execute_service(task.flow_id, task.service, compSpot.node, time, compSpot.is_cloud)
 
             # forward the completed task
             path = self.view.shortest_path(node, receiver)
@@ -162,8 +293,11 @@ class Hybrid(Strategy):
         # metric to rank each VM of Comp. Spot
         self.deadline_metric = {x : {} for x in range(0, self.num_nodes)}
         self.cand_deadline_metric = {x : {} for x in range(0, self.num_nodes)}
+        self.replacements_so_far = 0
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             for vm_indx in range(0, self.num_services):
                 self.deadline_metric[node][vm_indx] = 0.0
             for service_indx in range(0, self.num_services):
@@ -176,6 +310,8 @@ class Hybrid(Strategy):
         """
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             cs.running_requests = [0 for x in range(0, self.num_services)]
             cs.missed_requests = [0 for x in range(0, self.num_services)]
             cs.cpuInfo.idleTime = 0.0
@@ -184,7 +320,7 @@ class Hybrid(Strategy):
             for service_indx in range(0, self.num_services):
                 self.cand_deadline_metric[node][service_indx] = 0.0
     #HYBRID 
-    def replace_services(self, k, time):
+    def replace_services(self, time):
         """
         This method does the following:
         1. Evaluate instantiated and stored services at each computational spot for the past time interval, ie, [t-interval, t]. 
@@ -193,75 +329,116 @@ class Hybrid(Strategy):
         k : max number of instances to replace at each computational spot
         interval: the length of interval
         """
+        self.replacements_so_far += 1
         # First sort services by deadline strictness
         for node, cs in self.compSpots.items():
             if cs.is_cloud:
                 continue
-            n_replacements = k
-            service_deadlines = []
-            service_util = [] #dict
-            n_requests = {}
-            utilisation_metrics = []
-            cand_services = []
+            n_replacements = self.n_replacements
             vm_metrics = self.deadline_metric[node]
             cand_metric = self.cand_deadline_metric[node]
+            running_services_latency = []
+            running_services_utilisation_normalised = []
+            missed_services_utilisation = []
+            cand_services_latency = {}
+            delay = {}
+            util = []
+            util_normalised = {}
+            total_util = 0.0
             if self.debug:
                 print ("Replacement at node " + repr(node))
             for service in range(0, self.num_services):
                 d_metric = 0.0
                 u_metric = 0.0
-                if cs.numberOfInstances[service] == 0 and cs.missed_requests[service] > 0:
-                    d_metric = cand_metric[service]/cs.missed_requests[service]
+                util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time])
+                total_util += (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time
+                if cs.numberOfInstances[service] == 0: # No instances
+                    if cs.missed_requests[service] > 0:
+                        d_metric = cand_metric[service]/cs.missed_requests[service]
+                    else:
+                        d_metric = float('inf')
                     u_metric = cs.missed_requests[service] * cs.services[service].service_time
-                elif cs.numberOfInstances[service] > 0 and cs.running_requests[service] > 0: 
-                    d_metric = vm_metrics[service]/cs.running_requests[service]
+                    cand_services_latency[service] = d_metric
+                    delay[service] = d_metric
+                    util_normalised[service] = (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time 
+                elif cs.numberOfInstances[service] > 0: # At least one instance
+                    if cs.running_requests[service] > 0:
+                        d_metric = vm_metrics[service]/cs.running_requests[service]
+                    else:
+                        d_metric = float('inf')
                     u_metric = cs.running_requests[service] * cs.services[service].service_time
-                if d_metric > 0.0:
-                    service_deadlines.append([service, d_metric])
-                if u_metric > 0.0:
-                   service_util.append([service, u_metric])
-                n_requests[service] = cs.running_requests[service] + cs.missed_requests[service]
-            service_deadlines = sorted(service_deadlines, key=lambda x: x[1]) # small to large
-            services = []
-            # Fill the memory with time critical services 
-            for indx in range(0, len(service_deadlines)):
-                service = service_deadlines[indx][0]
-                metric = service_deadlines[indx][1]
-                if cs.rtt_upstream[service] == 0:
-                    #compute rtt to upstream node
+                    running_services_latency.append([service, d_metric])
+                    running_services_utilisation_normalised.append([service, u_metric/cs.numberOfInstances[service]])
+                    util_normalised[service] = (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time / cs.numberOfInstances[service]
+                    delay[service] = d_metric
+                else:
+                    print("This should not happen")
+
+                # Regardless of there is an instance, we also care about missed requests and their loss of utilisation
+                if cs.missed_requests[service] > 0:
+                    u_metric = cs.missed_requests[service] * cs.services[service].service_time
+                    missed_services_utilisation.append([service, u_metric])
+                if cs.rtt_upstream[service] == 0.0: # compute RTT to upstream service (if not done before)
                     source = self.view.content_source(service)
                     path = self.view.shortest_path(node, source)
                     next_node = path[1]
-                    cs.rtt_upstream[service] = self.view.path_delay(node, next_node)
-                if metric > cs.rtt_upstream[service]:
-                    break
-                services.append([service, n_requests[service]])
-            
-            # services that are not delegatable upstream and have decreasing utilisations
-            services = sorted(services, key=lambda x: x[1], reverse=True) #large to small
-            n_services = 0
-            cs.numberOfInstances = [0]*cs.service_population 
-            for indx in range(0, len(services)):
-                service = services[indx][0]
-                if n_requests[service] == 1:
-                    break
-                cs.numberOfInstances[service] = 1
-                n_services += 1
-                if n_services == cs.n_services:
-                    break
+                    cs.rtt_upstream[service] = 2*self.view.path_delay(node, next_node)
 
-            # fill the remaining slots with high utilisation services
-            if (cs.n_services > n_services):
-                print(repr(cs.n_services-n_services) + " slots filled with popular services")
-                service_util = sorted(service_util, key=lambda x: x[1], reverse=True) # large to small
-            else:
-                print ("No slots for popular services")
-            indx = 0
-            while (cs.n_services > n_services) and (indx < len(service_util)):
-                service = service_util[indx][0]
-                indx += 1
-                cs.numberOfInstances[service] += 1
-                n_services += 1
+            running_services_utilisation_normalised = sorted(running_services_utilisation_normalised, key=lambda x: x[1]) #  small to large
+            missed_services_utilisation = sorted(missed_services_utilisation, key=lambda x: x[1], reverse=True)
+            util = sorted(util, key=lambda x: x[1], reverse=True) # large to small
+            running_services_latency = sorted(running_services_latency, key=lambda x: x[1], reverse=True) #TODO remove this, not used
+
+            #if self.debug:
+            if self.debug:
+                print ("Aggregate Utility of services: \n" + repr(util[0::15]))
+                print ("Running services normalised util: \n" + repr(running_services_utilisation_normalised[0::15]))
+                print ("Delay for services: \n" + repr(running_services_latency[0::15]))
+                print ("Total utilisation for node " + repr(node) + " is: " + repr(total_util/self.replacement_interval))
+
+            target_utilisation = self.replacement_interval*cs.numOfCores
+
+            # Placement is done below
+            if self.replacements_so_far < 3: # start from scratch (cold-start)
+                numOfVMs_assigned = 0
+                cs.numberOfInstances = [0]*cs.service_population
+                # First add undelegateable services
+                for indx in range(0, len(util)):
+                    service = util[indx][0]
+                    if delay[service] < cs.rtt_upstream[service] + cs.services[service].service_time:  # not delegatable (Added an extra service_time to account for queuing delay)
+                        while numOfVMs_assigned < cs.n_services and util[indx][1] > self.replacement_interval/10:
+                            cs.numberOfInstances[service] += 1
+                            numOfVMs_assigned += 1
+                            util[indx][1] -= self.replacement_interval/10
+                            target_utilisation -= self.replacement_interval/10
+                        if cs.numberOfInstances[service] > 0 and self.debug:
+                            print ("Number of instances for service: " + repr(service) + " : " + repr(cs.numberOfInstances[service]))
+                    else:
+                        if self.debug:
+                           print("RTT upstream to eliminated service: " + repr(service) + " is " + repr(cs.rtt_upstream[service]) + " and is greater than the actual delay metric: " + repr(delay[service]))
+
+                if numOfVMs_assigned < cs.n_services:
+                    print("Error in Hybrid strategy: Node: " + repr(cs.node) + ". Number of VMs assigned " + repr(numOfVMs_assigned) + " is smaller than capacity " + repr(cs.n_services))
+            else: # hot-start - only make incremental changes to placement
+                num_vm_reassigned = 0
+                indx_last_del = 0
+                replaced_services = set() 
+                for service_missed, utilisation_missed in missed_services_utilisation:
+                    if utilisation_missed < self.replacement_interval/10:
+                        break
+                    if num_vm_reassigned > self.n_replacements:
+                        break
+                    for service_running, utilisation in running_services_utilisation_normalised:
+                        if service_running in replaced_services:
+                            continue
+                        if util_normalised[service_missed] < util_normalised[service_running]:
+                            continue
+                        if service_running != service_missed:
+                            cs.reassign_vm(service_running, service_missed, self.debug) #self.debug)
+                            replaced_services.add(service_running)
+                            indx_last_del += 1
+                            num_vm_reassigned += 1
+                            break
 
     #HYBRID 
     @inheritdoc(Strategy)
@@ -277,17 +454,31 @@ class Hybrid(Strategy):
         #    self.debug = True
 
         service = content
+        source = self.view.content_source(service)
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
+            print("Replacement time: " + repr(time))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
-            self.replace_services(self.n_replacements, time)
+            self.replace_services(time)
             self.last_replacement = time
             self.initialise_metrics()
         
+        compSpot = None
+        if self.view.has_computationalSpot(node):
+            compSpot = self.view.compSpot(node)
+
+        # Request reached the cloud
+        if source == node and status == REQUEST:
+            ret, reason = compSpot.admit_task(service, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
+            if ret == False:
+                print("This should not happen in Hybrid.")
+                raise ValueError("Task should not be rejected at the cloud.")
+            return 
+
+        # Request at the receiver
         if receiver == node and status == REQUEST:
             self.controller.start_session(time, receiver, service, log, flow_id, deadline)
-            source = self.view.content_source(service)
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
@@ -298,23 +489,6 @@ class Hybrid(Strategy):
         if self.debug:
             print ("\nEvent\n time: " + repr(time) + " receiver  " + repr(receiver) + " service " + repr(service) + " node " + repr(node) + " flow_id " + repr(flow_id) + " deadline " + repr(deadline) + " status " + repr(status)) 
 
-        compSpot = None
-        if self.view.has_computationalSpot(node):
-            compSpot = self.view.compSpot(node)
-        else: # the node has no computational spots (0 services)
-            if status is not RESPONSE:
-                source = self.view.content_source(service)
-                if node == source:
-                    print ("Error: reached the source node: " + repr(node) + " this should not happen!")
-                    return
-                path = self.view.shortest_path(node, source)
-                next_node = path[1]
-                delay = self.view.link_delay(node, next_node)
-                if self.debug:
-                    print ("Pass upstream (no compSpot) to node: " + repr(next_node) + " " + repr(time+delay))
-                self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay+2*delay, REQUEST)
-                return
-            
         if status == RESPONSE: 
             # response is on its way back to the receiver
             if node == receiver:
@@ -324,13 +498,22 @@ class Hybrid(Strategy):
                 path = self.view.shortest_path(node, receiver)
                 next_node = path[1]
                 delay = self.view.link_delay(node, next_node)
+                path_del = self.view.path_delay(node, receiver)
                 self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, RESPONSE)
+                if path_del + time <= deadline:
+                    compSpot.missed_requests[service] -= 1 
 
         elif status == TASK_COMPLETE:
-            task = compSpot.schedule(time)
-            #schedule the next queued task at this node
-            if task is not None:
-                self.controller.add_event(task.finishTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+            if node != source:
+                task = compSpot.schedule(time)
+                #schedule the next queued task at this node
+                if task is not None:
+                    self.controller.add_event(task.completionTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+                    self.controller.execute_service(task.flow_id, task.service, compSpot.node, time, compSpot.is_cloud)
+
+                    if task.expiry < time + self.view.path_delay(node, task.receiver):
+                        print("Error. Time: " + repr(time) + " Node: " + repr(node) + " Deadline: " + repr(task.expiry) + " task rtt: " + repr(task.rtt_delay) + " Exec time: " + repr(task.exec_time) + " Flow ID: " + repr(task.flow_id))
+                        raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node (non-cloud).")
 
             # forward the completed task
             path = self.view.shortest_path(node, receiver)
@@ -344,7 +527,7 @@ class Hybrid(Strategy):
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
-            deadline_metric = (deadline - time - rtt_delay - compSpot.services[service].service_time)/deadline
+            deadline_metric = (deadline - time - rtt_delay - compSpot.services[service].service_time) #/deadline
             if self.debug:
                 print ("Deadline metric: " + repr(deadline_metric))
             if self.view.has_service(node, service):
@@ -361,6 +544,7 @@ class Hybrid(Strategy):
                         self.cand_deadline_metric[node][service] += deadline_metric
                     if self.debug:
                         print ("Pass upstream to node: " + repr(next_node))
+                    compSpot.missed_requests[service] += 1 # Added here
                 else:
                     if deadline_metric > 0:
                         self.deadline_metric[node][service] += deadline_metric
@@ -397,6 +581,8 @@ class MostFrequentlyUsed(Strategy):
         self.cand_deadline_metric = {x : {} for x in range(0, self.num_nodes)}
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             for vm_indx in range(0, self.num_services):
                 self.deadline_metric[node][vm_indx] = 0.0
             for service_indx in range(0, self.num_services):
@@ -409,6 +595,8 @@ class MostFrequentlyUsed(Strategy):
         """
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             cs.running_requests = [0 for x in range(0, self.num_services)]
             cs.missed_requests = [0 for x in range(0, self.num_services)]
             cs.cpuInfo.idleTime = 0.0
@@ -463,7 +651,7 @@ class MostFrequentlyUsed(Strategy):
                     usage_metric = cs.missed_requests[service] * cs.services[service].service_time
                     if self.debug:
                         print ("Usage metric for Upstream Service: " + repr(service) + " is " + repr(usage_metric))
-                cand_services.append([service, usage_metric])
+                    cand_services.append([service, usage_metric])
 
             # sort vms and virtual_vms arrays according to metric
             vms = sorted(vms, key=lambda x: x[1]) #small to large
@@ -474,6 +662,8 @@ class MostFrequentlyUsed(Strategy):
             # Small metric is better
             indx = 0
             for vm in vms: 
+                if indx >= len(cand_services):
+                    break
                 if vm[1] > cand_services[indx][1]:
                     break
                 else:
@@ -496,6 +686,7 @@ class MostFrequentlyUsed(Strategy):
         node : the current node at which the request/response arrived
         """
         service = content
+        source = self.view.content_source(service)
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
@@ -504,6 +695,19 @@ class MostFrequentlyUsed(Strategy):
             self.last_replacement = time
             self.initialise_metrics()
         
+        compSpot = None
+        if self.view.has_computationalSpot(node):
+            compSpot = self.view.compSpot(node)
+        
+        # Request reached the cloud
+        if source == node and status == REQUEST:
+            ret, reason = compSpot.admit_task(service, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
+            if ret == False:
+                print("This should not happen in Hybrid.")
+                raise ValueError("Task should not be rejected at the cloud.")
+            return 
+
+        # Request at the receiver
         if receiver == node and status == REQUEST:
             self.controller.start_session(time, receiver, service, log, flow_id, deadline)
             source = self.view.content_source(service)
@@ -518,23 +722,6 @@ class MostFrequentlyUsed(Strategy):
             print ("\nEvent\n time: " + repr(time) + " receiver  " + repr(receiver) + " service " + repr(service) + " node " + repr(node) + " flow_id " + repr(flow_id) + " deadline " + repr(deadline) + " status " + repr(status)) 
 
         # MFU
-        compSpot = None
-        if self.view.has_computationalSpot(node):
-            compSpot = self.view.compSpot(node)
-        else: # the node has no computational spots (0 services)
-            if status is not RESPONSE:
-                source = self.view.content_source(service)
-                if node == source:
-                    print ("Error: reached the source node: " + repr(node) + " this should not happen!")
-                    return
-                path = self.view.shortest_path(node, source)
-                next_node = path[1]
-                delay = self.view.link_delay(node, next_node)
-                if self.debug:
-                    print ("Pass upstream (no compSpot) to node: " + repr(next_node) + " " + repr(time+delay))
-                self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay+2*delay, REQUEST)
-                return
-            
         if status == RESPONSE: 
             # response is on its way back to the receiver
             if node == receiver:
@@ -547,10 +734,16 @@ class MostFrequentlyUsed(Strategy):
                 self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, RESPONSE)
 
         elif status == TASK_COMPLETE:
-            task = compSpot.schedule(time)
-            #schedule the next queued task at this node
-            if task is not None:
-                self.controller.add_event(task.finishTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+            if node != source:
+                task = compSpot.schedule(time)
+                #schedule the next queued task at this node
+                if task is not None:
+                    self.controller.add_event(task.completionTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+                    self.controller.execute_service(task.flow_id, task.service, compSpot.node, time, compSpot.is_cloud)
+
+                    if task.expiry < time + self.view.path_delay(node, task.receiver):
+                        print("Error. Time: " + repr(time) + " Node: " + repr(node) + " Deadline: " + repr(task.expiry) + " task rtt: " + repr(task.rtt_delay) + " Exec time: " + repr(task.exec_time) + " Flow ID: " + repr(task.flow_id))
+                        raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node (non-cloud).")
 
             # forward the completed task
             path = self.view.shortest_path(node, receiver)
@@ -617,6 +810,8 @@ class StrictestDeadlineFirst(Strategy):
         self.cand_deadline_metric = {x : {} for x in range(0, self.num_nodes)}
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             for vm_indx in range(0, self.num_services):
                 self.deadline_metric[node][vm_indx] = 0.0
             for service_indx in range(0, self.num_services):
@@ -629,6 +824,8 @@ class StrictestDeadlineFirst(Strategy):
         """
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
             cs.running_requests = [0 for x in range(0, self.num_services)]
             cs.missed_requests = [0 for x in range(0, self.num_services)]
             cs.cpuInfo.idleTime = 0.0
@@ -684,7 +881,7 @@ class StrictestDeadlineFirst(Strategy):
                     d_metric = cand_metric[service]/cs.missed_requests[service]
                     if self.debug:
                         print ("Deadline metric for Upstream Service: " + repr(service) + " is " + repr(d_metric))
-                cand_services.append([service, d_metric])
+                    cand_services.append([service, d_metric])
             # sort vms and virtual_vms arrays according to metric
             vms = sorted(vms, key=lambda x: x[1], reverse=True) #larger to smaller
             cand_services = sorted(cand_services, key=lambda x: x[1]) #smaller to larger
@@ -695,6 +892,8 @@ class StrictestDeadlineFirst(Strategy):
             indx = 0
             for vm in vms:
                 # vm's metric is worse than the cand. and they are not the same service
+                if indx >= len(cand_services):
+                    break
                 if vm[1] < cand_services[indx][1]:
                     break
                 else:
@@ -715,6 +914,7 @@ class StrictestDeadlineFirst(Strategy):
         node : the current node at which the request/response arrived
         """
         service = content
+        source = self.view.content_source(service)
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
@@ -723,6 +923,19 @@ class StrictestDeadlineFirst(Strategy):
             self.last_replacement = time
             self.initialise_metrics()
         
+        compSpot = None
+        if self.view.has_computationalSpot(node):
+            compSpot = self.view.compSpot(node)
+
+        # Request reached the cloud
+        if source == node and status == REQUEST:
+            ret, reason = compSpot.admit_task(service, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
+            if ret == False:
+                print("This should not happen in Hybrid.")
+                raise ValueError("Task should not be rejected at the cloud.")
+            return 
+
+        # Request at the receiver
         if receiver == node and status == REQUEST:
             self.controller.start_session(time, receiver, service, log, flow_id, deadline)
             source = self.view.content_source(service)
@@ -736,22 +949,6 @@ class StrictestDeadlineFirst(Strategy):
         if self.debug:
             print ("\nEvent\n time: " + repr(time) + " receiver  " + repr(receiver) + " service " + repr(service) + " node " + repr(node) + " flow_id " + repr(flow_id) + " deadline " + repr(deadline) + " status " + repr(status)) 
 
-        compSpot = None
-        if self.view.has_computationalSpot(node):
-            compSpot = self.view.compSpot(node)
-        else: # the node has no computational spots (0 services)
-            if status is not RESPONSE:
-                source = self.view.content_source(service)
-                if node == source:
-                    print ("Error: reached the source node: " + repr(node) + " this should not happen!")
-                    return
-                path = self.view.shortest_path(node, source)
-                next_node = path[1]
-                delay = self.view.link_delay(node, next_node)
-                if self.debug:
-                    print ("Pass upstream (no compSpot) to node: " + repr(next_node) + " " + repr(time+delay))
-                self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay+2*delay, REQUEST)
-                return
         # SDF  
         if status == RESPONSE: 
             # response is on its way back to the receiver
@@ -765,10 +962,16 @@ class StrictestDeadlineFirst(Strategy):
                 self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, RESPONSE)
 
         elif status == TASK_COMPLETE:
-            task = compSpot.schedule(time)
-            #schedule the next queued task at this node
-            if task is not None:
-                self.controller.add_event(task.finishTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+            if node != source:
+                task = compSpot.schedule(time)
+                #schedule the next queued task at this node
+                if task is not None:
+                    self.controller.add_event(task.completionTime, task.receiver, task.service, node, task.flow_id, task.expiry, task.rtt_delay, TASK_COMPLETE)
+                    self.controller.execute_service(task.flow_id, task.service, compSpot.node, time, compSpot.is_cloud)
+
+                    if task.expiry < time + self.view.path_delay(node, task.receiver):
+                        print("Error. Time: " + repr(time) + " Node: " + repr(node) + " Deadline: " + repr(task.expiry) + " task rtt: " + repr(task.rtt_delay) + " Exec time: " + repr(task.exec_time) + " Flow ID: " + repr(task.flow_id))
+                        raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node (non-cloud).")
 
             # forward the completed task
             path = self.view.shortest_path(node, receiver)
