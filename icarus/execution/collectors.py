@@ -350,7 +350,7 @@ class LatencyCollector(DataCollector):
         if cdf:
             self.latency_data = collections.deque()
         self.css = self.view.service_nodes()
-        self.n_services = self.css.items()[0][1].n_services
+        #self.n_services = self.css.items()[0][1].numOfVMs
     
     @inheritdoc(DataCollector)
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):

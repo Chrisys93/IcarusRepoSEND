@@ -62,7 +62,7 @@ NETWORK_CACHE = 0.05
 
 # Number of content objects
 #N_CONTENTS = 100
-N_CONTENTS = 1000
+N_CONTENTS = 10
 
 N_SERVICES = N_CONTENTS
 
@@ -89,7 +89,7 @@ N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 TOPOLOGIES =  ['TREE']
 TREE_DEPTH = 3
 BRANCH_FACTOR = 2
-NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH) -1) 
+NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1) 
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30
@@ -97,8 +97,8 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['SDF', 'HYBRID', 'MFU', 'COORDINATED']  # service-based routing
-#STRATEGIES = ['HYBRID']  # service-based routing
+STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU']  # service-based routing
+#STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
@@ -126,9 +126,9 @@ default['cache_placement']['name'] = 'UNIFORM'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['name'] = 'UNIFORM'
 #default['computation_placement']['name'] = 'CENTRALITY'
-default['computation_placement']['service_budget'] = N_SERVICES/2 #N_SERVICES/2 
+default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2 
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
-default['computation_placement']['computation_budget'] = (NUM_NODES-1)*NUM_CORES  # NUM_CORES for each node 
+default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node 
 default['content_placement']['name'] = 'UNIFORM'
 default['cache_policy']['name'] = CACHE_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
@@ -156,7 +156,7 @@ for strategy in ['LRU']: # STRATEGIES:
 for strategy in STRATEGIES:
     experiment = copy.deepcopy(default)
     if strategy == 'COORDINATED':
-        default['computation_placement']['service_budget'] = 10*N_SERVICES
+        default['computation_placement']['service_budget'] = NUM_NODES*N_SERVICES*NUM_CORES
     experiment['strategy']['name'] = strategy
     experiment['desc'] = "strategy: %s" \
                          % (strategy)

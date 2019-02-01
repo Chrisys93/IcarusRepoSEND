@@ -385,7 +385,7 @@ class NetworkView(object):
             cs = self.model.compSpot[node]
             if cs.is_cloud:
                 return True
-            elif cs.numberOfInstances[service] > 0:
+            elif cs.numberOfServiceInstances[service] > 0:
                 return True
  
         return False
@@ -565,42 +565,107 @@ class NetworkModel(object):
         service_time_min = 0.10 # used to be 0.001
         service_time_max = 0.10 # used to be 0.1 
         #delay_min = 0.005
-        delay_min = 3*topology.graph['receiver_access_delay'] + service_time_max
-        delay_max = delay_min + topology.graph['depth']*topology.graph['link_delay'] 
+        delay_min = 2*topology.graph['receiver_access_delay'] + service_time_max
+        delay_max = delay_min + 2*topology.graph['depth']*topology.graph['link_delay'] 
 
-        aFile = open('services.txt', 'w')
-        aFile.write("# ServiceID\tserviceTime\tserviceDeadline\tDifference\n")
 
         service_indx = 0
-        deadlines = []
-        service_times = []
         random.seed(seed)
-
         for service in range(0, n_services):
             service_time = random.uniform(service_time_min, service_time_max)
             #service_time = 2*random.uniform(service_time_min, service_time_max)
-            deadline = service_time + random.uniform(delay_min, delay_max) + 2*internal_link_delay
+            deadline = random.uniform(delay_min, delay_max) + 2*internal_link_delay
             #deadline = service_time + 1.5*(random.uniform(delay_min, delay_max) + 2*internal_link_delay)
-            deadlines.append(deadline)
-            service_times.append(service_time)
-
-        #deadlines = sorted(deadlines) #Correlate deadline and popularity XXX
-        #deadlines.reverse()
-        for service in range(0, n_services):
-            service_time = service_times[service_indx]
-            deadline = deadlines[service_indx]
-            diff = deadline - service_time
-
-            s = str(service_indx) + "\t" + str(service_time) + "\t" + str(deadline) + "\t" + str(diff) + "\n"
-            aFile.write(s)
-            service_indx += 1
             s = Service(service_time, deadline)
             self.services.append(s)
-        aFile.close()
         #""" #END OF Generating Services
+        
+        ### Prepare input for the optimizer
+        if False:
+            aFile = open('inputToOptimizer.txt', 'w')
+            aFile.write("# 1. ServiceIDs\n")
+            first = True
+            tostr = ""
+            for service in range(0, n_services):
+                if first:
+                    tostr += str(service)
+                    first = False
+                else:
+                    tostr += "," + str(service)
+            aFile.write(s)
+
+            aFile.write("# 2. Set of APs:\n")
+            first = True
+            tostr = ""
+            for ap in topology.graph['receivers']:
+                if first:
+                    tostr = str(ap)
+                    first = False
+                else:
+                    tostr += "," + str(ap)
+            tostr += '\n'
+            aFile.write(tostr)
+        
+            aFile.write("# 3. Set of nodes:\n")        
+            first = True
+            tostr = ""
+            for node in topology.nodes_iter():
+                if node in topology.graph['receivers']:
+                    continue
+                if first:
+                    tostr = str(node)
+                    first = False
+                else:
+                    tostr = "," + str(node)
+            tostr += '\n'
+            aFile.write(tostr)
+
+            aFile.write("# 4. NodeID, serviceID, numCores\n")
+            if topology.graph['type'] == 'TREE':
+                ap_node_to_services = {} 
+                ap_node_to_delay = {}
+                for ap in topology.graph['receivers']:
+                    node_to_delay = {}
+                    node_to_services = {}
+                    node_to_delay[ap] = 0.0
+                    ap_node_to_services[ap] = node_to_services
+                    ap_node_to_delay[ap] = node_to_delay
+                    for node in topology.nodes_iter(): 
+                        for egress, ingress in topology.edges_iter():
+                            #print str(ingress) + " " + str(egress)
+                            if ingress in node_to_delay.keys() and egress not in node_to_delay.keys():
+                                node_to_delay[egress] = node_to_delay[ingress] + topology.edge[ingress][egress]['delay']
+                                node_to_services[egress] = []
+                                service_indx = 0
+                                for s in self.services:
+                                    if s.deadline >= (s.service_time + 2*node_to_delay[egress]):
+                                        node_to_services[egress].append(service_indx)
+                                    service_indx += 1
+                aFile.write("# 4. Ap,Node,service1,service2, ....]\n")
+                for ap in topology.graph['receivers']:
+                    node_to_services = ap_node_to_services[ap]
+                    node_to_delay = ap_node_to_delay[ap]
+                    for node, services in node_to_services.items():
+                        s = str(ap) + "," + str(node) #+ "," + str(node_to_delay[node]) 
+                        for serv in services:
+                            s += "," + str(serv)
+                        s += '\n'
+                        aFile.write(s)
+                aFile.write("# 5. AP, rate_service1, rate_service2, ... rate_serviceN\n")
+                rate = 1.0/(len(topology.graph['receivers'])*len(self.services))
+                for ap in topology.graph['receivers']:
+                    s = str(ap) + ","
+                    for serv in self.services:
+                        s += str(rate)
+                    s += '\n'
+                    aFile.write(s)
+
+            aFile.close()
 
         self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
+
+        
 
         # This is for a local un-coordinated cache (currently used only by
         # Hashrouting with edge cache)

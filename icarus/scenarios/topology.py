@@ -137,6 +137,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     
     routers = topology.nodes()
     topology.graph['icr_candidates'] = set(routers)
+    topology.graph['type'] = 'TREE'
+    topology.graph['height'] = h
     
     edge_routers = [v for v in topology.nodes_iter()
                  if topology.node[v]['depth'] == h]
@@ -145,10 +147,12 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     #routers = [v for v in topology.nodes_iter()
     #          if topology.node[v]['depth'] > 0
     #          and topology.node[v]['depth'] < h]
+
     n_receivers = len(edge_routers)
     receivers = ['rec_%d' % i for i in range(n_receivers)]
     for i in range(n_receivers):
         topology.add_edge(receivers[i], edge_routers[i], delay=receiver_access_delay, type='internal')
+
     n_sources = len(root) 
     sources = ['src_%d' % i for i in range(n_sources)]
     for i in range(n_sources):
@@ -166,6 +170,11 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     for v in routers:
         fnss.add_stack(topology, v, 'router')
     # label links as internal
+
+    topology.graph['receivers'] = receivers
+    topology.graph['sources'] = sources
+    topology.graph['routers'] = routers
+    topology.graph['edge_routers'] = edge_routers
 
     return IcnTopology(topology)
 

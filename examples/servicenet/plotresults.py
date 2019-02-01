@@ -667,7 +667,7 @@ def run(config, results, plotdir):
 
     #print_lru_probability_results(lst) 
 
-    print_strategies_performance(lst)
+    #print_strategies_performance(lst)
     #print_budget_experiment(lst)
     #print_scheduling_experiments(lst)
     #print_zipf_experiment(lst)
