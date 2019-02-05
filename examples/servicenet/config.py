@@ -54,7 +54,7 @@ DATA_COLLECTORS = ['LATENCY']
 # This would give problems while trying to plot the results because if for
 # example I wanted to filter experiment with alpha=0.8, experiments with
 # alpha = 0.799999999999 would not be recognized 
-ALPHA = 0.5 #0.75
+ALPHA = 0.75 #0.75
 #ALPHA = [0.00001]
 
 # Total size of network cache as a fraction of content population
@@ -62,7 +62,7 @@ NETWORK_CACHE = 0.05
 
 # Number of content objects
 #N_CONTENTS = 100
-N_CONTENTS = 10
+N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
@@ -98,7 +98,7 @@ NUM_REPLACEMENTS = 10000
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU']  # service-based routing
-#STRATEGIES = ['COORDINATED']  # service-based routing
+#STRATEGIES = ['OPTIMAL_SCHED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
@@ -158,6 +158,7 @@ for strategy in STRATEGIES:
     if strategy == 'COORDINATED':
         default['computation_placement']['service_budget'] = NUM_NODES*N_SERVICES*NUM_CORES
     experiment['strategy']['name'] = strategy
+    experiment['warmup_strategy']['name'] = strategy
     experiment['desc'] = "strategy: %s" \
                          % (strategy)
     EXPERIMENT_QUEUE.append(experiment)

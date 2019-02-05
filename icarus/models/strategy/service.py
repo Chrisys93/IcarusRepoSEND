@@ -124,7 +124,6 @@ class Coordinated(Strategy):
         node : the current node at which the request/response arrived
         """
         service = content
-
         if self.debug:
             print ("\nEvent\n time: " + repr(time) + " receiver  " + repr(receiver) + " service " + repr(service) + " node " + repr(node) + " flow_id " + repr(flow_id) + " deadline " + repr(deadline) + " status " + repr(status)) 
         source = self.view.content_source(service)
@@ -1061,13 +1060,3 @@ class StrictestDeadlineFirst(Strategy):
         else:
             print ("Error: unrecognised status value : " + repr(status))
 
-
-@register_strategy('COORDINATED')
-class Coordinated(Strategy):
-    """
-    A coordinated approach to route requests:
-    i) Use global congestion information on Computation Spots to route requests.
-    ii) Use global demand distribution to place services on Computation Spots.
-    """
-    def __init__(self, view, controller, replacement_interval=10, debug=False, p = 0.5, **kwargs):
-        super(Coordinated, self).__init__(view,controller)

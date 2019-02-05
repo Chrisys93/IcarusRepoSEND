@@ -15,6 +15,7 @@ of all relevant events.
 """
 import random
 import logging
+import sys
 
 import networkx as nx
 import fnss
@@ -298,6 +299,11 @@ class NetworkView(object):
         """
 
         return self.model.eventQ
+    
+    def getRequestRate(self):
+        """Return the request rate per second of the aggregate traffic 
+        """
+        return self.model.rate
 
     def services(self):
         """Return the services list (i.e., service population)
@@ -522,6 +528,7 @@ class NetworkModel(object):
         cache_size = {}
         comp_size = {}
         service_size = {}
+        self.rate = rate
         for node in topology.nodes_iter():
             stack_name, stack_props = fnss.get_stack(topology, node)
             # get the depth of the tree
@@ -664,9 +671,8 @@ class NetworkModel(object):
 
         self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
-
-        
-
+        print ("Generated Computation Spot Objects")
+        sys.stdout.flush()
         # This is for a local un-coordinated cache (currently used only by
         # Hashrouting with edge cache)
         self.local_cache = {}

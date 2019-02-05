@@ -290,10 +290,10 @@ class ComputationSpot(object):
             # setup a random set of services to run in the memory
             while num_of_VMs < self.numOfVMs:
                 service_index = random.choice(range(0, self.service_population_size))
-                if self.numberOfServiceInstances[service_index] == 0:
-                    self.numberOfServiceInstances[service_index] = 1
-                    num_of_VMs += 1
-                    evicted = self.model.cache[node].put(service_index) # HACK: should use controller here   
+                #if self.numberOfServiceInstances[service_index] == 0:
+                self.numberOfServiceInstances[service_index] = 1
+                num_of_VMs += 1
+                evicted = self.model.cache[node].put(service_index) # HACK: should use controller here   
 
 
     def compute_completion_times(self, time, debug=False):

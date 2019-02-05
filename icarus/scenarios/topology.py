@@ -119,7 +119,12 @@ def topology_tree(k, h, delay=0.020, **kwargs):
 
     receiver_access_delay = 0.001
     topology = fnss.k_ary_tree_topology(k, h)
+    topology.graph['parent'] = [None for x in range(pow(k,h+1)-1)]
     for u, v in topology.edges_iter():
+        if topology.node[u]['depth'] > topology.node[v]['depth']:
+            topology.graph['parent'][u] = v
+        else:
+            topology.graph['parent'][v] = u 
         topology.edge[u][v]['type'] = 'internal'
         if u is 0 or v is 0:
             topology.edge[u][v]['delay'] = 3*delay
@@ -152,6 +157,7 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     receivers = ['rec_%d' % i for i in range(n_receivers)]
     for i in range(n_receivers):
         topology.add_edge(receivers[i], edge_routers[i], delay=receiver_access_delay, type='internal')
+
 
     n_sources = len(root) 
     sources = ['src_%d' % i for i in range(n_sources)]

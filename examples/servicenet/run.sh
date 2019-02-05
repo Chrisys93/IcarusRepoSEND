@@ -16,7 +16,7 @@ PLOTS_DIR=${CURR_DIR}/plots
 CONFIG_FILE=${CURR_DIR}/config.py
 
 # FIle where results will be saved
-RESULTS_FILE=${CURR_DIR}/results_uncorrelated.pickle
+RESULTS_FILE=${CURR_DIR}/results.pickle
 
 # Add Icarus code to PYTHONPATH
 export PYTHONPATH=${ICARUS_DIR}:$PYTHONPATH
