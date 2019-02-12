@@ -98,7 +98,7 @@ class Coordinated(Strategy):
             cs.scheduler.upcomingTaskQueue.append(aTask)
             cs.scheduler.upcomingTaskQueue = sorted(cs.scheduler.upcomingTaskQueue, key=lambda x: x.arrivalTime)
             cs.compute_completion_times(time, self.debug)
-            for task in cs.scheduler.taskQueue + cs.scheduler.upcomingTaskQueue:
+            for task in cs.scheduler._taskQueue + cs.scheduler.upcomingTaskQueue:
                 if self.debug:
                     print("After compute_completion_times:")
                     task.print_task()
@@ -170,8 +170,8 @@ class Coordinated(Strategy):
                 if self.debug:
                     print ("Task is not ready to be executed: ")
                     compSpot.scheduler.print_core_status()
-                    print (str(len(compSpot.scheduler.taskQueue)) + " tasks in the taskQueue")
-                    for aTask in compSpot.scheduler.taskQueue:
+                    print (str(len(compSpot.scheduler._taskQueue)) + " tasks in the taskQueue")
+                    for aTask in compSpot.scheduler._taskQueue:
                         aTask.print_task()
                     print (str(len(compSpot.scheduler.upcomingTaskQueue)) + " tasks in the upcomingtaskQueue")
                     for aTask in compSpot.scheduler.upcomingTaskQueue:
@@ -362,6 +362,89 @@ class Hybrid(Strategy):
                 self.deadline_metric[node][vm_indx] = 0.0
             for service_indx in range(0, self.num_services):
                 self.cand_deadline_metric[node][service_indx] = 0.0
+
+    #HYBRID 
+    def replace_services1(self, time):
+        for node, cs in self.compSpots.items():
+            n_replacements = 0
+            if cs.is_cloud:
+                continue
+            runningServiceResidualTimes = self.deadline_metric[node]
+            missedServiceResidualTimes = self.cand_deadline_metric[node]
+            #service_residuals = []
+            running_services_utilisation_normalised = []
+            missed_services_utilisation = []
+            delay = {}
+            #runningServicesUtil = {}
+            #missedServicesUtil = {}
+
+            util = []
+            util_normalised = {}
+            
+            if self.debug:
+                print ("Replacement at node " + repr(node))
+            for service in range(0, self.num_services):
+                d_metric = 0.0
+                u_metric = 0.0
+                util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time])
+                if cs.numberOfServiceInstances[service] == 0: 
+                # No instances
+                    if cs.missed_requests[service] > 0:
+                        d_metric = 1.0*missedServiceResidualTimes[service]/cs.missed_requests[service]
+                    else:
+                        d_metric = float('inf')
+                    delay[service] = d_metric
+                    u_metric = cs.missed_requests[service] * cs.services[service].service_time
+                    if u_metric > self.replacement_interval:
+                        u_metric = self.replacement_interval
+                    #missedServiceResidualTimes[service] = d_metric
+                    #missedServicesUtil[service] = u_metric
+                    missed_services_utilisation.append([service, u_metric])
+                    #service_residuals.append([service, d_metric])
+                elif cs.numberOfServiceInstances[service] > 0: 
+                # At least one instance
+                    if cs.running_requests[service] > 0:
+                        d_metric = 1.0*runningServiceResidualTimes[service]/cs.running_requests[service]
+                    else:
+                        d_metric = float('inf')
+                    runningServiceResidualTimes[service] = d_metric
+                    u_metric_missed = (cs.missed_requests[service]) * cs.services[service].service_time * 1.0
+                    if u_metric_missed > self.replacement_interval:
+                        u_metric_missed = self.replacement_interval
+                    #missedServicesUtil[service] = u_metric_missed
+                    u_metric_served = (1.0*cs.running_requests[service]*cs.services[service].service_time)/cs.numberOfServiceInstances[service]
+                    #runningServicesUtil[service] = u_metric_served
+                    missed_services_utilisation.append([service, u_metric_missed])
+                    #running_services_latency.append([service, d_metric])
+                    running_services_utilisation_normalised.append([service, u_metric/cs.numberOfServiceInstances[service]])
+                    #service_residuals.append([service, d_metric])
+                    delay[service] = d_metric
+                else:
+                    print("This should not happen")
+            running_services_utilisation_normalised = sorted(running_services_utilisation_normalised, key=lambda x: x[1]) #smaller to larger
+            missed_services_utilisation = sorted(missed_services_utilisation, key=lambda x: x[1], reverse=True) #larger to smaller
+            #service_residuals = sorted(service_residuals, key=lambda x: x[1]) #smaller to larger
+            exit_loop = False
+            for service_missed, missed_util in missed_services_utilisation:
+                if exit_loop:
+                    break
+                for indx in range(len(running_services_utilisation_normalised)):
+                    service_running = running_services_utilisation_normalised[indx][0]
+                    running_util = running_services_utilisation_normalised[indx][1]
+                    if running_util > missed_util:
+                        exit_loop = True
+                        break
+                    if service_running == service_missed:
+                        continue
+                    if missed_util >= running_util and delay[service_missed] < delay[service_running] and delay[service_missed] > 0:
+                        cs.reassign_vm(service_running, service_missed, True)
+                        print ("Missed util: " + str(missed_util) + " running util: " + str(running_util) + " Adequate time missed: " + str(delay[service_missed]) + " Adequate time running: " + str(delay[service_running]))
+                        del running_services_utilisation_normalised[indx]
+                        n_replacements += 1
+                        break
+
+            print(str(n_replacements) + " replacements at node:" + str(cs.node) + " at time: " + str(time))
+
     #HYBRID 
     def replace_services(self, time):
         """
@@ -403,13 +486,13 @@ class Hybrid(Strategy):
                     u_metric = cs.missed_requests[service] * cs.services[service].service_time
                     cand_services_latency[service] = d_metric
                     delay[service] = d_metric
-                    util_normalised[service] = (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time 
+                    util_normalised[service] = u_metric 
                 elif cs.numberOfServiceInstances[service] > 0: # At least one instance
                     if cs.running_requests[service] > 0:
                         d_metric = vm_metrics[service]/cs.running_requests[service]
                     else:
                         d_metric = float('inf')
-                    u_metric = cs.running_requests[service] * cs.services[service].service_time
+                    u_metric = (cs.running_requests[service] + cs.missed_requests) * cs.services[service].service_time
                     running_services_latency.append([service, d_metric])
                     running_services_utilisation_normalised.append([service, u_metric/cs.numberOfServiceInstances[service]])
                     util_normalised[service] = (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time / cs.numberOfServiceInstances[service]
@@ -432,7 +515,6 @@ class Hybrid(Strategy):
             util = sorted(util, key=lambda x: x[1], reverse=True) # large to small
             running_services_latency = sorted(running_services_latency, key=lambda x: x[1], reverse=True) #TODO remove this, not used
 
-            #if self.debug:
             if self.debug:
                 print ("Aggregate Utility of services: \n" + repr(util[0::15]))
                 print ("Running services normalised util: \n" + repr(running_services_utilisation_normalised[0::15]))
@@ -448,7 +530,7 @@ class Hybrid(Strategy):
                 # First add undelegateable services
                 for indx in range(0, len(util)):
                     service = util[indx][0]
-                    if delay[service] < cs.rtt_upstream[service] + cs.services[service].service_time:  # not delegatable (Added an extra service_time to account for queuing delay)
+                    if delay[service] < cs.rtt_upstream[service] + cs.services[service].service_time/2:  # not delegatable (Added an extra service_time/3 to account for queuing delay)
                         while numOfVMs_assigned < cs.numOfVMs and util[indx][1] > self.replacement_interval/10:
                             cs.numberOfServiceInstances[service] += 1
                             numOfVMs_assigned += 1
@@ -458,7 +540,7 @@ class Hybrid(Strategy):
                             print ("Number of instances for service: " + repr(service) + " : " + repr(cs.numberOfServiceInstances[service]))
                     else:
                         if self.debug:
-                           print("RTT upstream to eliminated service: " + repr(service) + " is " + repr(cs.rtt_upstream[service]) + " and is greater than the actual delay metric: " + repr(delay[service]))
+                            print("RTT upstream to eliminated service: " + repr(service) + " is " + repr(cs.rtt_upstream[service]) + " and is greater than the actual delay metric: " + repr(delay[service]))
 
                 if numOfVMs_assigned < cs.numOfVMs:
                     print("Error in Hybrid strategy: Node: " + repr(cs.node) + ". Number of VMs assigned " + repr(numOfVMs_assigned) + " is smaller than capacity " + repr(cs.numOfVMs))
@@ -503,7 +585,7 @@ class Hybrid(Strategy):
             #self.print_stats()
             print("Replacement time: " + repr(time))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
-            self.replace_services(time)
+            self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
         
@@ -543,8 +625,8 @@ class Hybrid(Strategy):
                 delay = self.view.link_delay(node, next_node)
                 path_del = self.view.path_delay(node, receiver)
                 self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, RESPONSE)
-                if path_del + time <= deadline:
-                    compSpot.missed_requests[service] -= 1 
+                if path_del + time > deadline:
+                    compSpot.missed_requests[service] += 1 
 
         elif status == TASK_COMPLETE:
             if node != source:
@@ -587,12 +669,12 @@ class Hybrid(Strategy):
                         self.cand_deadline_metric[node][service] += deadline_metric
                     if self.debug:
                         print ("Pass upstream to node: " + repr(next_node))
-                    compSpot.missed_requests[service] += 1 # Added here
+                    #compSpot.missed_requests[service] += 1 # Added here
                 else:
                     if deadline_metric > 0:
                         self.deadline_metric[node][service] += deadline_metric
             else: #Not running the service
-                compSpot.missed_requests[service] += 1
+                #compSpot.missed_requests[service] += 1
                 if self.debug:
                     print ("Not running the service: Pass upstream to node: " + repr(next_node))
                 rtt_delay += delay*2

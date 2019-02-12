@@ -251,8 +251,8 @@ class OptimalScheduling(Strategy):
         """
         r = random.random()
         cum = 0.0
-        receiver = int(receiver[4:])
         parent = self.view.topology().graph['edge_routers'][receiver]
+        receiver = int(receiver[4:])
         while parent is not None:
             cs = self.compSpots[parent]
             if cs.is_cloud:
@@ -330,7 +330,7 @@ class OptimalScheduling(Strategy):
                     print ("Task is not ready to be executed: ")
                     compSpot.scheduler.print_core_status()
                     print (str(len(compSpot.scheduler.taskQueue)) + " tasks in the taskQueue")
-                    for aTask in compSpot.scheduler.taskQueue:
+                    for aTask in compSpot.scheduler._taskQueue:
                         aTask.print_task()
                     print (str(len(compSpot.scheduler.upcomingTaskQueue)) + " tasks in the upcomingtaskQueue")
                     for aTask in compSpot.scheduler.upcomingTaskQueue:

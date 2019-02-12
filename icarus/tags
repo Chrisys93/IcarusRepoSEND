@@ -93,6 +93,7 @@ NetworkView	execution/network.py	/^class NetworkView(object):$/;"	c
 NetworkView	models/strategy/tests/test_strategy.py	/^from icarus.execution import NetworkModel, NetworkView, NetworkController, DummyCollector$/;"	i
 NoCache	models/strategy/base.py	/^class NoCache(Strategy):$/;"	c
 NullCache	models/cache/policies.py	/^class NullCache(Cache):$/;"	c
+OptimalPlacementAndScheduling	models/strategy/placement.py	/^class OptimalPlacementAndScheduling(Strategy):$/;"	c
 OptimalScheduling	models/strategy/optimal.py	/^class OptimalScheduling(Strategy):$/;"	c
 Orchestrator	orchestration.py	/^class Orchestrator(object):$/;"	c
 Orchestrator	run.py	/^from icarus.orchestration import Orchestrator$/;"	i
@@ -104,10 +105,12 @@ PerfectLfuCache	models/cache/policies.py	/^class PerfectLfuCache(Cache):$/;"	c
 ProbCache	models/strategy/onpath.py	/^class ProbCache(Strategy):$/;"	c
 REQUEST	models/service/compSpot.py	/^REQUEST = 0$/;"	v
 REQUEST	models/strategy/optimal.py	/^REQUEST = 0$/;"	v
+REQUEST	models/strategy/placement.py	/^REQUEST = 0$/;"	v
 REQUEST	models/strategy/service.py	/^REQUEST = 0$/;"	v
 REQUEST	scenarios/workload.py	/^REQUEST = 0$/;"	v
 RESPONSE	models/service/compSpot.py	/^RESPONSE = 1$/;"	v
 RESPONSE	models/strategy/optimal.py	/^RESPONSE = 1$/;"	v
+RESPONSE	models/strategy/placement.py	/^RESPONSE = 1$/;"	v
 RESPONSE	models/strategy/service.py	/^RESPONSE = 1$/;"	v
 RESPONSE	scenarios/workload.py	/^RESPONSE = 1$/;"	v
 RESULTS_READER	registry.py	/^RESULTS_READER = {}$/;"	v
@@ -138,10 +141,12 @@ Strategy	models/strategy/hashrouting.py	/^from .base import Strategy$/;"	i
 Strategy	models/strategy/offpath.py	/^from .base import Strategy$/;"	i
 Strategy	models/strategy/onpath.py	/^from .base import Strategy$/;"	i
 Strategy	models/strategy/optimal.py	/^from .base import Strategy$/;"	i
+Strategy	models/strategy/placement.py	/^from .base import Strategy$/;"	i
 Strategy	models/strategy/service.py	/^from .base import Strategy$/;"	i
 StrictestDeadlineFirst	models/strategy/service.py	/^class StrictestDeadlineFirst(Strategy):$/;"	c
 TASK_COMPLETE	models/service/compSpot.py	/^TASK_COMPLETE = 2$/;"	v
 TASK_COMPLETE	models/strategy/optimal.py	/^TASK_COMPLETE = 2$/;"	v
+TASK_COMPLETE	models/strategy/placement.py	/^TASK_COMPLETE = 2$/;"	v
 TASK_COMPLETE	models/strategy/service.py	/^TASK_COMPLETE = 2$/;"	v
 TASK_COMPLETE	scenarios/workload.py	/^TASK_COMPLETE = 2$/;"	v
 TOPOLOGY_FACTORY	orchestration.py	/^                            CACHE_POLICY, WORKLOAD, DATA_COLLECTOR, STRATEGY$/;"	i
@@ -149,6 +154,7 @@ TOPOLOGY_FACTORY	registry.py	/^TOPOLOGY_FACTORY = {}$/;"	v
 TOPOLOGY_RESOURCES_DIR	scenarios/topology.py	/^TOPOLOGY_RESOURCES_DIR = path.abspath(path.join(path.dirname(__file__),$/;"	v
 Task	models/service/compSpot.py	/^class Task(object):$/;"	c
 Task	models/strategy/optimal.py	/^from icarus.models.service import Task$/;"	i
+Task	models/strategy/placement.py	/^from icarus.models.service import Task$/;"	i
 Task	models/strategy/service.py	/^from icarus.models.service import Task$/;"	i
 TestArrayCache	models/cache/tests/test_systems.py	/^class TestArrayCache(unittest.TestCase):$/;"	c
 TestCache	models/cache/tests/test_policies.py	/^class TestCache(unittest.TestCase):$/;"	c
@@ -236,6 +242,7 @@ __all__	models/strategy/hashrouting.py	/^__all__ = [$/;"	v
 __all__	models/strategy/offpath.py	/^__all__ = [$/;"	v
 __all__	models/strategy/onpath.py	/^__all__ = [$/;"	v
 __all__	models/strategy/optimal.py	/^__all__ = [$/;"	v
+__all__	models/strategy/placement.py	/^__all__ = [$/;"	v
 __all__	models/strategy/service.py	/^__all__ = [$/;"	v
 __all__	orchestration.py	/^__all__ = ['Orchestrator', 'run_scenario']$/;"	v
 __all__	results/plot.py	/^__all__ = ['plot_lines', 'plot_bar_chart', 'plot_cdf']$/;"	v
@@ -290,7 +297,7 @@ __init__	models/cache/systems.py	/^    def __init__(self, caches, weights=None, 
 __init__	models/cache/systems.py	/^    def __init__(self, leaf_caches, root_cache, **kwargs):$/;"	m	class:TreeCache
 __init__	models/cache/systems.py	/^    def __init__(self, maxlen, policy='LRU', nodes=4, f_map=None,$/;"	m	class:ShardedCache
 __init__	models/service/compSpot.py	/^    def __init__(self, model, numOfCores, numOfVMs, services, node, sched_policy = "EDF", dist=None):$/;"	m	class:ComputationSpot
-__init__	models/service/compSpot.py	/^    def __init__(self, sched_policy, cs): # numberOfVMs, service_population_len):$/;"	m	class:Scheduler
+__init__	models/service/compSpot.py	/^    def __init__(self, sched_policy, cs): $/;"	m	class:Scheduler
 __init__	models/service/compSpot.py	/^    def __init__(self, time, deadline, rtt_delay, node, service, service_time, flow_id, receiver, arrivalTime=None, completionTime=None):$/;"	m	class:Task
 __init__	models/strategy/base.py	/^    def __init__(self, view, controller, **kwargs):$/;"	m	class:NoCache
 __init__	models/strategy/base.py	/^    def __init__(self, view, controller, **kwargs):$/;"	m	class:Strategy
@@ -313,7 +320,8 @@ __init__	models/strategy/onpath.py	/^    def __init__(self, view, controller, **
 __init__	models/strategy/onpath.py	/^    def __init__(self, view, controller, p=0.2, **kwargs):$/;"	m	class:RandomBernoulli
 __init__	models/strategy/onpath.py	/^    def __init__(self, view, controller, t_tw=10):$/;"	m	class:ProbCache
 __init__	models/strategy/onpath.py	/^    def __init__(self, view, controller, use_ego_betw=False, **kwargs):$/;"	m	class:CacheLessForMore
-__init__	models/strategy/optimal.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=True, p = 0.5, **kwargs):$/;"	m	class:OptimalScheduling
+__init__	models/strategy/optimal.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=False, p = 0.5, **kwargs):$/;"	m	class:OptimalScheduling
+__init__	models/strategy/placement.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=False, p = 0.5, **kwargs):$/;"	m	class:OptimalPlacementAndScheduling
 __init__	models/strategy/service.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1, **kwargs):$/;"	m	class:Hybrid
 __init__	models/strategy/service.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1, **kwargs):$/;"	m	class:MostFrequentlyUsed
 __init__	models/strategy/service.py	/^    def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1, **kwargs):$/;"	m	class:StrictestDeadlineFirst
@@ -375,10 +383,12 @@ abc	models/service/compSpot.py	/^import abc$/;"	i
 abc	models/strategy/base.py	/^import abc$/;"	i
 absolute_import	__init__.py	/^from __future__ import absolute_import$/;"	i
 add	results/readwrite.py	/^    def add(self, parameters, results):$/;"	m	class:ResultSet
+addToTaskQueue	models/service/compSpot.py	/^    def addToTaskQueue(self, aTask, time):$/;"	m	class:Scheduler
 add_event	execution/network.py	/^    def add_event(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:NetworkController
 admit_task	models/service/compSpot.py	/^    def admit_task(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):$/;"	m	class:ComputationSpot
 admit_task_EDF	models/service/compSpot.py	/^    def admit_task_EDF(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):$/;"	m	class:ComputationSpot
 admit_task_FIFO	models/service/compSpot.py	/^    def admit_task_FIFO(self, service, time, flow_id, deadline, receiver, rtt_delay, controller, debug):$/;"	m	class:ComputationSpot
+admit_task_with_probability	models/service/compSpot.py	/^    def admit_task_with_probability(self, aTask, perAccessPerNodePerServiceProbability, debug):$/;"	m	class:ComputationSpot
 algorithms	scenarios/test/test_algorithms.py	/^import icarus.scenarios as algorithms$/;"	i
 all_pairs_shortest_paths	execution/network.py	/^    def all_pairs_shortest_paths(self):$/;"	m	class:NetworkView
 alpha	tools/stats.py	/^    def alpha(self):$/;"	m	class:TruncatedZipfDist
@@ -389,7 +399,7 @@ apportionment	models/cache/policies.py	/^from icarus.util import inheritdoc, app
 apportionment	util.py	/^def apportionment(n, fracs):$/;"	f
 assign	util.py	/^    def assign(self):$/;"	m	class:SequenceNumber
 assign_points_to_clusters	scenarios/algorithms.py	/^    def assign_points_to_clusters(medoids, distances):$/;"	f	function:pam
-assign_task_to_core	models/service/compSpot.py	/^    def assign_task_to_core(self, core_indx, fin_time, service):$/;"	m	class:Scheduler
+assign_task_to_core	models/service/compSpot.py	/^    def assign_task_to_core(self, core_indx, aTask, time):$/;"	m	class:Scheduler
 attach_collector	execution/network.py	/^    def attach_collector(self, collector):$/;"	m	class:NetworkController
 authoritative_cache	models/strategy/hashrouting.py	/^    def authoritative_cache(self, content, cluster=None):$/;"	m	class:BaseHashrouting
 betweenness_centrality_cache_placement	scenarios/cacheplacement.py	/^def betweenness_centrality_cache_placement(topology, cache_budget, **kwargs):$/;"	f
@@ -416,6 +426,7 @@ can_import	util.py	/^def can_import(statement):$/;"	f
 cdf	execution/collectors.py	/^from icarus.tools import cdf$/;"	i
 cdf	tools/stats.py	/^    def cdf(self):$/;"	m	class:DiscreteDist
 cdf	tools/stats.py	/^def cdf(data):$/;"	f
+ceil	models/strategy/placement.py	/^import math # for ceil()$/;"	i
 central_computation_placement	scenarios/compSpotplacement.py	/^def central_computation_placement(topology, computation_budget, service_budget, **kwargs):$/;"	f
 che_cache_hit_ratio	tools/cacheperf.py	/^def che_cache_hit_ratio(pdf, cache_size):$/;"	f
 che_cache_hit_ratio_generalized	tools/cacheperf.py	/^def che_cache_hit_ratio_generalized(pdf, cache_size, policy='LRU', **policy_args):$/;"	f
@@ -465,6 +476,7 @@ compute_clusters	scenarios/algorithms.py	/^def compute_clusters(topology, k, dis
 compute_clusters	scenarios/cacheplacement.py	/^from icarus.scenarios.algorithms import compute_clusters, compute_p_median, deploy_clusters$/;"	i
 compute_completion_times	models/service/compSpot.py	/^    def compute_completion_times(self, time, debug=False):$/;"	m	class:ComputationSpot
 compute_new_medoid	scenarios/algorithms.py	/^    def compute_new_medoid(cluster, distances):$/;"	f	function:pam
+compute_optimal_placement_schedule	models/strategy/placement.py	/^    def compute_optimal_placement_schedule(self):$/;"	m	class:OptimalPlacementAndScheduling
 compute_optimal_schedule	models/strategy/optimal.py	/^    def compute_optimal_schedule(self):$/;"	m	class:OptimalScheduling
 compute_p_median	scenarios/algorithms.py	/^def compute_p_median(distances, p, n_iter=20):$/;"	f
 compute_p_median	scenarios/cacheplacement.py	/^from icarus.scenarios.algorithms import compute_clusters, compute_p_median, deploy_clusters$/;"	i
@@ -485,6 +497,7 @@ copy	orchestration.py	/^import copy$/;"	i
 copy	results/readwrite.py	/^import copy$/;"	i
 copy	util.py	/^import copy$/;"	i
 cp	models/strategy/optimal.py	/^import cvxpy as cp$/;"	i
+cp	models/strategy/placement.py	/^import cvxpy as cp$/;"	i
 csv	scenarios/workload.py	/^import csv$/;"	i
 cubrt	tools/cacheperf.py	/^    def cubrt(x):$/;"	f	function:laoutaris_characteristic_time
 current	util.py	/^    def current(self):$/;"	m	class:SequenceNumber
@@ -510,6 +523,7 @@ division	models/strategy/hashrouting.py	/^from __future__ import division$/;"	i
 division	models/strategy/offpath.py	/^from __future__ import division$/;"	i
 division	models/strategy/onpath.py	/^from __future__ import division$/;"	i
 division	models/strategy/optimal.py	/^from __future__ import division$/;"	i
+division	models/strategy/placement.py	/^from __future__ import division$/;"	i
 division	models/strategy/service.py	/^from __future__ import division$/;"	i
 division	orchestration.py	/^from __future__ import division$/;"	i
 division	results/plot.py	/^from __future__ import division$/;"	i
@@ -549,6 +563,7 @@ end_session	execution/collectors.py	/^    def end_session(self, success=True, ti
 end_session	execution/collectors.py	/^    def end_session(self, success=True, timestamp=0, flow_id=0):$/;"	m	class:LatencyCollector
 end_session	execution/network.py	/^    def end_session(self, success=True, timestamp=0, flow_id=0):$/;"	m	class:NetworkController
 eventQ	execution/network.py	/^    def eventQ(self):$/;"	m	class:NetworkView
+evicted	models/service/compSpot.py	/^                evicted = self.model.cache[node].put(service_index) # HACK: should use controller here   $/;"	v	class:ComputationSpot.__init__.variable
 exec_experiment	execution/engine.py	/^def exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy, sched_policy = {'name': 'EDF'}):$/;"	f
 exec_experiment	orchestration.py	/^from icarus.execution import exec_experiment$/;"	i
 execute_service	execution/collectors.py	/^    def execute_service(self, flow_id, service, node, timestamp, is_cloud):$/;"	m	class:CollectorProxy
@@ -561,6 +576,7 @@ extract_cluster_level_topology	models/strategy/hashrouting.py	/^from icarus.scen
 extract_cluster_level_topology	scenarios/algorithms.py	/^def extract_cluster_level_topology(topology):$/;"	f
 filter	results/readwrite.py	/^    def filter(self, condition):$/;"	m	class:ResultSet
 finalizeResults	models/strategy/optimal.py	/^    def finalizeResults(self):$/;"	m	class:OptimalScheduling
+finalizeResults	models/strategy/placement.py	/^    def finalizeResults(self):$/;"	m	class:OptimalPlacementAndScheduling
 find_topmost_feasible_node	models/strategy/service.py	/^    def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):$/;"	m	class:Coordinated
 fnss	execution/network.py	/^import fnss$/;"	i
 fnss	execution/tests/test_network.py	/^import fnss$/;"	i
@@ -571,6 +587,7 @@ fnss	scenarios/test/test_cacheplacement.py	/^import fnss$/;"	i
 fnss	scenarios/test/test_contentplacement.py	/^import fnss$/;"	i
 fnss	scenarios/topology.py	/^import fnss$/;"	i
 fnss	test/test_util.py	/^import fnss$/;"	i
+for	models/strategy/placement.py	/^import math # for ceil()$/;"	i
 forward_content_hop	execution/network.py	/^    def forward_content_hop(self, u, v, main_path=True):$/;"	m	class:NetworkController
 forward_content_path	execution/network.py	/^    def forward_content_path(self, u, v, path=None, main_path=True):$/;"	m	class:NetworkController
 forward_request_hop	execution/network.py	/^    def forward_request_hop(self, u, v, main_path=True):$/;"	m	class:NetworkController
@@ -612,6 +629,7 @@ get_next_task_admit_time	models/service/compSpot.py	/^    def get_next_task_admi
 get_sources	scenarios/contentplacement.py	/^def get_sources(topology):$/;"	f
 getval	util.py	/^    def getval(self, path):$/;"	m	class:Tree
 groupSpecificExecution	models/strategy/optimal.py	/^    def groupSpecificExecution(self):$/;"	m	class:OptimalScheduling
+groupSpecificExecution	models/strategy/placement.py	/^    def groupSpecificExecution(self):$/;"	m	class:OptimalPlacementAndScheduling
 handler	run.py	/^def handler(settings, orch, output, signum=None, frame=None):$/;"	f
 has	models/cache/policies.py	/^    def has(k, *args, **kwargs):$/;"	f	function:ttl_cache
 has	models/cache/policies.py	/^    def has(self, k, *args, **kwargs):$/;"	m	class:BeladyMinCache
@@ -660,9 +678,11 @@ inheritdoc	models/strategy/hashrouting.py	/^from icarus.util import inheritdoc, 
 inheritdoc	models/strategy/offpath.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 inheritdoc	models/strategy/onpath.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 inheritdoc	models/strategy/optimal.py	/^from icarus.util import inheritdoc, path_links$/;"	i
+inheritdoc	models/strategy/placement.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 inheritdoc	models/strategy/service.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 inheritdoc	util.py	/^def inheritdoc(cls):$/;"	f
 initialise_metrics	models/strategy/optimal.py	/^    def initialise_metrics(self):$/;"	m	class:OptimalScheduling
+initialise_metrics	models/strategy/placement.py	/^    def initialise_metrics(self):$/;"	m	class:OptimalPlacementAndScheduling
 initialise_metrics	models/strategy/service.py	/^    def initialise_metrics(self):$/;"	m	class:Coordinated
 initialise_metrics	models/strategy/service.py	/^    def initialise_metrics(self):$/;"	m	class:Hybrid
 initialise_metrics	models/strategy/service.py	/^    def initialise_metrics(self):$/;"	m	class:Lru
@@ -695,12 +715,14 @@ logging	run.py	/^import logging$/;"	i
 logging	util.py	/^import logging$/;"	i
 m	__init__.py	/^    m = "Python version 2.7 or later is required for Icarus (%d.%d detected)."$/;"	v
 match	util.py	/^    def match(self, condition):$/;"	m	class:Tree
+math	models/strategy/placement.py	/^import math # for ceil()$/;"	i
 math	tools/cacheperf.py	/^import math$/;"	i
 math	tools/stats.py	/^import math$/;"	i
 math	tools/traces.py	/^import math$/;"	i
 matplotlib	results/plot.py	/^import matplotlib.pyplot as plt$/;"	i
 matplotlib	results/visualize.py	/^import matplotlib.pyplot as plt$/;"	i
 max_request_forwarded	models/strategy/optimal.py	/^    def max_request_forwarded(self):$/;"	m	class:OptimalScheduling
+max_request_forwarded	models/strategy/placement.py	/^    def max_request_forwarded(self):$/;"	m	class:OptimalPlacementAndScheduling
 maxlen	models/cache/policies.py	/^    def maxlen(self):$/;"	m	class:BeladyMinCache
 maxlen	models/cache/policies.py	/^    def maxlen(self):$/;"	m	class:Cache
 maxlen	models/cache/policies.py	/^    def maxlen(self):$/;"	m	class:ClimbCache
@@ -731,11 +753,13 @@ multicast_tree	models/strategy/hashrouting.py	/^from icarus.util import inheritd
 multicast_tree	util.py	/^def multicast_tree(shortest_paths, source, destinations):$/;"	f
 network	execution/tests/test_network.py	/^import icarus.execution.network as network$/;"	i
 noiseFilter	models/strategy/optimal.py	/^    def noiseFilter(self):$/;"	m	class:OptimalScheduling
+noiseFilter	models/strategy/placement.py	/^    def noiseFilter(self):$/;"	m	class:OptimalPlacementAndScheduling
 np	models/cache/policies.py	/^import numpy as np$/;"	i
 np	models/cache/systems.py	/^import numpy as np$/;"	i
 np	models/cache/tests/test_policies.py	/^import numpy as np$/;"	i
 np	models/service/compSpot.py	/^import numpy as np$/;"	i
 np	models/strategy/optimal.py	/^import numpy as np$/;"	i
+np	models/strategy/placement.py	/^import numpy as np$/;"	i
 np	results/plot.py	/^import numpy as np$/;"	i
 np	results/visualize.py	/^import numpy as np$/;"	i
 np	scenarios/algorithms.py	/^import numpy as np$/;"	i
@@ -757,6 +781,7 @@ nx	models/strategy/hashrouting.py	/^import networkx as nx$/;"	i
 nx	models/strategy/offpath.py	/^import networkx as nx$/;"	i
 nx	models/strategy/onpath.py	/^import networkx as nx$/;"	i
 nx	models/strategy/optimal.py	/^import networkx as nx$/;"	i
+nx	models/strategy/placement.py	/^import networkx as nx$/;"	i
 nx	models/strategy/service.py	/^import networkx as nx$/;"	i
 nx	results/visualize.py	/^import networkx as nx$/;"	i
 nx	scenarios/algorithms.py	/^import networkx as nx$/;"	i
@@ -774,6 +799,7 @@ optimal_hashrouting_cache_placement	scenarios/cacheplacement.py	/^def optimal_ha
 optimal_median_cache_placement	scenarios/cacheplacement.py	/^def optimal_median_cache_placement(topology, cache_budget, n_cache_nodes,$/;"	f
 optimize	tools/traces.py	/^        raise ImportError("Cannot import scipy.optimize minimize_scalar. "$/;"	i
 optparse	models/strategy/optimal.py	/^import optparse$/;"	i
+optparse	models/strategy/placement.py	/^import optparse$/;"	i
 os	results/plot.py	/^import os$/;"	i
 os	results/visualize.py	/^import os$/;"	i
 os	run.py	/^import os$/;"	i
@@ -792,6 +818,7 @@ path_links	models/strategy/hashrouting.py	/^from icarus.util import inheritdoc, 
 path_links	models/strategy/offpath.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 path_links	models/strategy/onpath.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 path_links	models/strategy/optimal.py	/^from icarus.util import inheritdoc, path_links$/;"	i
+path_links	models/strategy/placement.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 path_links	models/strategy/service.py	/^from icarus.util import inheritdoc, path_links$/;"	i
 path_links	scenarios/algorithms.py	/^from icarus.util import path_links$/;"	i
 path_links	util.py	/^def path_links(path):$/;"	f
@@ -799,6 +826,7 @@ paths	util.py	/^    def paths(self):$/;"	m	class:Tree
 pdf	tools/stats.py	/^    def pdf(self):$/;"	m	class:DiscreteDist
 pdf	tools/stats.py	/^def pdf(data, n_bins):$/;"	f
 pickExecutionNode	models/strategy/optimal.py	/^    def pickExecutionNode(self, receiver, service, cloud):$/;"	m	class:OptimalScheduling
+pickExecutionNode	models/strategy/placement.py	/^    def pickExecutionNode(self, receiver, service, cloud):$/;"	m	class:OptimalPlacementAndScheduling
 pickle	results/readwrite.py	/^    import cPickle as pickle$/;"	i
 pickle	results/readwrite.py	/^    import pickle$/;"	i
 pickle	test/test_tree.py	/^    import cPickle as pickle$/;"	i
@@ -819,6 +847,7 @@ position	models/cache/systems.py	/^    def position(self, k):$/;"	m	class:PathCa
 position	models/cache/systems.py	/^    def position(self, k):$/;"	m	class:TreeCache
 print_core_status	models/service/compSpot.py	/^    def print_core_status(self):$/;"	m	class:Scheduler
 print_function	models/strategy/optimal.py	/^from __future__ import print_function$/;"	i
+print_function	models/strategy/placement.py	/^from __future__ import print_function$/;"	i
 print_function	models/strategy/service.py	/^from __future__ import print_function$/;"	i
 print_task	models/service/compSpot.py	/^    def print_task(self):$/;"	m	class:Task
 process_event	models/strategy/base.py	/^    def process_event(self, time, receiver, content, log):$/;"	m	class:NoCache
@@ -840,6 +869,7 @@ process_event	models/strategy/onpath.py	/^    def process_event(self, time, rece
 process_event	models/strategy/onpath.py	/^    def process_event(self, time, receiver, content, log):$/;"	m	class:RandomBernoulli
 process_event	models/strategy/onpath.py	/^    def process_event(self, time, receiver, content, log):$/;"	m	class:RandomChoice
 process_event	models/strategy/optimal.py	/^    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:OptimalScheduling
+process_event	models/strategy/placement.py	/^    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:OptimalPlacementAndScheduling
 process_event	models/strategy/service.py	/^    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:Coordinated
 process_event	models/strategy/service.py	/^    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:Hybrid
 process_event	models/strategy/service.py	/^    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):$/;"	m	class:Lru
@@ -874,6 +904,7 @@ random	models/cache/systems.py	/^import random$/;"	i
 random	models/service/compSpot.py	/^import random$/;"	i
 random	models/strategy/onpath.py	/^import random$/;"	i
 random	models/strategy/optimal.py	/^import random$/;"	i
+random	models/strategy/placement.py	/^import random$/;"	i
 random	models/strategy/service.py	/^import random$/;"	i
 random	scenarios/algorithms.py	/^import random$/;"	i
 random	scenarios/cacheplacement.py	/^import random$/;"	i
@@ -908,6 +939,7 @@ register_strategy	models/strategy/hashrouting.py	/^from icarus.registry import r
 register_strategy	models/strategy/offpath.py	/^from icarus.registry import register_strategy$/;"	i
 register_strategy	models/strategy/onpath.py	/^from icarus.registry import register_strategy$/;"	i
 register_strategy	models/strategy/optimal.py	/^from icarus.registry import register_strategy$/;"	i
+register_strategy	models/strategy/placement.py	/^from icarus.registry import register_strategy$/;"	i
 register_strategy	models/strategy/service.py	/^from icarus.registry import register_strategy$/;"	i
 register_strategy	registry.py	/^register_strategy = register_decorator(STRATEGY)$/;"	v
 register_topology_factory	registry.py	/^register_topology_factory = register_decorator(TOPOLOGY_FACTORY)$/;"	v
@@ -931,12 +963,14 @@ remove	models/cache/systems.py	/^    def remove(self, k):$/;"	m	class:ArrayCache
 remove	models/cache/systems.py	/^    def remove(self, k):$/;"	m	class:PathCache
 remove	models/cache/systems.py	/^    def remove(self, k):$/;"	m	class:ShardedCache
 remove	models/cache/systems.py	/^    def remove(self, k):$/;"	m	class:TreeCache
+removeFromTaskQueue	models/service/compSpot.py	/^    def removeFromTaskQueue(self, aTask):$/;"	m	class:Scheduler
 remove_content	execution/network.py	/^    def remove_content(self, node):$/;"	m	class:NetworkController
 remove_link	execution/network.py	/^    def remove_link(self, u, v, recompute_paths=True):$/;"	m	class:NetworkController
 remove_node	execution/network.py	/^    def remove_node(self, v, recompute_paths=True):$/;"	m	class:NetworkController
 replace_services	models/strategy/service.py	/^    def replace_services(self, k, time):$/;"	m	class:MostFrequentlyUsed
 replace_services	models/strategy/service.py	/^    def replace_services(self, k, time):$/;"	m	class:StrictestDeadlineFirst
 replace_services	models/strategy/service.py	/^    def replace_services(self, time):$/;"	m	class:Hybrid
+replace_services1	models/strategy/service.py	/^    def replace_services1(self, time):$/;"	m	class:Hybrid
 replacement_interval_over	execution/collectors.py	/^    def replacement_interval_over(self, replacement_interval, timestamp):$/;"	m	class:CollectorProxy
 replacement_interval_over	execution/collectors.py	/^    def replacement_interval_over(self, replacement_interval, timestamp):$/;"	m	class:DataCollector
 replacement_interval_over	execution/collectors.py	/^    def replacement_interval_over(self, replacement_interval, timestamp):$/;"	m	class:LatencyCollector
@@ -969,9 +1003,11 @@ server_hit	execution/collectors.py	/^    def server_hit(self, node):$/;"	m	class
 server_hit	execution/collectors.py	/^    def server_hit(self, node):$/;"	m	class:CollectorProxy
 server_hit	execution/collectors.py	/^    def server_hit(self, node):$/;"	m	class:DataCollector
 server_hit	execution/collectors.py	/^    def server_hit(self, node):$/;"	m	class:DummyCollector
+service_index	models/service/compSpot.py	/^                service_index = random.choice(range(0, self.service_population_size))$/;"	v	class:ComputationSpot.__init__.variable
 service_locations	execution/network.py	/^    def service_locations(self, k):$/;"	m	class:NetworkView
 service_nodes	execution/network.py	/^    def service_nodes(self):$/;"	m	class:NetworkView
 services	execution/network.py	/^    def services(self):$/;"	m	class:NetworkView
+services	models/service/compSpot.py	/^    services = None$/;"	v	class:ComputationSpot
 session_summary	execution/collectors.py	/^    def session_summary(self):$/;"	m	class:DummyCollector
 set	util.py	/^    def set(self, name, value):$/;"	m	class:Settings
 setUp	execution/tests/test_network.py	/^    def setUp(self):$/;"	m	class:TestNetworkMvc
@@ -1037,6 +1073,7 @@ symmetrify_paths	execution/network.py	/^def symmetrify_paths(shortest_paths):$/;
 sys	__init__.py	/^import sys$/;"	i
 sys	execution/network.py	/^import sys$/;"	i
 sys	models/strategy/optimal.py	/^import sys$/;"	i
+sys	models/strategy/placement.py	/^import sys$/;"	i
 sys	models/strategy/service.py	/^import sys$/;"	i
 sys	orchestration.py	/^import sys$/;"	i
 sys	run.py	/^import sys$/;"	i
@@ -1333,6 +1370,7 @@ update	util.py	/^    def update(self, e):$/;"	m	class:Tree
 update_state	models/service/compSpot.py	/^    def update_state(self, time):$/;"	m	class:Scheduler
 util	test/test_util.py	/^import icarus.util as util$/;"	i
 value	models/cache/policies.py	/^    def value(k, *args, **kwargs):$/;"	f	function:keyval_cache
+variable	models/service/compSpot.py	/^        self.services = services #TODO this is a bit awkward: both instance and class variable$/;"	c	function:ComputationSpot.__init__
 verify_random_assignment	scenarios/test/test_cacheplacement.py	/^    def verify_random_assignment(self, topo, cache_budget, cache_nodes):$/;"	m	class:TestRadomCachePlacement
 weighted_content_placement	scenarios/contentplacement.py	/^def weighted_content_placement(topology, contents, source_weights, seed=None):$/;"	f
 workload	scenarios/test/test_workload.py	/^import icarus.scenarios as workload$/;"	i

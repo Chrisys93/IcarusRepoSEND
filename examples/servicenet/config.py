@@ -61,7 +61,7 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-#N_CONTENTS = 100
+#N_CONTENTS = 1000
 N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
@@ -97,8 +97,8 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU']  # service-based routing
-#STRATEGIES = ['OPTIMAL_SCHED']  # service-based routing
+STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU', 'OPTIMAL_PLACEMENT_SCHED']  # service-based routing
+STRATEGIES = ['HYBRID', 'OPTIMAL_PLACEMENT_SCHED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'

@@ -584,6 +584,7 @@ class NetworkModel(object):
             deadline = random.uniform(delay_min, delay_max) + 2*internal_link_delay
             #deadline = service_time + 1.5*(random.uniform(delay_min, delay_max) + 2*internal_link_delay)
             s = Service(service_time, deadline)
+            print ("Service " + str(service) + " has a deadline of " + str(deadline))
             self.services.append(s)
         #""" #END OF Generating Services
         
@@ -668,7 +669,7 @@ class NetworkModel(object):
                     aFile.write(s)
 
             aFile.close()
-
+        ComputationSpot.services = self.services
         self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
         print ("Generated Computation Spot Objects")
