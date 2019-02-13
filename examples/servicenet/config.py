@@ -81,7 +81,7 @@ N_WARMUP_REQUESTS = 0 #30000
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 10.0 #5.5
+MINS = 3.0 #10.0 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
@@ -92,13 +92,13 @@ BRANCH_FACTOR = 2
 NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1) 
 
 # Replacement Interval in seconds
-REPLACEMENT_INTERVAL = 30
+REPLACEMENT_INTERVAL = 30.0
 NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU', 'OPTIMAL_PLACEMENT_SCHED']  # service-based routing
-STRATEGIES = ['HYBRID', 'OPTIMAL_PLACEMENT_SCHED']  # service-based routing
+STRATEGIES = ['OPTIMAL_PLACEMENT_SCHED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'

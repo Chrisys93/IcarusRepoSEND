@@ -416,7 +416,7 @@ class Hybrid(Strategy):
                     #runningServicesUtil[service] = u_metric_served
                     missed_services_utilisation.append([service, u_metric_missed])
                     #running_services_latency.append([service, d_metric])
-                    running_services_utilisation_normalised.append([service, u_metric/cs.numberOfServiceInstances[service]])
+                    running_services_utilisation_normalised.append([service, u_metric_served/cs.numberOfServiceInstances[service]])
                     #service_residuals.append([service, d_metric])
                     delay[service] = d_metric
                 else:
@@ -438,12 +438,22 @@ class Hybrid(Strategy):
                         continue
                     if missed_util >= running_util and delay[service_missed] < delay[service_running] and delay[service_missed] > 0:
                         cs.reassign_vm(service_running, service_missed, True)
-                        print ("Missed util: " + str(missed_util) + " running util: " + str(running_util) + " Adequate time missed: " + str(delay[service_missed]) + " Adequate time running: " + str(delay[service_running]))
+                        if self.debug:
+                            print ("Missed util: " + str(missed_util) + " running util: " + str(running_util) + " Adequate time missed: " + str(delay[service_missed]) + " Adequate time running: " + str(delay[service_running]))
                         del running_services_utilisation_normalised[indx]
                         n_replacements += 1
                         break
 
             print(str(n_replacements) + " replacements at node:" + str(cs.node) + " at time: " + str(time))
+            for node in self.compSpots.keys():
+                cs = self.compSpots[node]
+                if cs.is_cloud:
+                    continue
+                if cs.node != 14 and cs.node!=6:
+                    continue
+                for service in range(0, self.num_services):
+                    if cs.numberOfServiceInstances[service] > 0:
+                        print ("Node: " + str(node) + " has " + str(cs.numberOfServiceInstances[service]) + " instance of " + str(service))
 
     #HYBRID 
     def replace_services(self, time):

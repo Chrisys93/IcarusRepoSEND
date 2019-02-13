@@ -235,13 +235,24 @@ class OptimalPlacementAndScheduling(Strategy):
                     #print (str((cp.sum_entries(np.sum(map(lambda ap:cp.mul_elemwise(self.A[ap],self.x_bar[ap].T),range(self.S))), axis=1)).value))
                     #if node == 3:
                     #    print("Service: " + str(service) + " ap: " + str(ap) + " node: " + str(node) + " x_bar = " + str(self.x_bar[service].value[ap,node]))
-                    cs.numberOfServiceInstances[service] += int(math.ceil(self.x_bar[service].value[ap, node]))
+                    cs.serviceProbabilities[service] += self.x_bar[service].value[ap, node]
+                    #cs.numberOfServiceInstances[service] += int(math.ceil(self.x_bar[service].value[ap, node]))
                     self.perAccessPerNodePerServiceProbability[ap][node][service] = self.x_bar[service].value[ap, node] - math.floor(self.x_bar[service].value[ap, node])
 
-        if self.debug:
+        for node in self.compSpots.keys():
+            cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
+            for service in range(0, self.view.num_services()):
+                node = int(node)
+                cs.numberOfServiceInstances[service] = int(math.ceil(cs.serviceProbabilities[service]))
+
+        if True:
             for node in self.compSpots.keys():
                 cs = self.compSpots[node]
                 if cs.is_cloud:
+                    continue
+                if cs.node != 14 and cs.node!=6:
                     continue
                 for service in range(0, self.view.num_services()):
                     if cs.numberOfServiceInstances[service] > 0:
@@ -255,6 +266,12 @@ class OptimalPlacementAndScheduling(Strategy):
                 ap = int(ap[4:])
                 self.perServiceReceiverRequestCounts[service][ap] = 0
 
+        for node in self.compSpots.keys():
+            cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
+            for service in range(0, self.view.num_services()):
+                cs.serviceProbabilities[service] = 0.0
     def pickExecutionNode(self, receiver, service, cloud):
         """
         Pick the execution node for a given request according to the optimizer output.
@@ -322,13 +339,7 @@ class OptimalPlacementAndScheduling(Strategy):
         # Request at an edge cloud
         elif status == REQUEST and node != source:
             aTask = Task(time, deadline, rtt_delay, node, service, compSpot.services[service].service_time, flow_id, receiver)
-            ret = compSpot.admit_task_with_probability(aTask, self.perAccessPerNodePerServiceProbability, self.debug)
-            if ret:
-                #compSpot.scheduler.taskQueue.append(aTask)
-                compSpot.scheduler.addToTaskQueue(aTask, time)
-                if self.debug:
-                    print (str(time) + ". flow_id: " + str(flow_id) + " is scheduled at node: " + str(node))
-                    aTask.print_task()
+            ret = compSpot.admit_task_with_probability(time, aTask, self.perAccessPerNodePerServiceProbability, self.debug)
             newTask = compSpot.scheduler.schedule(time)
             if newTask is not None:
                 self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, compSpot.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE) 

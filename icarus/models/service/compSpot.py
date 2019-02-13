@@ -77,8 +77,12 @@ class Scheduler(object):
         self.cs = cs
         ### Currently running service instance at each cpu #
         self.runningServices = [None]*self.numOfCores
+        ### Currently running Task instance at each cpu #
+        self.runningTasks = [None]*self.numOfCores
         ### Currently queued service instances  #
         self.queuedServices = [0] * cs.service_population_size
+        ### currently queued services by receiver #
+        self.queuedServicesPerReceiver = [[0]*cs.service_population_size for x in cs.model.topology.receivers()]
         ### Idle time of the cs #
         self.idleTime = 0.0
         ### Task queue #
@@ -106,6 +110,7 @@ class Scheduler(object):
         self._taskQueue.remove(aTask)
         aTask.queueArrivalTime = None
         self.queuedServices[aTask.service] -= 1
+        self.queuedServicesPerReceiver[int(aTask.receiver[4:])][aTask.service] -= 1
 
     def addToTaskQueue(self, aTask, time):
         self._taskQueue.append(aTask)
@@ -118,6 +123,7 @@ class Scheduler(object):
             raise ValueError("Invalid scheduling policy")
 
         self.queuedServices[aTask.service] += 1
+        self.queuedServicesPerReceiver[int(aTask.receiver[4:])][aTask.service] += 1
         
     def get_available_core(self, time):
         
@@ -145,7 +151,7 @@ class Scheduler(object):
         Return the smallest of the finish times of the currently *busy* Cores.
         """
         minFinishTime = time
-        for indx in range(0, len(self.runningServices)):
+        for indx in range(0, self.numOfCores):
             if self.coreFinishTime[indx] > time: 
                 if minFinishTime == time:
                     minFinishTime = self.coreFinishTime[indx]
@@ -164,6 +170,7 @@ class Scheduler(object):
             raise ValueError("Error in assign_task_to_core: there is a running task")
         
         self.runningServices[core_indx] = aTask.service
+        self.runningTasks[core_indx] = aTask
         self.coreFinishTime[core_indx] = aTask.completionTime
         taskWaitingTime = time - aTask.arrivalTime 
         if taskWaitingTime < 0:
@@ -189,11 +196,12 @@ class Scheduler(object):
                 self.addToTaskQueue(task, time)
                 new_addition = True
         numRunning = 0   
-        for indx in range(0, len(self.runningServices)):
+        for indx in range(0, self.numOfCores):
             if self.coreFinishTime[indx] <= time:
                 self.idleTime += time - self.coreFinishTime[indx]
                 self.coreFinishTime[indx] = time
                 self.runningServices[indx] = None
+                self.runningTasks[indx] = None
             else:
                 numRunning += 1
 
@@ -220,6 +228,7 @@ class Scheduler(object):
         
         if (len(self._taskQueue) > 0) and (core_indx is not None):
             runningServices = self.runningServices
+            runningTasks = self.runningTasks
             for aTask in self._taskQueue[:]:
                 serv_count = runningServices.count(aTask.service)
                 if self.cs.numberOfServiceInstances[aTask.service] > 0: 
@@ -239,7 +248,7 @@ class Scheduler(object):
         return None
 
     def print_core_status(self):
-        for indx in range(0, len(self.runningServices)):
+        for indx in range(0, self.numOfCores):
             print ("\tCore: " + repr(indx) + " finish time: " + repr(self.coreFinishTime[indx]) + " service: " + repr(self.runningServices[indx]))
 
 class ComputationSpot(object):
@@ -270,10 +279,9 @@ class ComputationSpot(object):
             self.numOfCores = numOfCores
             self.numOfVMs = numOfVMs
             self.is_cloud = False
-
+        
         self.service_population_size = len(services)
         self.model = model
-
 
         if numOfVMs < numOfCores:
             self.numOfVMs = numOfCores * 2
@@ -287,6 +295,8 @@ class ComputationSpot(object):
         self.numOfVMs = numOfVMs
         ### num. of instances of each service in the memory #
         self.numberOfServiceInstances = [0]*self.service_population_size
+        ### the below variable is for the optimal placement strategy
+        self.serviceProbabilities = [0.0]*self.service_population_size
 
         # CPU info
         self.scheduler = Scheduler(sched_policy, self)
@@ -335,6 +345,7 @@ class ComputationSpot(object):
         self.schedulerCopy.upcomingTaskQueue = copy.copy(self.scheduler.upcomingTaskQueue)
         self.schedulerCopy.coreFinishTime = copy.copy(self.scheduler.coreFinishTime)
         self.schedulerCopy.runningServices = copy.copy(self.scheduler.runningServices)
+        self.schedulerCopy.runningTasks = copy.copy(self.scheduler.runningTasks)
         numRunning = self.schedulerCopy.update_state(time)
 
 
@@ -522,14 +533,22 @@ class ComputationSpot(object):
             
         return ret
     
-    def admit_task_with_probability(self, aTask, perAccessPerNodePerServiceProbability, debug):
+    def admit_task_with_probability(self, time, aTask, perAccessPerNodePerServiceProbability, debug):
         availableInstances = self.numberOfServiceInstances[aTask.service]
         if debug:
             print("Available instances for service: " + str(aTask.service) + " at node: " + str(self.node) + " is: " + str(availableInstances))
         if availableInstances == 0:
             return False
         
-        numQueuedAndRunning = self.scheduler.runningServices.count(aTask.service) + self.scheduler.queuedServices[aTask.service]
+        #numQueuedAndRunning = self.scheduler.runningServices.count(aTask.service) + self.scheduler.queuedServices[aTask.service]
+        numRunning = 0
+        for bTask in self.scheduler.runningTasks:
+            if bTask is None:
+                continue
+            if bTask.service == aTask.service and bTask.receiver == aTask.receiver:
+                numRunning += 1
+        numQueued = self.scheduler.queuedServicesPerReceiver[int(aTask.receiver[4:])][aTask.service]
+        numQueuedAndRunning = numQueued + numRunning
         if debug:
             print("Number of running instances for service: " + str(aTask.service) + " is: " + str(numQueuedAndRunning))
         if numQueuedAndRunning >= availableInstances:
@@ -541,8 +560,38 @@ class ComputationSpot(object):
             if r < perAccessPerNodePerServiceProbability[ap][node][aTask.service]:
                 if debug:
                     print("Admitted with probability: " + str(perAccessPerNodePerServiceProbability[ap][node][aTask.service]))
+                ### Check if the task will satisfy the deadline
+                self.scheduler.addToTaskQueue(aTask, time)
+                self.compute_completion_times(time, debug)
+                for task in self.scheduler._taskQueue[:]:
+                    if debug:
+                        print("After simulate:")
+                        task.print_task()
+                    if task.completionTime is None: 
+                        print("Error: a task with invalid completion time: " + repr(task.completionTime))
+                        raise ValueError("Task completion time is invalid")
+                    if (task.expiry - task.rtt_delay) < task.completionTime:
+                        if debug:
+                            print("Refusing TASK: Congestion")
+                        self.scheduler.removeFromTaskQueue(aTask)
+                        return False
                 return True
-        elif (availableInstances - numQueuedAndRunning) > 0:
+        elif (availableInstances - numQueuedAndRunning) > 1:
+            ### Check if the task will satisfy the deadline
+            self.scheduler.addToTaskQueue(aTask, time)
+            self.compute_completion_times(time, debug)
+            for task in self.scheduler._taskQueue[:]:
+                if debug:
+                    print("After simulate:")
+                    task.print_task()
+                if task.completionTime is None: 
+                    print("Error: a task with invalid completion time: " + repr(task.completionTime))
+                    raise ValueError("Task completion time is invalid")
+                if (task.expiry - task.rtt_delay) < task.completionTime:
+                    if debug:
+                        print("Refusing TASK: Congestion")
+                    self.scheduler.removeFromTaskQueue(aTask)
+                    return False
             if debug:
                 print("Admitted")
             return True
