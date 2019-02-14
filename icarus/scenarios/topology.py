@@ -127,7 +127,7 @@ def topology_tree(k, h, delay=0.020, **kwargs):
             topology.graph['parent'][v] = u 
         topology.edge[u][v]['type'] = 'internal'
         if u is 0 or v is 0:
-            topology.edge[u][v]['delay'] = 3*delay
+            topology.edge[u][v]['delay'] = delay
             print "Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay'])
         else:
             topology.edge[u][v]['delay'] = delay
@@ -162,7 +162,7 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     n_sources = len(root) 
     sources = ['src_%d' % i for i in range(n_sources)]
     for i in range(n_sources):
-        topology.add_edge(sources[i], root[0], delay=0.001, type='internal')
+        topology.add_edge(sources[i], root[0], delay=3*delay, type='internal')
 
     print "The number of sources: " + repr(n_sources)
     print "The number of receivers: " + repr(n_receivers)
