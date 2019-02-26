@@ -144,6 +144,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     topology.graph['icr_candidates'] = set(routers)
     topology.graph['type'] = 'TREE'
     topology.graph['height'] = h
+    topology.graph['link_delay'] = delay
+    topology.graph['receiver_access_delay'] = receiver_access_delay
     
     edge_routers = [v for v in topology.nodes_iter()
                  if topology.node[v]['depth'] == h]

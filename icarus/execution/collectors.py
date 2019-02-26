@@ -107,6 +107,14 @@ class DataCollector(object):
         """
 
         pass
+    
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
+        """ Reports the instantiation of a VM running the service "serviceToAdd", 
+            optionally replacing a VM which is running the service serviceToReplace.
+        """ 
+
+        pass
+
     def request_hop(self, u, v, main_path=True):
         """Reports that a request has traversed the link *(u, v)*
 
@@ -176,7 +184,7 @@ class CollectorProxy(DataCollector):
     """
 
     EVENTS = ('start_session', 'end_session', 'cache_hit', 'cache_miss', 'server_hit',
-              'request_hop', 'content_hop', 'results', 'replacement_interval_over', 'execute_service')
+              'request_hop', 'content_hop', 'results', 'replacement_interval_over', 'execute_service'              ,'reassign_vm')
 
     def __init__(self, view, collectors):
         """Constructor
@@ -231,6 +239,11 @@ class CollectorProxy(DataCollector):
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):
         for c in self.collectors['execute_service']:
             c.execute_service(flow_id, service, node, timestamp, is_cloud)
+
+    @inheritdoc(DataCollector)
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
+        for c in self.collectors['reassign_vm']:
+            c.reassign_vm(node, serviceToReplace, serviceToAdd)
 
     @inheritdoc(DataCollector)
     def end_session(self, success=True, time=0, flow_id=0):
@@ -331,6 +344,7 @@ class LatencyCollector(DataCollector):
         self.n_satisfied = 0.0 # number of satisfied requests
         self.n_satisfied_interval = 0.0
         self.n_sat_cloud_interval = 0
+        self.n_instantiations_interval = 0
 
         self.flow_start = {} # flow_id to start time
         self.flow_cloud = {} # True if flow reched cloud
@@ -346,6 +360,7 @@ class LatencyCollector(DataCollector):
         self.node_idle_times = {}
         self.deadline_metric_times = {}
         self.cloud_sat_times = {}
+        self.instantiations_times = {}
 
         if cdf:
             self.latency_data = collections.deque()
@@ -360,12 +375,19 @@ class LatencyCollector(DataCollector):
             self.flow_cloud[flow_id] = False
 
     @inheritdoc(DataCollector)
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd): 
+        self.n_instantiations_interval += 1
+
+    @inheritdoc(DataCollector)
     def replacement_interval_over(self, replacement_interval, timestamp):
         if self.interval_sess_count == 0:
             self.satrate_times[timestamp] = 0.0
         else:
             self.satrate_times[timestamp] = self.n_satisfied_interval/self.interval_sess_count
         print ("Number of requests in interval: " + repr(self.interval_sess_count))
+
+        self.instantiations_times[timestamp] = self.n_instantiations_interval
+        self.n_instantiations_interval = 0
         
         total_idle_time = 0.0
         total_cores = 0 # total number of cores in the network
@@ -476,6 +498,7 @@ class LatencyCollector(DataCollector):
         results['LATENCY'] = self.latency_times
         results['DEADLINE_METRIC'] = self.deadline_metric_times
         results['CLOUD_SAT_TIMES'] = self.cloud_sat_times
+        results['INSTANTIATION_OVERHEAD'] = self.instantiations_times
 
         #print "Printing Sat. rate times:"
         #for key in sorted(self.satrate_times):

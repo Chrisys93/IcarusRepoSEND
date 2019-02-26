@@ -7,6 +7,7 @@ import networkx as nx
 import random
 import sys
 
+from math import ceil
 from icarus.registry import register_strategy
 from icarus.util import inheritdoc, path_links
 from .base import Strategy
@@ -43,36 +44,55 @@ class Coordinated(Strategy):
         self.last_replacement = 0
         self.replacement_interval = replacement_interval
         self.receivers = view.topology().receivers()
+        self.topo = view.topology()
         self.compSpots = self.view.service_nodes()
         self.num_nodes = len(self.compSpots.keys())
         self.num_services = self.view.num_services()
-        self.requestNumber = 0
+        self.serviceNodeUtil = [None]*len(self.receivers)
+        self.numVMsPerService = [[0] * self.num_services for x in range(self.num_nodes)]
         self.debug = debug
         self.p = p
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
             if cs.is_cloud:
                 continue
-            cs.numOfVMs = cs.service_population_size*cs.numOfCores
-            cs.scheduler.numOfVMs = cs.numOfVMs
+            #cs.numOfVMs = cs.service_population_size*cs.numOfCores
+            #cs.scheduler.numOfVMs = cs.numOfVMs
             ### Place numOfCores instances for each service type 
             ### at each cs to avoid insufficient VMs. 
             ### The only constraint is the numOfCores. 
-            for serv in range(cs.service_population_size):
+            for serv in range(self.num_services):
                 cs.numberOfServiceInstances[serv] = 0
             for vm in range(cs.numOfVMs):
                 serv = vm % cs.service_population_size 
                 cs.numberOfServiceInstances[serv] += 1 
+                self.numVMsPerService[cs.node][serv] = cs.numberOfServiceInstances[serv]
 
+        for recv in self.receivers:
+            recv = int(recv[4:])
+            self.serviceNodeUtil[recv] = [None]*self.num_nodes
+            for n in self.compSpots.keys():
+                cs = self.compSpots[n]
+                if cs.is_cloud:
+                    continue
+                self.serviceNodeUtil[recv][n] = [0.0]*self.num_services
+            
     def initialise_metrics(self):
         """
         Initialise metrics/counters to 0
         """
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
-            cs.running_requests = [0 for x in range(0, self.num_services)]
-            cs.missed_requests = [0 for x in range(0, self.num_services)]
             cs.scheduler.idleTime = 0.0
+
+        for recv in self.receivers:
+            recv = int(recv[4:])
+            self.serviceNodeUtil[recv] = [None]*self.num_nodes
+            for n in self.compSpots.keys():
+                cs = self.compSpots[n]
+                if cs.is_cloud:
+                    continue
+                self.serviceNodeUtil[recv][n] = [0.0]*self.num_services
 
     def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
         """
@@ -81,6 +101,7 @@ class Coordinated(Strategy):
         The goal is to carry out computations at the farthest node to create space for
         tasks that require closer comp. spots.
         """
+
         source = self.view.content_source(service)
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
@@ -88,6 +109,8 @@ class Coordinated(Strategy):
         for n in reversed(path[1:-1]):
             cs = self.compSpots[n]
             if cs.is_cloud:
+                continue
+            if cs.numberOfServiceInstances[service] == 0:
                 continue
             delay = self.view.path_delay(receiver, n)
             rtt_to_cs = rtt_delay + 2*delay
@@ -114,6 +137,118 @@ class Coordinated(Strategy):
                 return source
         return source
 
+    # Coordinated
+    def replace_services(self, time):
+        """
+        Replace services in a coordinated manner. 
+        Starting from the topmost node, deploy VMs for popular services, updating 
+        the global demand as they are deployed. 
+        """
+        for height in range(self.topo.graph['height']+1):
+            nodes = []
+            ### Get nodes with depth = height #
+            for node in self.compSpots.keys():
+                cs = self.compSpots[node]
+                if cs.is_cloud:
+                    continue
+                if self.topo.node[node]['depth'] == height:
+                    nodes.append(node)
+                    ### initialise number of service instances to zero #
+                    for service in range(self.num_services):
+                        cs.numberOfServiceInstances[service] = 0
+                
+            for node in nodes:
+                cs = self.compSpots[node]
+                service_utils = {x:0.0 for x in range(self.num_services)}
+                ### sort services that are executable at the node by their utilisation #
+                for recv in self.receivers:
+                    ap = int(recv[4:])
+                    for service in range(self.num_services):
+                        if self.serviceNodeUtil[ap][node][service] == 0:
+                            continue
+                        service_obj = self.view.services()[service]
+                        if service_obj.deadline > (2*self.view.path_delay(recv, node) + service_obj.service_time):
+                            service_utils[service] += self.serviceNodeUtil[ap][node][service]
+                service_utils_sorted = sorted(service_utils.items(), key = lambda x: x[1], reverse=True)
+                
+                if self.debug:
+                    count = 0
+                    for s,u in service_utils_sorted:
+                        print (str(s) + " has utilisation " + str(u))
+                        count += 1
+                        if count == 10:
+                            break
+                
+                remaining_vms = cs.numOfVMs
+                for service, util in service_utils_sorted:
+                    num_vms = int(round(util/(self.replacement_interval)))
+                    if remaining_vms > 0 and num_vms > 0:
+                        for recv in self.receivers:
+                            ap = int(recv[4:])
+                            if self.serviceNodeUtil[ap][node][service] == 0:
+                                continue
+                            else:
+                                path = self.view.shortest_path(recv, node)
+                                for n in path[1:]:
+                                   self.serviceNodeUtil[ap][n][service] = 0.0
+                    cs.numberOfServiceInstances[service] = min(num_vms, remaining_vms)
+                    if self.debug and cs.numberOfServiceInstances[service] > 0:
+                        print(str(cs.numberOfServiceInstances[service]) + " vms are instantiated at node: " + str(node) + " for service: " + str(service))
+                    remaining_vms -= cs.numberOfServiceInstances[service]
+
+                    if remaining_vms == 0:
+                        break
+                while remaining_vms > 0:
+                    newAddition = False
+                    for service, util in service_utils_sorted:
+                        if(cs.numberOfServiceInstances[service] > 0):
+                            newAddition = True
+                            cs.numberOfServiceInstances[service] += 1
+                            remaining_vms -= 1
+                            if self.debug:
+                                print ("One additional vm is instantiated at node: " + str(node) + " for service: " + str(service))
+                        else:
+                            num_vms = int(ceil(util/(self.replacement_interval)))
+                            num_vms = min(num_vms, remaining_vms)
+                            if num_vms > 0:
+                                cs.numberOfServiceInstances[service] = num_vms
+                                newAddition = True
+                                remaining_vms -= num_vms
+                                for recv in self.receivers:
+                                    ap = int(recv[4:])
+                                    if self.serviceNodeUtil[ap][node][service] == 0:
+                                        continue
+                                    else:
+                                        path = self.view.shortest_path(recv, node)
+                                        for n in path[1:]:
+                                           self.serviceNodeUtil[ap][n][service] = 0.0
+                                if self.debug:
+                                    print (str(num_vms) + " additional vm is instantiated at node: " + str(node) + " for service: " + str(service))
+                        if remaining_vms == 0:
+                            break
+                    if newAddition is False:
+                        break
+        # Report the VM instantiations (diff with the previous timeslot)
+        for node in self.compSpots.keys():
+            servicesToReplace = []
+            servicesToAdd = []
+            cs = self.compSpots[node]
+            if cs.is_cloud:
+                continue
+            for service in range(self.num_services):
+                diff = cs.numberOfServiceInstances[service] - self.numVMsPerService[cs.node][service]
+                self.numVMsPerService[cs.node][service] = cs.numberOfServiceInstances[service]
+                if diff > 0:
+                    for indx in range(diff):
+                        servicesToAdd.append(service)
+                elif diff < 0:
+                    for indx in range(diff):
+                        servicesToReplace.append(service)
+            for indx in range(len(servicesToAdd)):
+                serviceToAdd = servicesToAdd[indx]
+                serviceToReplace = servicesToReplace[indx] if indx < len(servicesToReplace) else None
+                self.controller.reassign_vm(node, serviceToReplace, servicesToAdd)
+
     # Coordinated            
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status):
@@ -130,7 +265,7 @@ class Coordinated(Strategy):
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
-            #self.replace_services(self.n_replacements, time)
+            self.replace_services(time)
             self.last_replacement = time
             self.initialise_metrics()
         # Process request based on status
@@ -150,6 +285,11 @@ class Coordinated(Strategy):
                 self.controller.add_event(time+rtt_delay+serviceTime, receiver, service, receiver, flow_id, deadline, rtt_delay, RESPONSE)
                 if self.debug:
                     print ("Request is scheduled to run at the CLOUD")
+            for n in path[1:]:
+                cs = self.view.compSpot(n)
+                if cs.is_cloud:
+                    continue
+                self.serviceNodeUtil[int(receiver[4:])][n][service] += self.view.services()[service].service_time
             return
         elif status == REQUEST and node != source:
             compSpot = self.view.compSpot(node)
@@ -188,9 +328,9 @@ class Coordinated(Strategy):
             self.controller.add_event(time+delay, receiver, service, receiver, flow_id, deadline, rtt_delay, RESPONSE)
             if self.debug:
                 print("Flow id: " + str(flow_id) + " is scheduled to arrive at the receiver at time: " + str(time+delay))
-            if (time+delay > deadline):
-                print ("Response at receiver at time: " + str(time+delay) + " deadline: " + str(deadline))
-                raise ValueError ("A scheduled request has missed its deadline!")
+            #if (time+delay > deadline): ### XXX After replacement, number of VMs change and requests can miss their deadline
+            #    print ("Response at receiver at time: " + str(time+delay) + " deadline: " + str(deadline))
+            #    raise ValueError ("A scheduled request has missed its deadline!")
         elif status == RESPONSE and node == receiver:
             self.controller.end_session(True, time, flow_id) #TODO add flow_time
             if self.debug:
@@ -309,10 +449,10 @@ class Lru(Strategy):
                     # is upstream possible to execute
                     if deadline - time - rtt_delay - 2*delay < compSpot.services[service].service_time:
                         evicted = self.controller.put_content(node, service)
-                        compSpot.reassign_vm(evicted, service, self.debug)
+                        compSpot.reassign_vm(self.controller, self.controller, evicted, service, self.debug)
                     elif self.p == 1.0 or random.random() <= self.p:
                         evicted = self.controller.put_content(node, service)
-                        compSpot.reassign_vm(evicted, service, self.debug)
+                        compSpot.reassign_vm(self.controller, evicted, service, self.debug)
                 rtt_delay += 2*delay
                 self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, REQUEST)
             else:
@@ -437,143 +577,23 @@ class Hybrid(Strategy):
                     if service_running == service_missed:
                         continue
                     if missed_util >= running_util and delay[service_missed] < delay[service_running] and delay[service_missed] > 0:
-                        cs.reassign_vm(service_running, service_missed, True)
+                        cs.reassign_vm(self.controller, service_running, service_missed, self.debug)
                         if self.debug:
                             print ("Missed util: " + str(missed_util) + " running util: " + str(running_util) + " Adequate time missed: " + str(delay[service_missed]) + " Adequate time running: " + str(delay[service_running]))
                         del running_services_utilisation_normalised[indx]
                         n_replacements += 1
                         break
-
-            print(str(n_replacements) + " replacements at node:" + str(cs.node) + " at time: " + str(time))
-            for node in self.compSpots.keys():
-                cs = self.compSpots[node]
-                if cs.is_cloud:
-                    continue
-                if cs.node != 14 and cs.node!=6:
-                    continue
-                for service in range(0, self.num_services):
-                    if cs.numberOfServiceInstances[service] > 0:
-                        print ("Node: " + str(node) + " has " + str(cs.numberOfServiceInstances[service]) + " instance of " + str(service))
-
-    #HYBRID 
-    def replace_services(self, time):
-        """
-        This method does the following:
-        1. Evaluate instantiated and stored services at each computational spot for the past time interval, ie, [t-interval, t]. 
-        2. Decide which services to instantiate in the next time interval [t, t+interval].
-        Parameters:
-        k : max number of instances to replace at each computational spot
-        interval: the length of interval
-        """
-        self.replacements_so_far += 1
-        # First sort services by deadline strictness
-        for node, cs in self.compSpots.items():
-            if cs.is_cloud:
-                continue
-            n_replacements = self.n_replacements
-            vm_metrics = self.deadline_metric[node]
-            cand_metric = self.cand_deadline_metric[node]
-            running_services_latency = []
-            running_services_utilisation_normalised = []
-            missed_services_utilisation = []
-            cand_services_latency = {}
-            delay = {}
-            util = []
-            util_normalised = {}
-            total_util = 0.0
             if self.debug:
-                print ("Replacement at node " + repr(node))
-            for service in range(0, self.num_services):
-                d_metric = 0.0
-                u_metric = 0.0
-                util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time])
-                total_util += (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time
-                if cs.numberOfServiceInstances[service] == 0: # No instances
-                    if cs.missed_requests[service] > 0:
-                        d_metric = cand_metric[service]/cs.missed_requests[service]
-                    else:
-                        d_metric = float('inf')
-                    u_metric = cs.missed_requests[service] * cs.services[service].service_time
-                    cand_services_latency[service] = d_metric
-                    delay[service] = d_metric
-                    util_normalised[service] = u_metric 
-                elif cs.numberOfServiceInstances[service] > 0: # At least one instance
-                    if cs.running_requests[service] > 0:
-                        d_metric = vm_metrics[service]/cs.running_requests[service]
-                    else:
-                        d_metric = float('inf')
-                    u_metric = (cs.running_requests[service] + cs.missed_requests) * cs.services[service].service_time
-                    running_services_latency.append([service, d_metric])
-                    running_services_utilisation_normalised.append([service, u_metric/cs.numberOfServiceInstances[service]])
-                    util_normalised[service] = (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[service].service_time / cs.numberOfServiceInstances[service]
-                    delay[service] = d_metric
-                else:
-                    print("This should not happen")
-
-                # Regardless of there is an instance, we also care about missed requests and their loss of utilisation
-                if cs.missed_requests[service] > 0:
-                    u_metric = cs.missed_requests[service] * cs.services[service].service_time
-                    missed_services_utilisation.append([service, u_metric])
-                if cs.rtt_upstream[service] == 0.0: # compute RTT to upstream service (if not done before)
-                    source = self.view.content_source(service)
-                    path = self.view.shortest_path(node, source)
-                    next_node = path[1]
-                    cs.rtt_upstream[service] = 2*self.view.path_delay(node, next_node)
-
-            running_services_utilisation_normalised = sorted(running_services_utilisation_normalised, key=lambda x: x[1]) #  small to large
-            missed_services_utilisation = sorted(missed_services_utilisation, key=lambda x: x[1], reverse=True)
-            util = sorted(util, key=lambda x: x[1], reverse=True) # large to small
-            running_services_latency = sorted(running_services_latency, key=lambda x: x[1], reverse=True) #TODO remove this, not used
-
-            if self.debug:
-                print ("Aggregate Utility of services: \n" + repr(util[0::15]))
-                print ("Running services normalised util: \n" + repr(running_services_utilisation_normalised[0::15]))
-                print ("Delay for services: \n" + repr(running_services_latency[0::15]))
-                print ("Total utilisation for node " + repr(node) + " is: " + repr(total_util/self.replacement_interval))
-
-            target_utilisation = self.replacement_interval*cs.numOfCores
-
-            # Placement is done below
-            if self.replacements_so_far < 3: # start from scratch (cold-start)
-                numOfVMs_assigned = 0
-                cs.numberOfServiceInstances = [0]*cs.service_population_size
-                # First add undelegateable services
-                for indx in range(0, len(util)):
-                    service = util[indx][0]
-                    if delay[service] < cs.rtt_upstream[service] + cs.services[service].service_time/2:  # not delegatable (Added an extra service_time/3 to account for queuing delay)
-                        while numOfVMs_assigned < cs.numOfVMs and util[indx][1] > self.replacement_interval/10:
-                            cs.numberOfServiceInstances[service] += 1
-                            numOfVMs_assigned += 1
-                            util[indx][1] -= self.replacement_interval/10
-                            target_utilisation -= self.replacement_interval/10
-                        if cs.numberOfServiceInstances[service] > 0 and self.debug:
-                            print ("Number of instances for service: " + repr(service) + " : " + repr(cs.numberOfServiceInstances[service]))
-                    else:
-                        if self.debug:
-                            print("RTT upstream to eliminated service: " + repr(service) + " is " + repr(cs.rtt_upstream[service]) + " and is greater than the actual delay metric: " + repr(delay[service]))
-
-                if numOfVMs_assigned < cs.numOfVMs:
-                    print("Error in Hybrid strategy: Node: " + repr(cs.node) + ". Number of VMs assigned " + repr(numOfVMs_assigned) + " is smaller than capacity " + repr(cs.numOfVMs))
-            else: # hot-start - only make incremental changes to placement
-                num_vm_reassigned = 0
-                indx_last_del = 0
-                replaced_services = set() 
-                for service_missed, utilisation_missed in missed_services_utilisation:
-                    if utilisation_missed < self.replacement_interval/10:
-                        break
-                    if num_vm_reassigned > self.n_replacements:
-                        break
-                    for service_running, utilisation in running_services_utilisation_normalised:
-                        if service_running in replaced_services:
-                            continue
-                        if util_normalised[service_missed] < util_normalised[service_running]:
-                            continue
-                        if service_running != service_missed:
-                            cs.reassign_vm(service_running, service_missed, self.debug) #self.debug)
-                            replaced_services.add(service_running)
-                            indx_last_del += 1
-                            num_vm_reassigned += 1
-                            break
+                print(str(n_replacements) + " replacements at node:" + str(cs.node) + " at time: " + str(time))
+                for node in self.compSpots.keys():
+                    cs = self.compSpots[node]
+                    if cs.is_cloud:
+                        continue
+                    if cs.node != 14 and cs.node!=6:
+                        continue
+                    for service in range(0, self.num_services):
+                        if cs.numberOfServiceInstances[service] > 0:
+                            print ("Node: " + str(node) + " has " + str(cs.numberOfServiceInstances[service]) + " instance of " + str(service))
 
     #HYBRID 
     @inheritdoc(Strategy)
@@ -647,8 +667,8 @@ class Hybrid(Strategy):
                     self.controller.execute_service(task.flow_id, task.service, compSpot.node, time, compSpot.is_cloud)
 
                     if task.expiry < time + self.view.path_delay(node, task.receiver):
-                        print("Error. Time: " + repr(time) + " Node: " + repr(node) + " Deadline: " + repr(task.expiry) + " task rtt: " + repr(task.rtt_delay) + " Exec time: " + repr(task.exec_time) + " Flow ID: " + repr(task.flow_id))
-                        raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
+                        print("Error in Hybrid: Time: " + repr(time) + " Node: " + repr(node) + " Deadline: " + repr(task.expiry) + " task rtt: " + repr(task.rtt_delay) + " Exec time: " + repr(task.exec_time) + " Flow ID: " + repr(task.flow_id))
+                        #raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             # forward the completed task
             path = self.view.shortest_path(node, receiver)
@@ -804,7 +824,7 @@ class MostFrequentlyUsed(Strategy):
                 else:
                     # Are they the same service? This should not happen really
                     if vm[0] != cand_services[indx][0]:
-                        cs.reassign_vm(vm[0], cand_services[indx][0], self.debug)
+                        cs.reassign_vm(self.controller, vm[0], cand_services[indx][0], self.debug)
                         n_replacements -= 1
                 
                 if n_replacements == 0 or indx == len(cand_services):
@@ -1033,7 +1053,7 @@ class StrictestDeadlineFirst(Strategy):
                     break
                 else:
                     if vm[0] != cand_services[indx][0]:
-                       cs.reassign_vm(vm[0], cand_services[indx][0], self.debug)
+                       cs.reassign_vm(self.controller, vm[0], cand_services[indx][0], self.debug)
                        n_replacements -= 1
                 
                 if n_replacements == 0 or indx == len(cand_services):

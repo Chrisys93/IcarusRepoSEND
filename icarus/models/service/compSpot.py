@@ -239,6 +239,8 @@ class Scheduler(object):
                         aTask.completionTime = time + aTask.exec_time
                         self.assign_task_to_core(core_indx, aTask, time)
                         return aTask
+                    else:
+                        self.cs.insufficientVMEvents[aTask.service] += 1
                 else: # This can happen during service replacement transitions
                     #self.taskQueue.remove(aTask)
                     self.removeFromTaskQueue(aTask)
@@ -304,6 +306,8 @@ class ComputationSpot(object):
         self.schedulerCopy = None 
         # server missed requests (due to congestion)
         self.missed_requests = [0] * self.service_population_size
+        # service requests that were missed due to insufficient VM
+        self.insufficientVMEvents = [0] * self.service_population_size
         # service request count (per service)
         self.running_requests = [0 for x in range(0, self.service_population_size)]
         # delegated (i.e., upstream) service request counts (per service)
@@ -599,7 +603,7 @@ class ComputationSpot(object):
             print("Rejected")
         return False
 
-    def reassign_vm(self, serviceToReplace, newService, debug):
+    def reassign_vm(self, controller, serviceToReplace, newService, debug):
         """
         Instantiate service at the given vm
         """
@@ -610,6 +614,7 @@ class ComputationSpot(object):
             print "Replacing service: " + repr(serviceToReplace) + " with: " + repr(newService) + " at node: " + repr(self.node)
         self.numberOfServiceInstances[newService] += 1
         self.numberOfServiceInstances[serviceToReplace] -= 1
+        controller.reassign_vm(self.node, serviceToReplace, newService)
 
     def getIdleTime(self, time):
         """

@@ -573,7 +573,7 @@ class NetworkModel(object):
         service_time_max = 0.10 # used to be 0.1 
         #delay_min = 0.005
         delay_min = 2*topology.graph['receiver_access_delay'] + service_time_max
-        delay_max = delay_min + 2*topology.graph['depth']*topology.graph['link_delay'] 
+        delay_max = delay_min + 2*topology.graph['depth']*topology.graph['link_delay'] + 0.005
 
 
         service_indx = 0
@@ -584,7 +584,7 @@ class NetworkModel(object):
             deadline = random.uniform(delay_min, delay_max) + 2*internal_link_delay
             #deadline = service_time + 1.5*(random.uniform(delay_min, delay_max) + 2*internal_link_delay)
             s = Service(service_time, deadline)
-            print ("Service " + str(service) + " has a deadline of " + str(deadline))
+            #print ("Service " + str(service) + " has a deadline of " + str(deadline))
             self.services.append(s)
         #""" #END OF Generating Services
         
@@ -672,7 +672,7 @@ class NetworkModel(object):
         ComputationSpot.services = self.services
         self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
                             for node in comp_size}
-        print ("Generated Computation Spot Objects")
+        #print ("Generated Computation Spot Objects")
         sys.stdout.flush()
         # This is for a local un-coordinated cache (currently used only by
         # Hashrouting with edge cache)
@@ -911,6 +911,16 @@ class NetworkController(object):
         """
 
         self.collector.execute_service(flow_id, service, node, timestamp, is_cloud)
+
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
+        """ Instantiate a VM with a given service
+        NOTE: this method should ideally call reassign_vm of ComputationSpot as well. 
+        However, some strategies rebuild VMs from scratch every time and they do not 
+        use that method always. 
+        """
+        #TODO FIX THIS.
+        # self.compSpots[node].reassign_vm(serviceToReplace, serviceToAdd)
+        self.collector.reassign_vm(node, serviceToReplace, serviceToAdd)
     
     def end_session(self, success=True, timestamp=0, flow_id=0):
         """Close a session

@@ -597,18 +597,21 @@ def print_zipf_experiment(lst):
 
 def print_budget_experiment(lst):
     
-    strategies = ['SDF', 'HYBRID', 'MFU'] 
+    strategies = ['COORDINATED', 'SDF', 'HYBRID', 'MFU'] 
+    TREE_DEPTH = 3
+    BRANCH_FACTOR = 2
+    NUM_CORES = 50
+    NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1) 
     alpha = 0.75
     replacement_interval = 30.0 
     N_SERVICES = 1000
-    #budgets = [N_SERVICES, 2*N_SERVICES, 3*N_SERVICES, 4*N_SERVICES, 5*N_SERVICES]
-    budgets = [N_SERVICES/8, N_SERVICES/4, N_SERVICES/2, 0.75*N_SERVICES, N_SERVICES, 2*N_SERVICES]
+    budgets = [NUM_CORES*NUM_NODES*1, NUM_CORES*NUM_NODES*3/2, NUM_CORES*NUM_NODES*2, NUM_CORES*NUM_NODES*5/2, NUM_CORES*NUM_NODES*3]
 
 
     # Print Sat. rates:
     for strategy in strategies:
         for budget in budgets:
-            filename = 'sat_' + str(strategy) + '_' + str(budget)
+            filename = 'Results/VM_Budget_Results/' + 'sat_' + str(strategy) + '_' + str(budget)
             f = open(filename, 'w')
             f.write('# Sat. rate over time\n')
             f.write('#\n')
@@ -622,13 +625,27 @@ def print_budget_experiment(lst):
     # Print Idle times:
     for strategy in strategies:
         for budget in budgets:
-            filename = 'idle_' + str(strategy) + '_' + str(budget)
+            filename = 'Results/VM_Budget_Results/' + 'idle_' + str(strategy) + '_' + str(budget)
             f = open(filename, 'w')
             f.write('# Idle times over time\n')
             f.write('#\n')
             f.write('# Time     Idle percentage\n')
             idle_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : budget, 'alpha' : alpha}, 3, 'LATENCY', 'IDLE_TIMES')
             for k in sorted(idle_times):
+                s = str(k[0][0]) + "\t" + str((1.0*k[1])) + "\n"
+                f.write(s)
+            f.close()
+    
+    # Print Overhead times:
+    for strategy in strategies:
+        for budget in budgets:
+            filename = 'Results/VM_Budget_Results/' + 'overhead_' + str(strategy) + '_' + str(budget)
+            f = open(filename, 'w')
+            f.write('# VM instantiation overhead over time\n')
+            f.write('#\n')
+            f.write('# Time     Overhead\n')
+            overhead_times = searchDictMultipleCat(lst, ['strategy', 'computation_placement', 'workload'], {'name' : strategy, 'service_budget' : budget, 'alpha' : alpha}, 3, 'LATENCY', 'INSTANTIATION_OVERHEAD')
+            for k in sorted(overhead_times):
                 s = str(k[0][0]) + "\t" + str((1.0*k[1])) + "\n"
                 f.write(s)
             f.close()
@@ -668,7 +685,7 @@ def run(config, results, plotdir):
     #print_lru_probability_results(lst) 
 
     #print_strategies_performance(lst)
-    #print_budget_experiment(lst)
+    print_budget_experiment(lst)
     #print_scheduling_experiments(lst)
     #print_zipf_experiment(lst)
 

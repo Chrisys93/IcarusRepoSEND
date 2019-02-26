@@ -81,7 +81,7 @@ N_WARMUP_REQUESTS = 0 #30000
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 3.0 #10.0 #5.5
+MINS = 10.0 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
@@ -97,8 +97,8 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU', 'OPTIMAL_PLACEMENT_SCHED']  # service-based routing
-STRATEGIES = ['OPTIMAL_PLACEMENT_SCHED']  # service-based routing
+STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU'] #, 'OPTIMAL_PLACEMENT_SCHED'] 
+#STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
@@ -153,15 +153,16 @@ for strategy in ['LRU']: # STRATEGIES:
 """
 # Compare SDF, LFU, Hybrid for default values
 #"""
+SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*1, NUM_CORES*NUM_NODES*3/2, NUM_CORES*NUM_NODES*2, NUM_CORES*NUM_NODES*5/2, NUM_CORES*NUM_NODES*3]
 for strategy in STRATEGIES:
-    experiment = copy.deepcopy(default)
-    if strategy == 'COORDINATED':
-        default['computation_placement']['service_budget'] = NUM_NODES*N_SERVICES*NUM_CORES
-    experiment['strategy']['name'] = strategy
-    experiment['warmup_strategy']['name'] = strategy
-    experiment['desc'] = "strategy: %s" \
+    for service_budget in SERVICE_BUDGETS:
+        experiment = copy.deepcopy(default)
+        experiment['computation_placement']['service_budget'] = service_budget
+        experiment['strategy']['name'] = strategy
+        experiment['warmup_strategy']['name'] = strategy
+        experiment['desc'] = "strategy: %s" \
                          % (strategy)
-    EXPERIMENT_QUEUE.append(experiment)
+        EXPERIMENT_QUEUE.append(experiment)
 #"""
 # Experiment with different budgets
 """
