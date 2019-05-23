@@ -132,7 +132,7 @@ class StationaryWorkload(object):
             while eventObj is not None and eventObj.time < t_event:
                 heapq.heappop(self.model.eventQ)
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver' : eventObj.receiver, 'content': eventObj.service, 'log' : log, 'node' : eventObj.node, 'flow_id' : eventObj.flow_id, 'deadline' : eventObj.deadline, 'rtt_delay' : eventObj.rtt_delay,'status' : eventObj.status}
+                event = {'receiver' : eventObj.receiver, 'content': eventObj.service, 'log' : log, 'node' : eventObj.node, 'flow_id' : eventObj.flow_id, 'deadline' : eventObj.deadline, 'rtt_delay' : eventObj.rtt_delay,'status' : eventObj.status, 'task' : eventObj.task}
 
                 yield (eventObj.time, event)
                 eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None

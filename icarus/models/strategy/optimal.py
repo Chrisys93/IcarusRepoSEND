@@ -136,10 +136,10 @@ class OptimalScheduling(Strategy):
             ### at each cs to avoid insufficient VMs. 
             ### The only constraint is the numOfCores. 
             for serv in range(cs.service_population_size):
-                cs.numberOfServiceInstances[serv] = 0
+                cs.numberOfVMInstances[serv] = 0
             for vm in range(cs.numOfVMs):
                 serv = vm % cs.service_population_size 
-                cs.numberOfServiceInstances[serv] += 1 
+                cs.numberOfVMInstances[serv] += 1 
             
         self.compute_optimal_schedule()
 

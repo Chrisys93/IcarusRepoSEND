@@ -141,10 +141,10 @@ class OptimalPlacementAndScheduling(Strategy):
             ### at each cs to avoid insufficient VMs. 
             ### The only constraint is the numOfCores. 
             for serv in range(cs.service_population_size):
-                cs.numberOfServiceInstances[serv] = 0
+                cs.numberOfVMInstances[serv] = 0
             for vm in range(cs.numOfVMs):
                 serv = vm % cs.service_population_size 
-                cs.numberOfServiceInstances[serv] += 1 
+                cs.numberOfVMInstances[serv] += 1 
             
         self.compute_optimal_placement_schedule()
 
@@ -222,7 +222,7 @@ class OptimalPlacementAndScheduling(Strategy):
             if cs.is_cloud:
                 continue
             for service in range(0, self.view.num_services()):
-                cs.numberOfServiceInstances[service] = 0
+                cs.numberOfVMInstances[service] = 0
 
         for service in range(0, self.view.num_services()):
             for ap in self.receivers:
@@ -236,7 +236,7 @@ class OptimalPlacementAndScheduling(Strategy):
                     #if node == 3:
                     #    print("Service: " + str(service) + " ap: " + str(ap) + " node: " + str(node) + " x_bar = " + str(self.x_bar[service].value[ap,node]))
                     cs.serviceProbabilities[service] += self.x_bar[service].value[ap, node]
-                    #cs.numberOfServiceInstances[service] += int(math.ceil(self.x_bar[service].value[ap, node]))
+                    #cs.numberOfVMInstances[service] += int(math.ceil(self.x_bar[service].value[ap, node]))
                     self.perAccessPerNodePerServiceProbability[ap][node][service] = self.x_bar[service].value[ap, node] - math.floor(self.x_bar[service].value[ap, node])
 
         for node in self.compSpots.keys():
@@ -245,7 +245,7 @@ class OptimalPlacementAndScheduling(Strategy):
                 continue
             for service in range(0, self.view.num_services()):
                 node = int(node)
-                cs.numberOfServiceInstances[service] = int(math.ceil(cs.serviceProbabilities[service]))
+                cs.numberOfVMInstances[service] = int(math.ceil(cs.serviceProbabilities[service]))
 
         if True:
             for node in self.compSpots.keys():
@@ -255,8 +255,8 @@ class OptimalPlacementAndScheduling(Strategy):
                 if cs.node != 14 and cs.node!=6:
                     continue
                 for service in range(0, self.view.num_services()):
-                    if cs.numberOfServiceInstances[service] > 0:
-                        print ("Node: " + str(node) + " has " + str(cs.numberOfServiceInstances[service]) + " instance of " + str(service))
+                    if cs.numberOfVMInstances[service] > 0:
+                        print ("Node: " + str(node) + " has " + str(cs.numberOfVMInstances[service]) + " instance of " + str(service))
 
     def initialise_metrics(self):
         """Initialise counts and metrics between periods of optimized solution computations

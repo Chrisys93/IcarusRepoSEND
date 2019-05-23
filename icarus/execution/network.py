@@ -25,6 +25,7 @@ import heapq
 from icarus.registry import CACHE_POLICY
 from icarus.util import path_links, iround
 from icarus.models.service.compSpot import ComputationSpot
+from icarus.models.service.compSpot import Task
 
 __all__ = [
     'Service',
@@ -39,7 +40,7 @@ logger = logging.getLogger('orchestration')
 class Event(object):
     """Implementation of an Event object: arrival of a request to a node"""
 
-    def __init__(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status):
+    def __init__(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status, task=None):
         """Constructor
         Parameters
         ----------
@@ -56,9 +57,11 @@ class Event(object):
         self.deadline = deadline 
         self.rtt_delay = rtt_delay
         self.status = status
+        self.task = task
 
-    def __cmp__(self, other):
-        return cmp(self.time, other.time)
+    def __lt__(self, other):
+        return self.time < other.time
+        #return cmp(self.time, other.time)
 
 class Service(object):
     """Implementation of a service object"""
@@ -391,7 +394,7 @@ class NetworkView(object):
             cs = self.model.compSpot[node]
             if cs.is_cloud:
                 return True
-            elif cs.numberOfServiceInstances[service] > 0:
+            elif cs.numberOfVMInstances[service] > 0:
                 return True
  
         return False
@@ -894,10 +897,12 @@ class NetworkController(object):
         if node in self.model.cache:
             return self.model.cache[node].remove(self.session['content'])
 
-    def add_event(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status):
+    def add_event(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status, task=None):
         """Add an arrival event to the eventQ
         """
-        e = Event(time, receiver, service, node, flow_id, deadline, rtt_delay, status)
+        if time == float('inf'):
+            raise ValueError("Invalid argument in add_event(): time parameter is infinite")
+        e = Event(time, receiver, service, node, flow_id, deadline, rtt_delay, status, task)
         heapq.heappush(self.model.eventQ, e)
 
     def replacement_interval_over(self, flow_id, replacement_interval, timestamp):
@@ -911,16 +916,32 @@ class NetworkController(object):
         """
 
         self.collector.execute_service(flow_id, service, node, timestamp, is_cloud)
+    
+    def complete_task(self, task, timestamp):
+        """ Perform execution of the task at node with starting time
+        """
+        cs = self.model.compSpot[task.node]
+        if cs.is_cloud:
+            self.execute_service(task.flow_id, task.service, task.node, timestamp, True)
+            return
+        else:
+            cs.complete_task(self, task, timestamp)
+            if task.taskType == Task.TASK_TYPE_SERVICE:
+                self.execute_service(task.flow_id, task.service, task.node, timestamp, False)
 
-    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
+    def reassign_vm(self, time, compSpot, serviceToReplace, serviceToAdd, debugFlag=False):
         """ Instantiate a VM with a given service
         NOTE: this method should ideally call reassign_vm of ComputationSpot as well. 
         However, some strategies rebuild VMs from scratch every time and they do not 
         use that method always. 
         """
-        #TODO FIX THIS.
-        # self.compSpots[node].reassign_vm(serviceToReplace, serviceToAdd)
-        self.collector.reassign_vm(node, serviceToReplace, serviceToAdd)
+        if serviceToAdd == serviceToReplace:
+            print ("Error in reassign_vm(): serviceToAdd equals serviceToReplace")
+            raise ValueError("Error in reassign_vm(): service replaced and added are same")
+
+
+        compSpot.reassign_vm(self, time, serviceToReplace, serviceToAdd, debugFlag)  
+        self.collector.reassign_vm(compSpot.node, serviceToReplace, serviceToAdd)
     
     def end_session(self, success=True, timestamp=0, flow_id=0):
         """Close a session
