@@ -27,11 +27,11 @@ for the following papers:
  * In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
  * In [Fogspot: Spot pricing for application provisioning in edge/fog computing](https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing)
 
-### Caching configurations:
+###Cache resource configuration:
 
 These configurations include placement of caches and content (see ./scenarios/cacheplacement.py and ./scenarios/contentplacement.py), total storage budget (in number of content), total number of contents. A cache model comprises policies that manage how content is replaces under ./models/cache/ containing replacement policies. The placement and retrieval of content to/from caches at run-time is determined by a strategy.
 
-### Computing configurations:
+### Compute resources configuration:
 
 These configurations resemble caching configurations and include number of functions, total computation budget (in number of CPU cores) and computation placement. The placement setting locates a set of  **computation spots**, i.e., Cloudlets, (see ./models/service/compSpoy.py) which comprises a number of CPU cores and VMs or containeras, in the topology. Each function is associated with a service rate, i.e., processing time per input data chunk. 
 
