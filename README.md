@@ -8,11 +8,9 @@ Icarus is not bound to any specific ICN or edge-computing architecture. Its desi
 to implement and evalute new caching and computing policies or routing strategies
 with few lines of code.
 
-## Notes for Beginners:
-
 The code is in general self-explanatory. Below are some notes on how to start experimenting with IcarusEdgeSim. 
 
-### Configuring Experiment Scenarios:
+## Configuring Experiment Scenarios:
 
 You can find sample configurations in the /examples folder. 
 
