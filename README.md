@@ -25,9 +25,9 @@ Example strategies are located under models/strategy/. The service.py in the exa
 for the following papers:
 
  * In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
- * In [Fogspot: Spot pricing for application provisioning in edge/fog computing](https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing)
-
-###Cache resource configuration:
+ * In [Fogspot: Spot pricing for application provisioning in edge/fog computing](https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing) 
+ 
+###  Cache resource configuration:
 
 These configurations include placement of caches and content (see ./scenarios/cacheplacement.py and ./scenarios/contentplacement.py), total storage budget (in number of content), total number of contents. A cache model comprises policies that manage how content is replaces under ./models/cache/ containing replacement policies. The placement and retrieval of content to/from caches at run-time is determined by a strategy.
 
