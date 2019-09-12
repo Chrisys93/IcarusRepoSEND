@@ -1,10 +1,48 @@
-# Icarus ICN caching simulator
-Icarus is a Python-based discrete-event simulator for evaluating caching
-performance in Information Centric Networks (ICN).
+# IcarusEdgeSim – An edge computing simulator based on Icarus 
 
-Icarus is not bound to any specific ICN architecture. Its design allows users
-to implement and evalute new caching policies or caching and routing strategy
+IcarusEdgeSim is a Python-based discrete-event simulator for evaluating the 
+performance of both networks with both cache and compute resources based on 
+the Icarus simulator (https://github.com/icarus-sim/icarus) for ICN caching networks. 
+
+Icarus is not bound to any specific ICN or edge-computing architecture. Its design allows users
+to implement and evalute new caching and computing policies or routing strategies
 with few lines of code.
+
+## Notes for Beginners:
+
+The code is in general self-explanatory. Below are some notes on how to start experimenting with IcarusEdgeSim. 
+
+### Configuring Experiment Scenarios:
+
+You can find sample configurations in the /examples folder. 
+
+A typical configuration contains information on the scenario to be executed. A general scenario includes  
+a network topology, workload, placement of caches, placement of data producers, and most importantly
+a strategy. A strategy determines how requests are processed (i.e., routed from source to resources and possibly back), 
+a workload determines the arrival rate and placement of initial requests. 
+
+### Strategies:
+
+Example strategies are located under models/strategy/. The service.py in the examples contains strategies for edge-computing implemented 
+for the following papers:
+
+* In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
+* In [Fogspot: Spot pricing for application provisioning in edge/fog computing] (https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing)
+
+### Caching configurations:
+
+These configurations include placement of caches and content (see ./scenarios/cacheplacement.py and ./scenarios/contentplacement.py), total storage budget (in number of content), total number of contents. A cache model comprises policies that manage how content is replaces under ./models/cache/ containing replacement policies. The placement and retrieval of content to/from caches at run-time is determined by a strategy.
+
+### Computing configurations:
+
+These configurations resemble caching configurations and include number of functions, total computation budget (in number of CPU cores) and computation placement. The placement setting locates a set of  **computation spots**, i.e., Cloudlets, (see ./models/service/compSpoy.py) which comprises a number of CPU cores and VMs or containeras, in the topology. Each function is associated with a service rate, i.e., processing time per input data chunk. 
+
+A number of policies dictate how computation spots are managed. An admission policy determines how a node decides whether or not to accept a request for execution. A scheduling policy determines the order of execution for admitted requests. A strategy determines the placement of functions (mapping of VMs to function) for each computation spot. 
+
+### Topologies:
+
+The topology determines the connectivity of the network. Available topologies include measurement-based
+ones such as Rocketfuel (please see /resources/topologies). 
 
 This document explains how to configure and run the simulator.
 
@@ -18,14 +56,14 @@ If you use Ubuntu (version 13.10+) you can run the script `ubuntusetup.sh`
 located in the `scripts` folder which will take of installing all the
 dependencies. To run it, executes the following commands
 
-    $ cd <YOUR ICARUS FOLDER>
+    $ cd <YOUR ICARUSEDGESIM FOLDER>
     $ sh scripts/ubuntusetup.sh
 
 The script, after being launched, will ask you for superuser password.
 
-Finally, it is advisable to add Icarus path to the PYTHONPATH environment variable. This makes it possible to launch Icarus from outside the Icarus root directory or call Icarus APIs from other programs:
+Finally, it is advisable to add IcarusEdgeSim path to the PYTHONPATH environment variable. This makes it possible to launch IcarusEdgeSim from outside the IcarusEdgeSim root directory or call IcarusEdgeSim APIs from other programs:
 
-    $ cd <YOUR ICARUS FOLDER>
+    $ cd <YOUR ICARUSEDGESIM FOLDER>
     $ export PYTHONPATH=`pwd`:$PYTHONPATH
 
 Note however that setting the PYTHONPATH this way does not persist across reboots. To make it persist you should add the export instruction to a script that your machine executes at boot or login time, e.g. `.bashrc` (if you use Bash).
@@ -33,7 +71,7 @@ Note however that setting the PYTHONPATH this way does not persist across reboot
 #### Other operating systems
 If you have other operating systems, you can install all dependencies manually. 
 
-Icarus dependencies are:
+IcarusEdgeSim dependencies are:
 
 * **Python interpreter (2.7.x)**: you can either download it
   from the [Python website](http://www.python.org) or, possibly, from the package
@@ -58,7 +96,7 @@ If you use `easy_install` run:
 You may need to run `pip` or `easy_install` as superuser. The installation of these packages, especially `numpy` and `scipy` may also require to install additional libraries.
 
 #### Virtual machine
-You can also run Icarus within a virtual machine. [This repository](https://github.com/icarus-sim/icarus-vm) contains scripts and documentation to set up a virtual machine with Icarus and all its dependencies.
+You can also run IcarusEdgeSim within a virtual machine. [This repository](https://github.com/icarus-sim/icarus-vm) contains scripts and documentation to set up a virtual machine with IcarusEdgeSim and all its dependencies.
 
 
 ### Download
@@ -86,7 +124,7 @@ You can also get the development branch from the Github repository using Git. Ju
 
 ### Run simulations
 
-To use Icarus with the currently implemented topologies and models of caching policies and strategies you need to do the following.
+To use IcarusEdgeSim with the currently implemented topologies and models of caching and computing policies and strategies you need to do the following.
 
 First, create a configuration file with all the desired parameters of your
 simulation. You can modify the file `config.py`, which is a well documented
@@ -119,7 +157,7 @@ By executing the steps illustrated above it is possible to run simulations using
 topologies, cache policies, strategies and result collectors readily available on
 Icarus. Icarus makes it easy to implement new models to use in simulations.
 
-To implement new models, please refer to the description of the simulator 
+To implement new models, please refer to the description of the original Icarus simulator 
 provided in this paper:
 
 L.Saino, I. Psaras and G. Pavlou, Icarus: a Caching Simulator for Information Centric
@@ -131,91 +169,3 @@ Networking (ICN), in Proc. of SIMUTOOLS'14, Lisbon, Portugal, March 2014.
 Otherwise, please browse the source code. It is very well documented and easy to
 understand.
 
-### Modelling tools
-Icarus provides utilities for modelling the performance of caches and
-work with traffic traces. The code is included in the `icarus.tools` package.
-These tools are described in detail in [this paper](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.pdf).
-
-### Run tests
-To run the unit test cases you can use the `test.py` script located in the directory of
-this README file.
-
-    $ python test.py
-
-To run the test you need to have the Python [`nose`](https://nose.readthedocs.org/en/latest/) package. If you installed all
-dependencies using the Ubuntu script, then you already have it installed. Otherwise you may need to install it using either `pip` or `easy_install`.
-
-    $ pip install nose
-
-or
-
-    $ easy_install nose
-
-### Build documentation from source
-To build the documentation you can you the `Makefile` provided in the `doc` folder. This script provides targets for building
-documentation in a number of formats. For example, to build HTML documentation, execute the following commands:
-
-    $ cd <YOUR ICARUS FOLDER>
-    $ cd doc
-    $ make html
-
-The built documentation will be put in the `doc/build` folder. The compiled HTML documentation is also available on the
-[Icarus website](http://icarus-sim.github.io/doc/)
-
-To build the documentation you need [Sphinx](http://sphinx-doc.org/). If you installed all dependencies using the Ubuntu script,
-then you already have it installed. Otherwise you may need to install it using either `pip` or `easy_install`.
-
-    $ pip install sphinx
-
-or
-
-    $ easy_install sphinx
-
-## Citing
-
-If you use Icarus for your paper, please refer to the following publication:
-
-    @inproceedings{icarus-simutools14,
-       author = {Saino, Lorenzo and Psaras, Ioannis and Pavlou, George},
-       title = {Icarus: a Caching Simulator for Information Centric Networking (ICN)},
-       booktitle = {Proceedings of the 7th International ICST Conference on Simulation Tools and Techniques},
-       series = {SIMUTOOLS '14},
-       year = {2014},
-       location = {Lisbon, Portugal},
-       numpages = {10},
-       publisher = {ICST},
-       address = {ICST, Brussels, Belgium, Belgium},
-    }
-
-## Documentation
-If you desire further information about Icarus, you can find it in the following places:
-
- * In [this paper](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.pdf), which describes the overall architecture of the Icarus simulator,
-   the motivations for its design, the models implemented and shows some snippets of codes on how to use the modelling tools.
- * In the [API reference](http://icarus-sim.github.io/doc/), which documents all packages, modules, classes, methods
-   and functions included in the Icarus simulator.
- * In the [source code](https://www.github.com/icarus-sim/icarus/), which is well organized and throughly documented.
-
-## Reproduce results of previous papers
-
-### Hash-routing schemes, ACM SIGCOMM ICN '13
-The Icarus simulator can be used to reproduce the results and plot the graphs presented in the paper:
-
-L.Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for Information Centric Networking,
-in *Proc. of the 3rd ACM SIGCOMM workshop on Information Centric Networking (ICN'13)*, Hong Kong, China, August 2013.
-[\[PDF\]](http://www.ee.ucl.ac.uk/~lsaino/publications/hashrouting-icn13.pdf),
-[\[BibTex\]](http://www.ee.ucl.ac.uk/~lsaino/publications/hashrouting-icn13.bib)
-
-To do so, refer to the instructions reported in the  [icarus-sim/hashrouting-icn13-results](http://github.com/icarus-sim/hashrouting-icn13-results) repository.
-
-## License
-Icarus is licensed under the terms of the [GNU GPLv2 license](http://www.gnu.org/licenses/gpl-2.0.html).
-
-## Contacts
-For further information about the Icarus simulator, please contact
-[Lorenzo Saino](http://www.ee.ucl.ac.uk/~lsaino)
-
-## Acknowledgments
-This work received funding from the UK EPSRC, under grant agreement no. EP/K019589/1 ([COMIT project](http://www.ee.ucl.ac.uk/comit-project/)),
-the EU-Japan initiative, under EU FP7 grant agreement no. 608518 and NICT contract no. 167 ([GreenICN project](http://www.greenicn.org/))
-and from the EU FP7 program, under grant agreements 318488 ([Flamingo Network of Excellence project](http://www.fp7-flamingo.eu/)).
