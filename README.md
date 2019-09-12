@@ -24,8 +24,8 @@ a workload determines the arrival rate and placement of initial requests.
 Example strategies are located under models/strategy/. The service.py in the examples contains strategies for edge-computing implemented 
 for the following papers:
 
-    * In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
-    * In [Fogspot: Spot pricing for application provisioning in edge/fog computing] (https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing)
+ * In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
+ * In [Fogspot: Spot pricing for application provisioning in edge/fog computing] (https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing)
 
 ### Caching configurations:
 
