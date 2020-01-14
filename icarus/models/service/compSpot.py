@@ -1017,7 +1017,7 @@ class ComputationSpot(object):
             print ("Replacing service: " + repr(serviceToReplace) + " with: " + repr(newService) + " at node: " + repr(self.node))
         if self.numberOfVMInstances[serviceToReplace] <= 0:
             print("Error in reassign_vm(): service to replace has no instances for service:" + str(serviceToReplace))
-            raise ValueError("Invalid number of instances of service: " + str(newService) + " has " + str(self.numberOfVMInstances[serviceToReplace]))
+            raise ValueError("Invalid number of instances of service: " + str(serviceToReplace) + " has " + str(self.numberOfVMInstances[serviceToReplace]))
         self.numberOfVMInstances[newService] += 1
         self.numberOfVMInstances[serviceToReplace] -= 1
         if len(self.scheduler.busyVMs[serviceToReplace]) + len(self.scheduler.idleVMs[serviceToReplace])  <= 0:
