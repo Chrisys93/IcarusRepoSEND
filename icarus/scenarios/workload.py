@@ -157,7 +157,7 @@ class StationaryWorkload(object):
             yield (t_event, event)
             req_counter += 1
         
-        print "End of iteration: len(eventObj): " + repr(len(self.model.eventQ))
+        print ("End of iteration: len(eventObj): " + repr(len(self.model.eventQ)))
         #aFile.close()
         raise StopIteration()
 

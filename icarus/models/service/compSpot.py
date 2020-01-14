@@ -749,11 +749,11 @@ class ComputationSpot(object):
                     print ("\tNo task to execute")
                     print ("Current time: " + str(time))
                     if len(self.schedulerCopy.upcomingTaskQueue) > 0: 
-                        print "Upcoming task queue not empty: " + str(len(self.schedulerCopy.upcomingTaskQueue))
+                        print ("Upcoming task queue not empty: " + str(len(self.schedulerCopy.upcomingTaskQueue)))
                         for task in self.schedulerCopy.upcomingTaskQueue:
                             task.print_task()
                     if len(self.schedulerCopy._taskQueue) > 0: 
-                        print "task queue not empty: " + str(len(self.schedulerCopy._taskQueue))
+                        print ("task queue not empty: " + str(len(self.schedulerCopy._taskQueue)))
                         for task in self.schedulerCopy._taskQueue:
                             task.print_task()
 
@@ -846,7 +846,7 @@ class ComputationSpot(object):
             controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, self.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE, newTask) 
         
         if self.numberOfVMInstances[service] == 0:
-            print "Error: this should not happen in admit_task_FIFO()"
+            print ("Error: this should not happen in admit_task_FIFO()")
        
         if debug:
             print ("Accepting Task")
@@ -919,7 +919,7 @@ class ComputationSpot(object):
             controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, self.node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE, newTask) 
 
         if self.numberOfVMInstances[service] == 0:
-            print "Error: this should not happen in admit_task_EDF()"
+            print ("Error: this should not happen in admit_task_EDF()")
        
         if debug:
             print ("Accepting Task")
@@ -1014,10 +1014,10 @@ class ComputationSpot(object):
             raise ValueError("Error in reassign_vm: the service to replace has no instances")
 
         if debug:
-            print "Replacing service: " + repr(serviceToReplace) + " with: " + repr(newService) + " at node: " + repr(self.node)
+            print ("Replacing service: " + repr(serviceToReplace) + " with: " + repr(newService) + " at node: " + repr(self.node))
         if self.numberOfVMInstances[serviceToReplace] <= 0:
             print("Error in reassign_vm(): service to replace has no instances for service:" + str(serviceToReplace))
-            raise ValueError("Invalid number of instances of service: " + str(service) + " has " + str(self.numberOfVMInstances[serviceToReplace]))
+            raise ValueError("Invalid number of instances of service: " + str(newService) + " has " + str(self.numberOfVMInstances[serviceToReplace]))
         self.numberOfVMInstances[newService] += 1
         self.numberOfVMInstances[serviceToReplace] -= 1
         if len(self.scheduler.busyVMs[serviceToReplace]) + len(self.scheduler.idleVMs[serviceToReplace])  <= 0:

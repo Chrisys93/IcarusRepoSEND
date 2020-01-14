@@ -128,13 +128,13 @@ def topology_tree(k, h, delay=0.020, **kwargs):
         topology.edge[u][v]['type'] = 'internal'
         if u is 0 or v is 0:
             topology.edge[u][v]['delay'] = delay
-            print "Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay'])
+            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
         else:
             topology.edge[u][v]['delay'] = delay
-            print "Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay'])
+            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
 
     for v in topology.nodes_iter():
-        print "Depth of " + repr(v) + " is " + repr(topology.node[v]['depth'])
+        print ("Depth of " + repr(v) + " is " + repr(topology.node[v]['depth']))
     
     # set weights and delays on all links
     fnss.set_weights_constant(topology, 1.0)
@@ -166,8 +166,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     for i in range(n_sources):
         topology.add_edge(sources[i], root[0], delay=3*delay, type='internal')
 
-    print "The number of sources: " + repr(n_sources)
-    print "The number of receivers: " + repr(n_receivers)
+    print ("The number of sources: " + repr(n_sources))
+    print ("The number of receivers: " + repr(n_receivers))
     topology.graph['receiver_access_delay'] = receiver_access_delay 
     topology.graph['link_delay'] = delay
     topology.graph['depth'] = h
