@@ -34,6 +34,10 @@ NO_INSTANCES = 4
 @register_strategy('COORDINATED')
 class Coordinated(Strategy):
     """
+    TODO: These should mostly be used as they are, but should still be reviewed
+        after all the rest of the functional code for data placement, centralised
+        data placement management and packet forwarding are ready for implementation.
+
     A coordinated approach to route requests:
     i) Use global congestion information on Computation Spots to route requests.
     ii) Use global demand distribution to place services on Computation Spots.

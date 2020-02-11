@@ -21,6 +21,16 @@ __all__ = [
        'RandomChoice',
            ]
 
+"""
+    TODO: All of this needs to be reviewed, for both storage and service placement.
+        Services should be placed on-path, the on-path caching should be retained
+        for the strategies relevant for the normal uncoordinated service placement
+        and the uncoordinated service placement with EDR implementation ONLY!
+        The rest should be redeveloped to specifically place only services and/or
+        functions in an uncoordinated manner and leave the data to be decided on in a
+        centralised way, or, otherwise in a hybrid, centralised information, coordinated
+        with local service and data information and performance metrics
+"""
 
 @register_strategy('PARTITION')
 class Partition(Strategy):
@@ -29,9 +39,11 @@ class Partition(Strategy):
     In this strategy the network is divided into as many partitions as the number
     of caching nodes and each receiver is statically mapped to one and only one
     caching node. When a request is issued it is forwarded to the cache mapped
-    to the receiver. In case of a miss the request is routed to the source and
-    then returned to cache, which will store it and forward it back to the
-    receiver.
+    to the receiver.
+
+    TODO: In case of a miss the request is routed to the source and
+        then returned to cache, which will store it and forward it back to the
+        receiver. - !!! this needs to be changed !!!
 
     This requires median cache placement, which optimizes the placement of
     caches for this strategy.
@@ -122,6 +134,10 @@ class LeaveCopyEverywhere(Strategy):
 
     In this strategy a copy of a content is replicated at any cache on the
     path between serving node and receiver.
+
+    TODO: This strategy is not valid in our case, but can be modified, to
+        leave a certain amount of copies along the path, according to the
+        limit imposed by the packet labels/MetaData/MetaInfo
     """
 
     @inheritdoc(Strategy)
@@ -160,7 +176,7 @@ class LeaveCopyDown(Strategy):
 
     According to this strategy, one copy of a content is replicated only in
     the caching node you hop away from the serving node in the direction of
-    the receiver. This strategy is described in [2]_.
+    the receiver. This strategy is described in [2]_. Note: \/Should this be [1]?\/
 
     Rereferences
     ------------
@@ -210,6 +226,9 @@ class ProbCache(Strategy):
     This strategy caches content objects probabilistically on a path with a
     probability depending on various factors, including distance from source
     and destination and caching space available on the path.
+
+    TODO: Again, this could be adapted, to account for packet storage and
+        function execution restrictions imposed by MetaData/MetaInfo
 
     This strategy was originally proposed in [2]_ and extended in [3]_. This
     class implements the extended version described in [3]_. In the extended
@@ -282,6 +301,13 @@ class CacheLessForMore(Strategy):
     the greatest number of shortest paths). If the argument *use_ego_betw* is
     set to *True* then the betweenness centrality of the ego-network is used
     instead.
+
+    TODO: This strategy should have the most impact in our implementation,
+        but needs to be adapted, to interact with the centralised, system-wide
+        feedback-led DATA STORAGE MANAGEMENT entity, so that it can obtain updated
+        and most-effective data placement, duplication or deletion, depending on
+        the latest known system performance diagnosis data for the associated
+        services
 
     References
     ----------

@@ -23,6 +23,8 @@ class NearestReplicaRouting(Strategy):
     implemented assuming that each node knows the nearest replica of a content
     without any signaling
 
+    TODO: Interesting - revise for service usage and not data placement.
+
     On the return path, content can be caching according to a variety of
     metacaching policies. LCE and LCD are currently supported.
     """

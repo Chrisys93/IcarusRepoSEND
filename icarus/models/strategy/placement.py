@@ -28,6 +28,12 @@ TASK_COMPLETE = 2
 @register_strategy('OPTIMAL_PLACEMENT_SCHED')
 class OptimalPlacementAndScheduling(Strategy):
     """
+    TODO: All these need to be revised and reversed, basically, with the data
+        placement, as the service placement should be uncoordinated and the
+        data placement should be managed, not the other way around. Otherwise
+        the name "On uncoordinated service placement [...]" would not be fit
+        for purpose.
+
     An optimal approach for scheduling 
     i) Use global congestion information on Computation Spots to route requests.
     ii) Use global demand distribution to place services on Computation Spots.

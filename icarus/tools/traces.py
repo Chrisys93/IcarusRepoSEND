@@ -25,6 +25,14 @@ __all__ = [
        'parse_common_log_format'
            ]
 
+"""
+    TODO: These should be the functions to extrapolate necessary measures,
+    based on existing update data from the local EDR system.
+    
+    These are to be implemented in the centralised data distribution
+    management system.
+"""
+
 
 def frequencies(data):
     """Extract frequencies from traces. Returns array of sorted frequencies

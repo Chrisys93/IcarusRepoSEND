@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """Network Model-View-Controller (MVC)
 
+TODO: Main Edge network data placement manager ("ERP") - to be implemented
+    appropriately, with a few placement strategies, probably, or a new
+    class for these specific data storage placement strategies, using the
+    inputs from service feedback, network updates, system-wide status updates
+    and service provision updates.
+
 This module contains classes providing an abstraction of the network shown to
 the strategy implementation. The network is modelled using an MVC design
 pattern.
