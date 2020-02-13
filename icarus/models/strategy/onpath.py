@@ -22,6 +22,8 @@ __all__ = [
            ]
 
 """
+    Caching strategies - ALL ON-PATH !!!
+    
     TODO: All of this needs to be reviewed, for both storage and service placement.
         Services should be placed on-path, the on-path caching should be retained
         for the strategies relevant for the normal uncoordinated service placement
@@ -29,7 +31,7 @@ __all__ = [
         The rest should be redeveloped to specifically place only services and/or
         functions in an uncoordinated manner and leave the data to be decided on in a
         centralised way, or, otherwise in a hybrid, centralised information, coordinated
-        with local service and data information and performance metrics
+        with local service and data information and performance metrics way
 """
 
 @register_strategy('PARTITION')

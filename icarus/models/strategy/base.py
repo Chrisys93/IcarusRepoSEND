@@ -37,6 +37,8 @@ class Strategy(object):
     def process_event(self, time, receiver, content, log, **kwargs):
         """Process an event received from the simulation engine.
 
+        TODO: Event processing FOR CONTROLLER -
+
         This event is processed by executing relevant actions of the network
         controller, potentially based on the current status of the network
         retrieved from the network view.

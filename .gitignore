@@ -17,3 +17,4 @@ doc/source/apidoc
 
 # Ignore plot files
 *.pdf
+/venv/

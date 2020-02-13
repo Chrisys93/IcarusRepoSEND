@@ -26,7 +26,7 @@ import sys
 import networkx as nx
 import fnss
 
-import heapq 
+import heapq
 
 from icarus.registry import CACHE_POLICY
 from icarus.util import path_links, iround
@@ -60,7 +60,7 @@ class Event(object):
         self.node = node
         self.service = service
         self.flow_id = flow_id
-        self.deadline = deadline 
+        self.deadline = deadline
         self.rtt_delay = rtt_delay
         self.status = status
         self.task = task
@@ -77,7 +77,9 @@ class Service(object):
         Parameters
         ----------
         service_time : computation time to process a request and produce results
-        deadline : the total amount of time (taking in to account the computational and network delays) to process the request for this service once the request leaves the user, for an acceptable level of QoS.
+        deadline : the total amount of time (taking into account the computational
+            and network delays) to process the request for this service once the request
+            leaves the user, for an acceptable level of QoS.
         """
 
         self.service_time = service_time
@@ -111,6 +113,10 @@ def symmetrify_paths(shortest_paths):
 
 class NetworkView(object):
     """Network view
+
+    TODO: Very important part of the ERP system view, for updating storage (and
+        service) allocation within the local EDR environment. To be used in
+        conjunction with the adapted "optimal placement" strategy, for the data.
 
     This class provides an interface that strategies and data collectors can
     use to know updated information about the status of the network.
@@ -266,7 +272,7 @@ class NetworkView(object):
             The link delay
         """
         return self.model.link_delay[(u, v)]
-    
+
     def path_delay(self, s, t):
         """Return the delay from *s* to *t*
 
@@ -308,7 +314,7 @@ class NetworkView(object):
         """
 
         return self.model.eventQ
-    
+
     def getRequestRate(self):
         """Return the request rate per second of the aggregate traffic 
         """
@@ -366,7 +372,7 @@ class NetworkView(object):
             *True* if the node has a cache, *False* otherwise
         """
         return node in self.model.cache
-    
+
     def has_computationalSpot(self, node):
         """Check if a node is a computational spot.
 
@@ -395,14 +401,14 @@ class NetworkView(object):
         has_service : bool,
             *True* if the node is running the service, *False* otherwise
         """
-        
+
         if self.has_computationalSpot(node):
             cs = self.model.compSpot[node]
             if cs.is_cloud:
                 return True
             elif cs.numberOfVMInstances[service] > 0:
                 return True
- 
+
         return False
 
     def cache_lookup(self, node, content):
@@ -566,7 +572,7 @@ class NetworkModel(object):
             for node in cache_size:
                 if cache_size[node] < 1:
                     cache_size[node] = 1
-        
+
         policy_name = cache_policy['name']
         policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
         # The actual cache objects storing the content
@@ -577,9 +583,9 @@ class NetworkModel(object):
         self.services = []
         self.n_services = n_services
         internal_link_delay = 0.001 # This is the delay from receiver to router
-        
+
         service_time_min = 0.10 # used to be 0.001
-        service_time_max = 0.10 # used to be 0.1 
+        service_time_max = 0.10 # used to be 0.1
         #delay_min = 0.005
         delay_min = 2*topology.graph['receiver_access_delay'] + service_time_max
         delay_max = delay_min + 2*topology.graph['depth']*topology.graph['link_delay'] + 0.005
@@ -596,7 +602,7 @@ class NetworkModel(object):
             #print ("Service " + str(service) + " has a deadline of " + str(deadline))
             self.services.append(s)
         #""" #END OF Generating Services
-        
+
         ### Prepare input for the optimizer
         if False:
             aFile = open('inputToOptimizer.txt', 'w')
@@ -622,8 +628,8 @@ class NetworkModel(object):
                     tostr += "," + str(ap)
             tostr += '\n'
             aFile.write(tostr)
-        
-            aFile.write("# 3. Set of nodes:\n")        
+
+            aFile.write("# 3. Set of nodes:\n")
             first = True
             tostr = ""
             for node in topology.nodes_iter():
@@ -639,7 +645,7 @@ class NetworkModel(object):
 
             aFile.write("# 4. NodeID, serviceID, numCores\n")
             if topology.graph['type'] == 'TREE':
-                ap_node_to_services = {} 
+                ap_node_to_services = {}
                 ap_node_to_delay = {}
                 for ap in topology.graph['receivers']:
                     node_to_delay = {}
@@ -647,7 +653,7 @@ class NetworkModel(object):
                     node_to_delay[ap] = 0.0
                     ap_node_to_services[ap] = node_to_services
                     ap_node_to_delay[ap] = node_to_delay
-                    for node in topology.nodes_iter(): 
+                    for node in topology.nodes_iter():
                         for egress, ingress in topology.edges_iter():
                             #print str(ingress) + " " + str(egress)
                             if ingress in node_to_delay.keys() and egress not in node_to_delay.keys():
@@ -663,7 +669,7 @@ class NetworkModel(object):
                     node_to_services = ap_node_to_services[ap]
                     node_to_delay = ap_node_to_delay[ap]
                     for node, services in node_to_services.items():
-                        s = str(ap) + "," + str(node) #+ "," + str(node_to_delay[node]) 
+                        s = str(ap) + "," + str(node) #+ "," + str(node_to_delay[node])
                         for serv in services:
                             s += "," + str(serv)
                         s += '\n'
@@ -679,7 +685,7 @@ class NetworkModel(object):
 
             aFile.close()
         ComputationSpot.services = self.services
-        self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None) 
+        self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None)
                             for node in comp_size}
         #print ("Generated Computation Spot Objects")
         sys.stdout.flush()
@@ -886,7 +892,7 @@ class NetworkController(object):
             return True
         else:
             return False
-    
+
     def remove_content(self, node):
         """Remove the content being handled from the cache
 
@@ -916,13 +922,13 @@ class NetworkController(object):
         """
         #if self.collector is not None and self.session[flow_id]['log']:
         self.collector.replacement_interval_over(replacement_interval, timestamp)
-            
+
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):
         """ Perform execution of the service at node with starting time
         """
 
         self.collector.execute_service(flow_id, service, node, timestamp, is_cloud)
-    
+
     def complete_task(self, task, timestamp):
         """ Perform execution of the task at node with starting time
         """
@@ -946,9 +952,9 @@ class NetworkController(object):
             raise ValueError("Error in reassign_vm(): service replaced and added are same")
 
 
-        compSpot.reassign_vm(self, time, serviceToReplace, serviceToAdd, debugFlag)  
+        compSpot.reassign_vm(self, time, serviceToReplace, serviceToAdd, debugFlag)
         self.collector.reassign_vm(compSpot.node, serviceToReplace, serviceToAdd)
-    
+
     def end_session(self, success=True, timestamp=0, flow_id=0):
         """Close a session
 

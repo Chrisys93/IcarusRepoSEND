@@ -17,6 +17,12 @@ __all__ = [
     'ShardedCache',
            ]
 
+"""
+So let me get this straight, these "systems" do not implement ANY delay or 
+any kind of change between fetching or adding data to or from specific nodes?!
+    - as it says at the end of the document, modeled as single caches - 
+ 
+"""
 
 @register_cache_policy('PATH')
 class PathCache(object):
@@ -39,6 +45,11 @@ class PathCache(object):
         """
         self._caches = caches
         self._len = len(caches)
+
+    """
+    TODO: Implement all the below methods, with the appropriate "cache" 
+        (implement EDRs as "caches")
+    """
 
     def __len__(self):
         return self._len

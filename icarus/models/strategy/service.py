@@ -38,6 +38,9 @@ class Coordinated(Strategy):
         after all the rest of the functional code for data placement, centralised
         data placement management and packet forwarding are ready for implementation.
 
+        ONE OF THE MAIN BUILDING BLOCKS of the next work. Could be changed so it
+        includes the local and global (ERP) resource and service feedback algorithms.
+
     A coordinated approach to route requests:
     i) Use global congestion information on Computation Spots to route requests.
     ii) Use global demand distribution to place services on Computation Spots.

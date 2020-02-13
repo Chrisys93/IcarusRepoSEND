@@ -29,10 +29,10 @@ TASK_COMPLETE = 2
 class OptimalPlacementAndScheduling(Strategy):
     """
     TODO: All these need to be revised and reversed, basically, with the data
-        placement, as the service placement should be uncoordinated and the
-        data placement should be managed, not the other way around. Otherwise
-        the name "On uncoordinated service placement [...]" would not be fit
-        for purpose.
+        placement, as the service placement or, rather the resource allocation
+        should be uncoordinated and the data placement should be managed, not
+        the other way around. Otherwise the name "On uncoordinated service
+        placement [...]" would not be fit for purpose.
 
     An optimal approach for scheduling 
     i) Use global congestion information on Computation Spots to route requests.
@@ -54,7 +54,7 @@ class OptimalPlacementAndScheduling(Strategy):
         ### inputs to optimizer
         self.riskAversionParameter = 0.0 #TODO: Ask Argyris
         self.S      = self.view.num_services()
-        self.G      = len(self.receivers) #number of groups 
+        self.G      = len(self.receivers) #number of groups ehhhh....what?!
         self.H      = len(self.compSpots) - 1 #number of nodes
         self.C      = cp.Parameter(self.H, value=np.zeros(self.H)) 
         self.x_bar  = {} # #variable: maximum number of group-node requests forwarded per services with size (Sx)GxH
