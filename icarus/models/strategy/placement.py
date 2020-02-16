@@ -33,6 +33,7 @@ class OptimalPlacementAndScheduling(Strategy):
         should be uncoordinated and the data placement should be managed, not
         the other way around. Otherwise the name "On uncoordinated service
         placement [...]" would not be fit for purpose.
+        THIS IS THE FILE WHERE CACHES ARE ASSOCIATED TO NODES!
 
     An optimal approach for scheduling 
     i) Use global congestion information on Computation Spots to route requests.

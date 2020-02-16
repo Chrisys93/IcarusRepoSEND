@@ -17,7 +17,7 @@ from icarus.registry import register_cache_policy
 
 
 __all__ = [
-        'RepoStorage'
+        'RepoStorage',
         'LinkedSet',
         'Cache',
         'NullCache',
@@ -451,86 +451,78 @@ class LinkedSet(object):
         self._map.clear()
 
 
-class RepoStorage:
 
 
 
     """
 
 
-/ **
-* Like in the DTNFileSystem, but here the
-* objects to be used and stored are messages
-* and this is a more complex system, with a collection
-* of messages and a certain capacity
-* /
-// private HashMap < String, Messages > staticMessages;
-
-/ ** Host where this file system belongs to * /
-private DTNHost host;
-private double compressionRate;
 
 
-protected ArrayList < Message > staticMessages;
-protected ArrayList < Message > processMessages;
-protected ArrayList < Message > processedMessages;
-protected ArrayList < Message > storedMessages;
+private DTNHost host
+private double compressionRate
 
-private ProcApplication procApp;
+
+protected ArrayList  staticMessages
+protected ArrayList  processMessages
+protected ArrayList  processedMessages
+protected ArrayList  storedMessages
+
+private ProcApplication procApp
 
 / ** value to keep track of used storage * /
-// protected long usedStorage;
+// protected long usedStorage
 
-protected Collection < Message > messages;
+protected Collection  messages
 
-public void init(DTNHost dtnHost, long storageSize, double compressionRate) :
-this.host = dtnHost;
-// this.messages = new Collection < Message > ();
-this.staticMessages = new ArrayList < Message > ();
-this.processMessages = new ArrayList < Message > ();
-this.processedMessages = new ArrayList < Message > ();
-this.storedMessages = new ArrayList < Message > ();
-this.storageSize = storageSize;
-this.processSize = 0;
-this.staticSize = 0;
-this.processedSize = 0;
-this.mFresh = 0;
-this.mStale = 0;
-this.mOvertime = 0;
-this.mSatisfied = 0;
-this.mUnSatisfied = 0;
-this.mUnProcessed = 0;
-this.mStorTimeNo = 0;
-this.mStorTimeAvg = 0;
-this.mStorTimeMax = 0;
-this.mStorTime = 0;
-this.nrofDeletedMessages = 0;
-this.deletedMessagesSize = 0;
-this.totalReceivedMessages = 0;
-this.totalReceivedMessagesSize = 0;
-this.depletedProcMessages = 0;
-this.oldDepletedProcMessagesSize = 0;
-this.depletedProcMessagesSize = 0;
-this.depletedCloudProcMessages = 0;
-this.oldDepletedCloudProcMessagesSize = 0;
-this.depletedCloudProcMessagesSize = 0;
-this.depletedUnProcMessages = 0;
-this.depletedUnProcMessagesSize = 0;
-this.depletedPUnProcMessages = 0;
-this.depletedPUnProcMessagesSize = 0;
-this.oldDepletedUnProcMessagesSize = 0;
-this.depletedStaticMessages = 0;
-this.depletedStaticMessagesSize = 0;
-this.oldDepletedStaticMessagesSize = 0;
-this.depletedCloudStaticMessages = 0;
-this.oldDepletedCloudStaticMessagesSize = 0;
-this.depletedCloudStaticMessagesSize = 0;
-this.cachedMessages = 0;
-if (this.getHost().hasProcessingCapability()):
-// this.processSize = processSize;
-this.compressionRate = compressionRate;
-double processedRatio = this.compressionRate * 2;
-this.processedSize = (long)(this.storageSize / processedRatio);
+ void init(DTNHost dtnHost, long storageSize, double compressionRate) :
+self.host = dtnHost
+// self.messages = new Collection  (self)
+self.staticMessages = new ArrayList  (self)
+self.processMessages = new ArrayList  (self)
+self.processedMessages = new ArrayList  (self)
+self.storedMessages = new ArrayList  (self)
+self.storageSize = storageSize
+self.processSize = 0
+self.staticSize = 0
+self.processedSize = 0
+self.mFresh = 0
+self.mStale = 0
+self.mOvertime = 0
+self.mSatisfied = 0
+self.mUnSatisfied = 0
+self.mUnProcessed = 0
+self.mStorTimeNo = 0
+self.mStorTimeAvg = 0
+self.mStorTimeMax = 0
+self.mStorTime = 0
+self.nrofDeletedMessages = 0
+self.deletedMessagesSize = 0
+self.totalReceivedMessages = 0
+self.totalReceivedMessagesSize = 0
+self.depletedProcMessages = 0
+self.oldDepletedProcMessagesSize = 0
+self.depletedProcMessagesSize = 0
+self.depletedCloudProcMessages = 0
+self.oldDepletedCloudProcMessagesSize = 0
+self.depletedCloudProcMessagesSize = 0
+self.depletedUnProcMessages = 0
+self.depletedUnProcMessagesSize = 0
+self.depletedPUnProcMessages = 0
+self.depletedPUnProcMessagesSize = 0
+self.oldDepletedUnProcMessagesSize = 0
+self.depletedStaticMessages = 0
+self.depletedStaticMessagesSize = 0
+self.oldDepletedStaticMessagesSize = 0
+self.depletedCloudStaticMessages = 0
+self.oldDepletedCloudStaticMessagesSize = 0
+self.depletedCloudStaticMessagesSize = 0
+self.cachedMessages = 0
+if (self.getHost(self).hasProcessingCapability(self)):
+// self.processSize = processSize
+self.compressionRate = compressionRate
+double processedRatio = self.compressionRate * 2
+self.processedSize = (long)(self.storageSize / processedRatio)
 }
 }
 
@@ -543,11 +535,11 @@ return total
 storage
 size
 * /
-public
+
 long
-getTotalStorageSpace()
+getTotalStorageSpace(self)
 :
-return this.storageSize;
+return self.storageSize
 }
 
 / **
@@ -566,11 +558,11 @@ message
 storage
 size
 * /
-public
+
 long
-getTotalProcessedSpace()
+getTotalProcessedSpace(self)
 :
-return this.processedSize;
+return self.processedSize
 }
 
 / ** Create
@@ -579,12 +571,12 @@ collection
 stored
 return method * /
 
-public
-Collection < Message > getStoredMessagesCollection()
+
+Collection  getStoredMessagesCollection(self)
 :
-    this.messages = this.staticMessages;
-this.messages.addAll(this.processMessages);
-return this.messages;
+    self.messages = self.staticMessages
+self.messages.addAll(self.processMessages)
+return self.messages
 }
 
 / ** Create
@@ -593,12 +585,12 @@ ArrayList
 stored
 return method * /
 
-public
-ArrayList < Message > getStoredMessages()
+
+ArrayList  getStoredMessages(self)
 :
-    this.storedMessages = this.staticMessages;
-this.storedMessages.addAll(this.processMessages);
-return this.storedMessages;
+    self.storedMessages = self.staticMessages
+self.storedMessages.addAll(self.processMessages)
+return self.storedMessages
 }
 
 / ** Create
@@ -607,10 +599,10 @@ ArrayList
 stored
 return method * /
 
-public
-ArrayList < Message > getProcessedMessages()
+
+ArrayList  getProcessedMessages(self)
 :
-return this.processedMessages;
+return self.processedMessages
 }
 
 / ** Create
@@ -619,10 +611,10 @@ ArrayList
 stored
 return method * /
 
-public
-ArrayList < Message > getProcessMessages()
+
+ArrayList  getProcessMessages(self)
 :
-return this.processMessages;
+return self.processMessages
 }
 
 / ** Create
@@ -631,10 +623,10 @@ ArrayList
 stored
 return method * /
 
-public
-ArrayList < Message > getStaticMessages()
+
+ArrayList  getStaticMessages(self)
 :
-return this.staticMessages;
+return self.staticMessages
 }
 
 / **
@@ -676,53 +668,53 @@ return true if the
 message is added
 correctly
 * /
-public
+
 void
 addToStoredMessages(Message
 sm) :
     double
-curTime = SimClock.getTime();
-if (sm != null)
+curTime = SimClock.getTime(self)
+if (sm is not None)
 :
 if (((String) sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
-if (host.hasStorageCapability())
+if (host.hasStorageCapability(self))
 :
-    this.staticMessages.add(sm);
-this.staticSize += sm.getSize();
+    self.staticMessages.add(sm)
+self.staticSize += sm.getSize(self)
 }
 }
-else if (((String) sm.getProperty("type")).equalsIgnoreCase("proc")) :
-if (host.hasProcessingCapability()) :
-this.processMessages.add(sm);
-this.processSize += sm.getSize();
+elif (((String) sm.getProperty("type")).equalsIgnoreCase("proc")) :
+if (host.hasProcessingCapability(self)) :
+self.processMessages.add(sm)
+self.processSize += sm.getSize(self)
 }
 }
-else if (((String) sm.getProperty("type")).equalsIgnoreCase("processed")) :
-this.processedMessages.add(sm);
+elif (((String) sm.getProperty("type")).equalsIgnoreCase("processed")) :
+self.processedMessages.add(sm)
 }
-else if (((String) sm.getProperty("type")).equalsIgnoreCase("unprocessed")) :
-if (host.hasStorageCapability()) :
-this.staticMessages.add(sm);
-this.staticSize += sm.getSize();
+elif (((String) sm.getProperty("type")).equalsIgnoreCase("unprocessed")) :
+if (host.hasStorageCapability(self)) :
+self.staticMessages.add(sm)
+self.staticSize += sm.getSize(self)
 }
 else :
-addToDeplStaticMessages(sm);
+addToDeplStaticMessages(sm)
 }
 }
-this.totalReceivedMessages++;
-this.totalReceivedMessagesSize += sm.getSize();
+self.totalReceivedMessages++
+self.totalReceivedMessagesSize += sm.getSize(self)
 / * add space used in the storage space * /
-// System.out.println("There is " + this.getStaticMessagesSize() + " storage used");
+// System.out.println("There is " + self.getStaticMessagesSize(self) + " storage used")
 }
-if ((this.staticSize + this.processSize) >= this.storageSize) :
-for (Application app: this.getHost().getRouter().getApplications("ProcApplication")) :
-    this.procApp = (ProcApplication)
-app;
-// System.out.println("App ID is: " + this.procApp.getAppID());
+if ((self.staticSize + self.processSize) >= self.storageSize) :
+for (Application app: self.getHost(self).getRouter(self).getApplications("ProcApplication")) :
+    self.procApp = (ProcApplication)
+app
+// System.out.println("App ID is: " + self.procApp.getAppID(self))
 }
 
-procApp.updateDeplBW(this.getHost());
-procApp.deplStorage(this.getHost());
+procApp.updateDeplBW(self.getHost(self))
+procApp.deplStorage(self.getHost(self))
 }
 }
 
@@ -745,38 +737,38 @@ add
 message is added
 correctly
 * /
-public
+
 void
 addToDeplStaticMessages(Message
 sm) :
-if (sm != null)
+if (sm is not None)
 :
-    this.depletedStaticMessages + +;
-this.depletedStaticMessagesSize += sm.getSize();
+    self.depletedStaticMessages + +
+self.depletedStaticMessagesSize += sm.getSize(self)
 if ((Boolean)sm.getProperty("overtime"))
-this.mOvertime + +;
+self.mOvertime + +
 if ((String)sm.getProperty("type") == "unprocessed") :
-    this.mUnProcessed + +;
-this.depletedUnProcMessages + +;
-this.depletedUnProcMessagesSize += sm.getSize();
+    self.mUnProcessed + +
+self.depletedUnProcMessages + +
+self.depletedUnProcMessagesSize += sm.getSize(self)
 }
 if ((Boolean)sm.getProperty("satisfied"))
-this.mSatisfied ++;
+self.mSatisfied ++
 else
-this.mUnSatisfied ++;
-if (sm.getProperty("storTime") != null) :
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+self.mUnSatisfied ++
+if (sm.getProperty("storTime") is not None) :
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime();
-sm.addProperty("storTime", curTime - sm.getReceiveTime());
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+double curTime = SimClock.getTime(self)
+sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 }
 }
@@ -800,35 +792,35 @@ add
 message is added
 correctly
 * /
-public
+
 void
 addToDeplProcMessages(Message
 sm) :
-if (sm != null)
+if (sm is not None)
 :
-    this.depletedProcMessages + +;
-this.depletedProcMessagesSize += sm.getSize();
+    self.depletedProcMessages + +
+self.depletedProcMessagesSize += sm.getSize(self)
 if ((Boolean)sm.getProperty("overtime"))
-this.mOvertime + +;
-this.mUnSatisfied + +;
+self.mOvertime + +
+self.mUnSatisfied + +
 if ((String)sm.getProperty("type") == "unprocessed") :
-    this.mUnProcessed + +;
-this.depletedUnProcMessages + +;
-this.depletedUnProcMessagesSize += sm.getSize();
+    self.mUnProcessed + +
+self.depletedUnProcMessages + +
+self.depletedUnProcMessagesSize += sm.getSize(self)
 }
-if (sm.getProperty("storTime") != null) :
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+if (sm.getProperty("storTime") is not None) :
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime();
-sm.addProperty("storTime", curTime - sm.getReceiveTime());
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+double curTime = SimClock.getTime(self)
+sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 }
 }
@@ -852,38 +844,38 @@ add
 message is added
 correctly
 * /
-public
+
 void
 addToCloudDeplStaticMessages(Message
 sm) :
-if (sm != null)
+if (sm is not None)
 :
-    this.depletedCloudStaticMessages + +;
-this.depletedCloudStaticMessagesSize += sm.getSize();
+    self.depletedCloudStaticMessages + +
+self.depletedCloudStaticMessagesSize += sm.getSize(self)
 if ((Boolean)sm.getProperty("overtime"))
-this.mOvertime + +;
+self.mOvertime + +
 if ((String)sm.getProperty("type") == "unprocessed") :
-    this.mUnProcessed + +;
-this.depletedUnProcMessages + +;
-this.depletedUnProcMessagesSize += sm.getSize();
+    self.mUnProcessed + +
+self.depletedUnProcMessages + +
+self.depletedUnProcMessagesSize += sm.getSize(self)
 }
 if ((Boolean)sm.getProperty("satisfied"))
-this.mSatisfied ++;
+self.mSatisfied ++
 else
-this.mUnSatisfied ++;
-if (sm.getProperty("storTime") != null) :
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+self.mUnSatisfied ++
+if (sm.getProperty("storTime") is not None) :
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime();
-sm.addProperty("storTime", curTime - sm.getReceiveTime());
-this.mStorTimeNo ++;
-this.mStorTime += (double)sm.getProperty("storTime");
-if (this.mStorTimeMax < (double)sm.getProperty("storTime"))
-this.mStorTimeMax = (double)sm.getProperty("storTime");
+double curTime = SimClock.getTime(self)
+sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+self.mStorTimeNo ++
+self.mStorTime += (double)sm.getProperty("storTime")
+if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
+self.mStorTimeMax = (double)sm.getProperty("storTime")
 }
 }
 }
@@ -900,7 +892,7 @@ the
 "depleted processed"
 messages, even
 though
-this
+self
 message
 *would
 be
@@ -910,9 +902,9 @@ the
 cloud
 for processing instead.The
     *tradeoff
-    for this problem is accounted for by increasing BW
+    for self problem is accounted for by increasing BW
 *of
-depletion.This is a
+depletion.self is a
 last - resort
 solution.
 * @ param
@@ -925,12 +917,12 @@ add
 message is added
 correctly
 * /
-public
+
 void
 addToDeplUnProcMessages(Message
 sm) :
-    sm.updateProperty("type", "unprocessed");
-host.getStorageSystem().addToStoredMessages(sm);
+    sm.updateProperty("type", "unprocessed")
+host.getStorageSystem(self).addToStoredMessages(sm)
 }
 
 / **
@@ -952,16 +944,16 @@ add
 message is added
 correctly
 * /
-public
+
 void
 addToDepletedUnProcMessages(Message
 sm) :
-if (sm != null)
+if (sm is not None)
 :
 if ((String)sm.getProperty("type") == "unprocessed") :
-    this.depletedUnProcMessages + +;
-this.depletedUnProcMessagesSize += sm.getSize();
-this.mUnProcessed + +;
+    self.depletedUnProcMessages + +
+self.depletedUnProcMessagesSize += sm.getSize(self)
+self.mUnProcessed + +
 }
 }
 }
@@ -982,22 +974,22 @@ file
 * @ return The
 message
 * /
-public
+
 Message
 getStaticMessage(String
 MessageId) :
     Message
-staticMessage = null;
-for (Message temp: this.staticMessages)
+staticMessage = null
+for (Message temp: self.staticMessages)
 :
-if (temp.getId() == MessageId)
+if (temp.getId(self) == MessageId)
 :
     int
-i = this.staticMessages.indexOf(temp);
-staticMessage = this.staticMessages.get(i);
+i = self.staticMessages.indexOf(temp)
+staticMessage = self.staticMessages.get(i)
 }
 }
-return staticMessage;
+return staticMessage
 }
 
 / **
@@ -1017,22 +1009,22 @@ file
 return The
 message
 * /
-public
+
 Message
 getProcessedMessage(String
 MessageId) :
     Message
-processedMessage = null;
-for (Message temp: this.processedMessages)
+processedMessage = null
+for (Message temp: self.processedMessages)
 :
-if (temp.getId() == MessageId)
+if (temp.getId(self) == MessageId)
 :
     int
-i = this.processedMessages.indexOf(temp);
-processedMessage = this.processedMessages.get(i);
+i = self.processedMessages.indexOf(temp)
+processedMessage = self.processedMessages.get(i)
 }
 }
-return processedMessage;
+return processedMessage
 }
 
 / **
@@ -1052,22 +1044,22 @@ file
 return The
 message
 * /
-public
+
 Message
 getProcessMessage(String
 MessageId) :
     Message
-processMessage = null;
-for (Message temp: this.processMessages)
+processMessage = null
+for (Message temp: self.processMessages)
 :
-if (temp.getId() == MessageId)
+if (temp.getId(self) == MessageId)
 :
     int
-i = this.processMessages.indexOf(temp);
-processMessage = this.processMessages.get(i);
+i = self.processMessages.indexOf(temp)
+processMessage = self.processMessages.get(i)
 }
 }
-return processMessage;
+return processMessage
 }
 
 / **
@@ -1084,16 +1076,16 @@ registered
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 int
-getStorTimeNo()
+getStorTimeNo(self)
 :
-return this.mStorTimeNo;
+return self.mStorTimeNo
 }
 
 / **
@@ -1110,17 +1102,17 @@ registered
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 double
-getStorTimeAvg()
+getStorTimeAvg(self)
 :
-    this.mStorTimeAvg = this.mStorTime / this.mStorTimeNo;
-return this.mStorTimeAvg;
+    self.mStorTimeAvg = self.mStorTime / self.mStorTimeNo
+return self.mStorTimeAvg
 }
 
 / **
@@ -1137,16 +1129,16 @@ registered
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 double
-getStorTimeMax()
+getStorTimeMax(self)
 :
-return this.mStorTimeMax;
+return self.mStorTimeMax
 }
 
 / **
@@ -1155,7 +1147,7 @@ the
 number
 of
 files
-this
+self
 file
 system
 has
@@ -1163,16 +1155,16 @@ has
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 int
-getNrofMessages()
+getNrofMessages(self)
 :
-return this.staticMessages.size();
+return self.staticMessages.size(self)
 }
 
 / **
@@ -1181,7 +1173,7 @@ the
 number
 of
 files
-this
+self
 file
 system
 has
@@ -1189,16 +1181,16 @@ has
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 int
-getNrofProcessMessages()
+getNrofProcessMessages(self)
 :
-return this.processMessages.size();
+return self.processMessages.size(self)
 }
 
 / **
@@ -1207,7 +1199,7 @@ the
 number
 of
 files
-this
+self
 file
 system
 has
@@ -1215,16 +1207,16 @@ has
 return How
 many
 files
-this
+self
 file
 system
 has
 * /
-public
+
 int
-getNrofProcessedMessages()
+getNrofProcessedMessages(self)
 :
-return this.processedMessages.size();
+return self.processedMessages.size(self)
 }
 
 / **
@@ -1234,7 +1226,7 @@ total
 size
 of
 stored
-messages in this
+messages in self
 storage
 system
 * @
@@ -1243,15 +1235,15 @@ size
 of
 the
 used
-storage in this
+storage in self
 storage
 system
 * /
-public
+
 long
-getStaticMessagesSize()
+getStaticMessagesSize(self)
 :
-return this.staticSize;
+return self.staticSize
 }
 
 / **
@@ -1276,25 +1268,25 @@ the
 used
 storage
 for valid, satisfied shelf - life
-    *messages in this
+    *messages in self
     storage
     system
     * /
-    public
+    
     long
-    getStaleStaticMessagesSize()
+    getStaleStaticMessagesSize(self)
     :
         double
-    curTime = SimClock.getTime();
+    curTime = SimClock.getTime(self)
     long
-    size = 0;
-    for (Message m: this.staticMessages) :
-    if (m.getProperty("shelfLife") != null & &
-        ((double) m.getProperty("shelfLife")) >= curTime - m.getReceiveTime()) :
-    size += m.getSize();
+    size = 0
+    for (Message m: self.staticMessages) :
+    if (m.getProperty("shelfLife") is not None & &
+        ((double) m.getProperty("shelfLife")) >= curTime - m.getReceiveTime(self)) :
+    size += m.getSize(self)
     }
     }
-    return size;
+    return size
     }
 
     / **
@@ -1306,7 +1298,7 @@ for valid, satisfied shelf - life
     messages
     to
     be
-    processed in this
+    processed in self
     storage
     system
     * @
@@ -1316,15 +1308,15 @@ for valid, satisfied shelf - life
     the
     used
     processing
-    storage in this
+    storage in self
     storage
     system
     * /
-    public
+    
     long
-    getProcMessagesSize()
+    getProcMessagesSize(self)
     :
-    return this.processSize;
+    return self.processSize
     }
 
     / **
@@ -1336,7 +1328,7 @@ for valid, satisfied shelf - life
     messages
     to
     be
-    processed in this
+    processed in self
     storage
     system
     * @
@@ -1346,20 +1338,20 @@ for valid, satisfied shelf - life
     the
     used
     processing
-    storage in this
+    storage in self
     storage
     system
     * /
-    public
+    
     long
-    getProcessedMessagesSize()
+    getProcessedMessagesSize(self)
     :
         long
-    processedUsed = 0;
-    for (Message msg:this.processedMessages) :
-        processedUsed += msg.getSize();
+    processedUsed = 0
+    for (Message msg:self.processedMessages) :
+        processedUsed += msg.getSize(self)
     }
-    return processedUsed;
+    return processedUsed
     }
 
     / **
@@ -1372,7 +1364,7 @@ for valid, satisfied shelf - life
     messages
     being
     added.
-    * This is called
+    * self is called
     every
     application
     update.
@@ -1387,21 +1379,21 @@ for valid, satisfied shelf - life
     full
     storage
     * /
-    public
+    
     int
-    getFullCachedMessagesNo()
+    getFullCachedMessagesNo(self)
     :
         int
-    proc = this.cachedMessages;
-    this.cachedMessages = 0;
-    return proc;
+    proc = self.cachedMessages
+    self.cachedMessages = 0
+    return proc
     }
 
     / **
     *Returns
     the
     host
-    this
+    self
     repo
     storage
     system is in
@@ -1411,13 +1403,13 @@ for valid, satisfied shelf - life
     * /
     protected
     DTNHost
-    getHost()
+    getHost(self)
     :
-    return this.host;
+    return self.host
     }
 
     / **
-    *Check if this
+    *Check if self
     storage
     system
     has
@@ -1433,36 +1425,36 @@ for valid, satisfied shelf - life
     the
     file
     * @
-    return true if this
+    return true if self
     file
     system
     has
     the
     file
     * /
-    public
+    
     Message
     hasMessage(String
     MessageId) :
         Message
-    answer = null;
+    answer = null
 
-    for (int j=0; j < this.processedMessages.size(); j++):
-    if (this.processedMessages.get(j).getId() == MessageId):
-    answer =  this.processedMessages.get(j);
+    for (int j=0 j < self.processedMessages.size(self) j++):
+    if (self.processedMessages.get(j).getId(self) == MessageId):
+    answer =  self.processedMessages.get(j)
     }
     }
-    for (int i=0; i < this.staticMessages.size(); i++):
-    if (this.staticMessages.get(i).getId() == MessageId):
-    answer =  this.staticMessages.get(i);
+    for (int i=0 i < self.staticMessages.size(self) i++):
+    if (self.staticMessages.get(i).getId(self) == MessageId):
+    answer =  self.staticMessages.get(i)
     }
     }
-    for (int i=0; i < this.processMessages.size(); i++):
-    if (this.processMessages.get(i).getId() == MessageId):
-    answer =  this.processMessages.get(i);
+    for (int i=0 i < self.processMessages.size(self) i++):
+    if (self.processMessages.get(i).getId(self) == MessageId):
+    answer =  self.processMessages.get(i)
     }
     }
-    return answer;
+    return answer
     }
 
     / **
@@ -1474,18 +1466,18 @@ for valid, satisfied shelf - life
     deletion
     status
     * /
-    public
+    
     boolean
     deleteStaticMessage(String
     MessageId):
-    for (int i=0; i < staticMessages.size(); i++):
-    if (staticMessages.get(i).getId() == MessageId):
-    this.staticSize -= staticMessages.get(i).getSize();
-    this.staticMessages.remove(i);
-    return true;
+    for (int i=0 i < staticMessages.size(self) i++):
+    if (staticMessages.get(i).getId(self) == MessageId):
+    self.staticSize -= staticMessages.get(i).getSize(self)
+    self.staticMessages.remove(i)
+    return true
     }
     }
-    return false;
+    return false
     }
 
     / **
@@ -1497,18 +1489,18 @@ for valid, satisfied shelf - life
     deletion
     status
     * /
-    public
+    
     boolean
     deleteProcMessage(String
     MessageId):
-    for (int i=0; i < processMessages.size(); i++):
-    if (processMessages.get(i).getId() == MessageId):
-    this.processSize -= processMessages.get(i).getSize();
-    this.processMessages.remove(i);
-    return true;
+    for (int i=0 i < processMessages.size(self) i++):
+    if (processMessages.get(i).getId(self) == MessageId):
+    self.processSize -= processMessages.get(i).getSize(self)
+    self.processMessages.remove(i)
+    return true
     }
     }
-    return false;
+    return false
     }
 
     / **
@@ -1520,28 +1512,28 @@ for valid, satisfied shelf - life
     deletion
     status
     * /
-    public
+    
     boolean
     deleteMessage(String
     MessageId):
         Message
-    m = this.hasMessage(MessageId);
-    if (m != null):
+    m = self.hasMessage(MessageId)
+    if (m is not None):
     if (((String)m.getProperty("type")).equalsIgnoreCase("proc") & & deleteProcMessage(MessageId)) :
-    return true;
+    return true
     }
-    else if (((String)m.getProperty("type")).equalsIgnoreCase("nonproc") & & deleteStaticMessage(MessageId)) :
-    return true;
+    elif (((String)m.getProperty("type")).equalsIgnoreCase("nonproc") & & deleteStaticMessage(MessageId)) :
+    return true
 }
-else if (((String)m.getProperty("type")).equalsIgnoreCase("unprocessed") & & deleteStaticMessage(MessageId)) :
-return true;
+elif (((String)m.getProperty("type")).equalsIgnoreCase("unprocessed") & & deleteStaticMessage(MessageId)) :
+return true
 }
-if (!this.getHost().hasStorageCapability()) :
-this.nrofDeletedMessages + +;
-this.deletedMessagesSize += m.getSize();
+if (!self.getHost(self).hasStorageCapability(self)) :
+self.nrofDeletedMessages + +
+self.deletedMessagesSize += m.getSize(self)
 }
 }
-return false;
+return false
 }
 
 / **
@@ -1553,7 +1545,7 @@ return successful
 deletion
 status
 * /
-public
+
 boolean
 deleteProcessedMessage(String
 MessageId, boolean
@@ -1565,138 +1557,138 @@ used in event,
 for deleting processed messages
 * after "sending" / depleting them.
 * /
-for (int i=0; i < processedMessages.size(); i++):
-if (processedMessages.get(i).getId() == MessageId):
-this.depletedCloudProcMessages++;
-this.depletedCloudProcMessagesSize += this.processedMessages.get(i).getSize();
+for (int i=0 i < processedMessages.size(self) i++):
+if (processedMessages.get(i).getId(self) == MessageId):
+self.depletedCloudProcMessages++
+self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize(self)
 if (report) :
-if (this.processedMessages.get(i).getProperty("overtime") != null) :
-if ((Boolean)this.processedMessages.get(i).getProperty("overtime"))
-this.mOvertime ++;
+if (self.processedMessages.get(i).getProperty("overtime") is not None) :
+if ((Boolean)self.processedMessages.get(i).getProperty("overtime"))
+self.mOvertime ++
 }
-if (this.processedMessages.get(i).getProperty("satisfied") != null) :
-if ((Boolean)this.processedMessages.get(i).getProperty("satisfied"))
-this.mSatisfied ++;
+if (self.processedMessages.get(i).getProperty("satisfied") is not None) :
+if ((Boolean)self.processedMessages.get(i).getProperty("satisfied"))
+self.mSatisfied ++
 else
-this.mUnSatisfied ++;
+self.mUnSatisfied ++
 }
-if (this.processedMessages.get(i).getProperty("Fresh") != null) :
+if (self.processedMessages.get(i).getProperty("Fresh") is not None) :
 if ((Boolean)processedMessages.get(i).getProperty("Fresh"))
-this.mFresh++;
-else if (!(Boolean)processedMessages.get(i).getProperty("Fresh"))
-this.mStale++;
+self.mFresh++
+elif (!(Boolean)processedMessages.get(i).getProperty("Fresh"))
+self.mStale++
 }
 }
-this.processedMessages.remove(i);
-return true;
+self.processedMessages.remove(i)
+return true
 }
 }
-return false;
+return false
 }
 
-public
+
 long
-getNrofDeletedMessages()
+getNrofDeletedMessages(self)
 :
-return this.nrofDeletedMessages;
+return self.nrofDeletedMessages
 }
 
-public
+
 long
-getSizeofDeletedMessages()
+getSizeofDeletedMessages(self)
 :
-return this.deletedMessagesSize;
+return self.deletedMessagesSize
 }
 
-public
+
 long
-getNrofDepletedCloudProcMessages()
+getNrofDepletedCloudProcMessages(self)
 :
-return this.depletedCloudProcMessages;
+return self.depletedCloudProcMessages
 }
 
-public
+
 int
-getNrofFreshMessages()
+getNrofFreshMessages(self)
 :
-return this.mFresh;
+return self.mFresh
 }
 
-public
+
 int
-getNrofStaleMessages()
+getNrofStaleMessages(self)
 :
-return this.mStale;
+return self.mStale
 }
 
-public
+
 int
-getNrofSatisfiedMessages()
+getNrofSatisfiedMessages(self)
 :
-return this.mSatisfied;
+return self.mSatisfied
 }
 
-public
+
 int
-getNrofUnSatisfiedMessages()
+getNrofUnSatisfiedMessages(self)
 :
-return this.mUnSatisfied;
+return self.mUnSatisfied
 }
 
-public
+
 int
-getNrofOvertimeMessages()
+getNrofOvertimeMessages(self)
 :
-return this.mOvertime;
+return self.mOvertime
 }
 
-public
+
 int
-getNrofUnProcessedMessages()
+getNrofUnProcessedMessages(self)
 :
-return this.mUnProcessed;
+return self.mUnProcessed
 }
 
-public
+
 long
-getNrofDepletedUnProcMessages()
+getNrofDepletedUnProcMessages(self)
 :
-return this.depletedUnProcMessages;
+return self.depletedUnProcMessages
 }
 
-public
+
 long
-getNrofDepletedPUnProcMessages()
+getNrofDepletedPUnProcMessages(self)
 :
-return this.depletedPUnProcMessages;
+return self.depletedPUnProcMessages
 }
 
-public
+
 long
-getNrofDepletedStaticMessages()
+getNrofDepletedStaticMessages(self)
 :
-return this.depletedStaticMessages;
+return self.depletedStaticMessages
 }
 
-public
+
 long
-getNrofDepletedCloudStaticMessages()
+getNrofDepletedCloudStaticMessages(self)
 :
-return this.depletedCloudStaticMessages;
+return self.depletedCloudStaticMessages
 }
 
-public
+
 double
-getOverallMeanIncomingMesssageNo()
+getOverallMeanIncomingMesssageNo(self)
 :
-return (this.totalReceivedMessages / SimClock.getTime());
+return (self.totalReceivedMessages / SimClock.getTime(self))
 }
 
-public
+
 double
-getOverallMeanIncomingSpeed()
+getOverallMeanIncomingSpeed(self)
 :
-return (this.totalReceivedMessagesSize / SimClock.getTime());
+return (self.totalReceivedMessagesSize / SimClock.getTime(self))
 }
 
 / **
@@ -1717,17 +1709,17 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedCloudProcMessagesBW(boolean
 reporting) :
     long
-procBW = this.depletedCloudProcMessagesSize - this.oldDepletedCloudProcMessagesSize;
+procBW = self.depletedCloudProcMessagesSize - self.oldDepletedCloudProcMessagesSize
 if (reporting)
 :
-    this.oldDepletedCloudProcMessagesSize = this.depletedCloudProcMessagesSize;
+    self.oldDepletedCloudProcMessagesSize = self.depletedCloudProcMessagesSize
 }
-return (procBW);
+return (procBW)
 }
 
 / **
@@ -1757,17 +1749,17 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedUnProcMessagesBW(boolean
 reporting) :
     long
-procBW = this.depletedUnProcMessagesSize - this.oldDepletedUnProcMessagesSize;
+procBW = self.depletedUnProcMessagesSize - self.oldDepletedUnProcMessagesSize
 if (reporting)
 :
-    this.oldDepletedUnProcMessagesSize = this.depletedUnProcMessagesSize;
+    self.oldDepletedUnProcMessagesSize = self.depletedUnProcMessagesSize
 }
-return (procBW);
+return (procBW)
 }
 
 / **
@@ -1797,17 +1789,17 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedPUnProcMessagesBW(boolean
 reporting) :
     long
-procBW = this.depletedPUnProcMessagesSize - this.oldDepletedPUnProcMessagesSize;
+procBW = self.depletedPUnProcMessagesSize - self.oldDepletedPUnProcMessagesSize
 if (reporting)
 :
-    this.oldDepletedPUnProcMessagesSize = this.depletedPUnProcMessagesSize;
+    self.oldDepletedPUnProcMessagesSize = self.depletedPUnProcMessagesSize
 }
-return (procBW);
+return (procBW)
 }
 
 / **
@@ -1828,17 +1820,17 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedCloudStaticMessagesBW(boolean
 reporting) :
     long
-statBW = this.depletedCloudStaticMessagesSize - this.oldDepletedCloudStaticMessagesSize;
+statBW = self.depletedCloudStaticMessagesSize - self.oldDepletedCloudStaticMessagesSize
 if (reporting)
 :
-    this.oldDepletedCloudStaticMessagesSize = this.depletedCloudStaticMessagesSize;
+    self.oldDepletedCloudStaticMessagesSize = self.depletedCloudStaticMessagesSize
 }
-return (statBW);
+return (statBW)
 }
 
 / **
@@ -1859,17 +1851,17 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedProcMessagesBW(boolean
 reporting) :
     long
-procBW = this.depletedProcMessagesSize - this.oldDepletedProcMessagesSize;
+procBW = self.depletedProcMessagesSize - self.oldDepletedProcMessagesSize
 if (reporting)
 :
-    this.oldDepletedProcMessagesSize = this.depletedProcMessagesSize;
+    self.oldDepletedProcMessagesSize = self.depletedProcMessagesSize
 }
-return (procBW);
+return (procBW)
 }
 
 / **
@@ -1890,543 +1882,544 @@ BW
 used
 upstream
 * /
-public
+
 long
 getDepletedStaticMessagesBW(boolean
 reporting) :
     long
-statBW = this.depletedStaticMessagesSize - this.oldDepletedStaticMessagesSize;
+statBW = self.depletedStaticMessagesSize - self.oldDepletedStaticMessagesSize
 if (reporting)
 :
-    this.oldDepletedStaticMessagesSize = this.depletedStaticMessagesSize;
+    self.oldDepletedStaticMessagesSize = self.depletedStaticMessagesSize
 }
-return (statBW);
+return (statBW)
 }
 
-public
+
 boolean
-clearAllStaticMessages()
+clearAllStaticMessages(self)
 :
-this.staticMessages.clear();
-return true;
+self.staticMessages.clear(self)
+return true
 }
 
-public
+
 long
-getFreeStorageSpace()
+getFreeStorageSpace(self)
 :
 long
-usedStorage = this.getStaticMessagesSize();
-// System.out.println("There is " + usedStorage + " storage used in " + this.getHost());
+usedStorage = self.getStaticMessagesSize(self)
+// System.out.println("There is " + usedStorage + " storage used in " + self.getHost(self))
 long
-freeStorage = this.storageSize - usedStorage;
-// System.out.println("There is " + freeStorage + " free storage space in " + this.getHost());
-return freeStorage;
+freeStorage = self.storageSize - usedStorage
+// System.out.println("There is " + freeStorage + " free storage space in " + self.getHost(self))
+return freeStorage
 }
 
-/ *public
+/ *
 boolean
-isStorageFull()
+isStorageFull(self)
 :
 long
-usedStorage = this.getStaticMessagesSize();
-if (usedStorage >= this.storageSize - 100000000):
-return true;
+usedStorage = self.getStaticMessagesSize(self)
+if (usedStorage >= self.storageSize - 100000000):
+return true
 }
 else :
-return false;
+return false
 }
 }
 
-public
+
 boolean
-isProcessingFull()
+isProcessingFull(self)
 :
     long
-usedProc = this.getProcMessagesSize();
-if (usedProc >= this.processSize - 2000000)
+usedProc = self.getProcMessagesSize(self)
+if (usedProc >= self.processSize - 2000000)
 :
-// System.out.println("There is enough storage space: " + freeStorage);
-return true;
+// System.out.println("There is enough storage space: " + freeStorage)
+return true
 }
 else :
-// System.out.println("There is not enough storage space: " + freeStorage);
-return false;
+// System.out.println("There is not enough storage space: " + freeStorage)
+return false
 }
 } * /
 
-public
+
 boolean
-isProcessingEmpty()
+isProcessingEmpty(self)
 :
 //
 try :
-// System.setOut(new PrintStream(new FileOutputStream("log.txt")));
+// System.setOut(new PrintStream(new FileOutputStream("log.txt")))
 //} catch(Exception e) :}
-if (this.processSize <= 2000000):
-// System.out.println("There is enough storage space: " + freeStorage);
-return true;
+if (self.processSize <= 2000000):
+// System.out.println("There is enough storage space: " + freeStorage)
+return true
 }
 else :
-// System.out.println("There is not enough storage space: " + freeStorage);
-return false;
+// System.out.println("There is not enough storage space: " + freeStorage)
+return false
 }
 }
 
-public
+
 boolean
-isProcessedFull()
+isProcessedFull(self)
 :
     long
-usedProcessed = this.getProcessedMessagesSize();
+usedProcessed = self.getProcessedMessagesSize(self)
 // try :
-// System.setOut(new PrintStream(new FileOutputStream("log.txt")));
+// System.setOut(new PrintStream(new FileOutputStream("log.txt")))
 //} catch(Exception e) :}
-if (usedProcessed >= this.processedSize - 500000):
-// System.out.println("There is enough storage space: " + freeStorage);
-return true;
+if (usedProcessed >= self.processedSize - 500000):
+// System.out.println("There is enough storage space: " + freeStorage)
+return true
 }
 else :
-// System.out.println("There is not enough storage space: " + freeStorage);
-return false;
+// System.out.println("There is not enough storage space: " + freeStorage)
+return false
 }
 }
 
-public
+
 boolean
-isProcessedEmpty()
+isProcessedEmpty(self)
 :
     long
-usedProc = this.getProcessedMessagesSize();
+usedProc = self.getProcessedMessagesSize(self)
 // try :
-// System.setOut(new PrintStream(new FileOutputStream("log.txt")));
+// System.setOut(new PrintStream(new FileOutputStream("log.txt")))
 //} catch(Exception e) :}
 if (usedProc <= 2000000):
-// System.out.println("There is enough storage space: " + freeStorage);
-return true;
+// System.out.println("There is enough storage space: " + freeStorage)
+return true
 }
 else :
-// System.out.println("There is not enough storage space: " + freeStorage);
-return false;
+// System.out.println("There is not enough storage space: " + freeStorage)
+return false
 }
 }
 
-public
+
 Message
-getOldestProcessMessage()
+getOldestProcessMessage(self)
 :
     Message
-oldest = null;
-for (Message m: this.processMessages)
+oldest = null
+for (Message m: self.processMessages)
 :
 
 if (oldest == null) :
-oldest = m;
+oldest = m
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime()) :
-oldest = m;
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+oldest = m
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getOldestValidProcessMessage()
+getOldestValidProcessMessage(self)
 :
 Message
-oldest = null;
-for (Message m: this.processMessages) :
+oldest = null
+for (Message m: self.processMessages) :
 
 if (oldest == null) :
-if (m.getProperty("type") != null & & m.getProperty("Fresh") == null) :
+if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null) :
 if (!((String) m.getProperty("type")).equalsIgnoreCase("unprocessed") & &
 !((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("type") != null & &
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & &
 m.getProperty("Fresh") == null) :
 if (!((String) m.getProperty("type")).equalsIgnoreCase("unprocessed") & &
 !((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getOldestInvalidProcessMessage()
+getOldestInvalidProcessMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.processMessages) :
+oldest = null
+for (Message m: self.processMessages) :
 
 if (oldest == null) :
-if (m.getProperty("type") != null & & m.getProperty("shelfLife") != null) :
+if (m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("proc") & &
-((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime()) :
-oldest = m;
+((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("type") != null & & m.getProperty("shelfLife") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("proc") & &
-((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime()) :
-oldest = m;
+((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getOldestDeplUnProcMessage()
+getOldestDeplUnProcMessage(self)
 :
 Message
-oldest = null;
-for (Message m: this.staticMessages) :
+oldest = null
+for (Message m: self.staticMessages) :
 
 if (oldest == null) :
-if (m.getProperty("type") != null) :
+if (m.getProperty("type") is not None) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("type") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
 
 
-public
+
 Message
-getNewestProcessMessage()
+getNewestProcessMessage(self)
 :
 Message
-newest = null;
-for (Message m: this.processMessages) :
+newest = null
+for (Message m: self.processMessages) :
 
 if (newest == null) :
-if (m.getProperty("type") != null & & m.getProperty("Fresh") == null) :
+if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("proc")) :
-newest = m;
+newest = m
 }
 }
 }
-else if (newest.getReceiveTime() < m.getReceiveTime() & & m.getProperty("type") != null & &
+elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("type") is not None & &
 m.getProperty("Fresh") == null) :
 if (((String) m.getProperty("type")).equalsIgnoreCase("proc")) :
-newest = m;
+newest = m
 }
 }
 }
-return newest;
+return newest
 }
 
-public
+
 Message
-getOldestProcessedMessage()
+getOldestProcessedMessage(self)
 :
 Message
-oldest = null;
-for (Message m: this.processedMessages) :
+oldest = null
+for (Message m: self.processedMessages) :
 
 if (oldest == null) :
-oldest = m;
+oldest = m
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime()) :
-oldest = m;
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+oldest = m
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getOldestFreshMessage()
+getOldestFreshMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.processedMessages) :
+oldest = null
+for (Message m: self.processedMessages) :
 
 if (oldest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("type") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("type") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("type") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getNewestFreshMessage()
+getNewestFreshMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-newest = null;
-for (Message m: this.processedMessages) :
+newest = null
+for (Message m: self.processedMessages) :
 
 if (newest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("type") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-newest = m;
+newest = m
 }
 }
 }
-else if (newest.getReceiveTime() < m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("type") != null) :
+elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("type") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-newest = m;
+newest = m
 }
 }
 }
-return newest;
+return newest
 }
 
-public
+
 Message
-getOldestShelfMessage()
+getOldestShelfMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.processedMessages) :
+oldest = null
+for (Message m: self.processedMessages) :
 
 if (oldest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("type") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("type") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("type") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getNewestShelfMessage()
+getNewestShelfMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-newest = null;
-for (Message m: this.processedMessages) :
+newest = null
+for (Message m: self.processedMessages) :
 
 if (newest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("procTime") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
-newest = m;
+newest = m
 }
 }
 }
-else if (newest.getReceiveTime() < m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("type") != null) :
+elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("type") is not None) :
 if (!((Boolean) m.getProperty("Fresh") & & ((String) m.getProperty("type")).equalsIgnoreCase("processed"))) :
-newest = m;
+newest = m
 }
 }
 }
-return newest;
+return newest
 }
 
 
 
 
-public
+
 Message
-getOldestQueueFreshMessage()
+getOldestQueueFreshMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.processMessages) :
+oldest = null
+for (Message m: self.processMessages) :
 
 if (oldest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("procTime") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("procTime") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("procTime") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getNewestQueueFreshMessage()
+getNewestQueueFreshMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-newest = null;
-for (Message m: this.processMessages) :
+newest = null
+for (Message m: self.processMessages) :
 
 if (newest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("procTime") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-newest = m;
+newest = m
 }
 }
 }
-else if (newest.getReceiveTime() < m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("procTime") != null) :
+elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("procTime") is not None) :
 if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-newest = m;
+newest = m
 }
 }
 }
-return newest;
+return newest
 }
 
-public
+
 Message
-getOldestQueueShelfMessage()
+getOldestQueueShelfMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.processMessages) :
+oldest = null
+for (Message m: self.processMessages) :
 
 if (oldest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("procTime") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-oldest = m;
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("procTime") != null) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("procTime") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-oldest = m;
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getNewestQueueShelfMessage()
+getNewestQueueShelfMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-newest = null;
-for (Message m: this.processMessages) :
+newest = null
+for (Message m: self.processMessages) :
 
 if (newest == null) :
-if (m.getProperty("Fresh") != null & & m.getProperty("procTime") != null) :
+if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
 if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
-newest = m;
+newest = m
 }
 }
 }
-else if (newest.getReceiveTime() < m.getReceiveTime() & & m.getProperty("Fresh") != null & &
-m.getProperty("procTime") != null) :
+elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+m.getProperty("procTime") is not None) :
 if (!((Boolean) m.getProperty("Fresh") & & (double)m.getProperty("procTime") <= curTime)) :
-newest = m;
+newest = m
 }
 }
 }
-return newest;
+return newest
 }
 
 
 
-public
+
 Message
-getOldestStaticMessage()
+getOldestStaticMessage(self)
 :
 Message
-oldest = null;
-for (Message m: this.staticMessages) :
+oldest = null
+for (Message m: self.staticMessages) :
 
 if (oldest == null) :
-oldest = m;
+oldest = m
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime()) :
-oldest = m;
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+oldest = m
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 Message
-getOldestStaleStaticMessage()
+getOldestStaleStaticMessage(self)
 :
 double
-curTime = SimClock.getTime();
+curTime = SimClock.getTime(self)
 Message
-oldest = null;
-for (Message m: this.staticMessages) :
+oldest = null
+for (Message m: self.staticMessages) :
 
 if (oldest == null) :
-if (m.getProperty("shelfLife") != null) :
-if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime()) :
-oldest = m;
+if (m.getProperty("shelfLife") is not None) :
+if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+oldest = m
 }
 }
 }
-else if (oldest.getReceiveTime() > m.getReceiveTime() & & m.getProperty("shelfLife") != null) :
-if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime()) :
-oldest = m;
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("shelfLife") is not None) :
+if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+oldest = m
 }
 }
 }
-return oldest;
+return oldest
 }
 
-public
+
 double
-getCompressionRate()
+getCompressionRate(self)
 :
-return this.compressionRate;
+return self.compressionRate
 }
     """
-    
+
+class RepoStorage(object):
     def __init__(self, storageSize, compressionRate):
         """Constructor
 
@@ -2435,8 +2428,1020 @@ return this.compressionRate;
         maxlen : int
             The maximum number of items the cache can store
         """
-        raise NotImplementedError('This method is not implemented')
+        self.host = dtnHost
+        #self.messages = new
+        #Collection  ()
+        self.staticMessages = list ()
+        self.processMessages = list ()
+        self.processedMessages = list ()
+        self.storedMessages = list ()
+        self.storageSize = storageSize
+        self.processSize = 0
+        self.staticSize = 0
+        self.processedSize = 0
+        self.mFresh = 0
+        self.mStale = 0
+        self.mOvertime = 0
+        self.mSatisfied = 0
+        self.mUnSatisfied = 0
+        self.mUnProcessed = 0
+        self.mStorTimeNo = 0
+        self.mStorTimeAvg = 0
+        self.mStorTimeMax = 0
+        self.mStorTime = 0
+        self.nrofDeletedMessages = 0
+        self.deletedMessagesSize = 0
+        self.totalReceivedMessages = 0
+        self.totalReceivedMessagesSize = 0
+        self.depletedProcMessages = 0
+        self.oldDepletedProcMessagesSize = 0
+        self.depletedProcMessagesSize = 0
+        self.depletedCloudProcMessages = 0
+        self.oldDepletedCloudProcMessagesSize = 0
+        self.depletedCloudProcMessagesSize = 0
+        self.depletedUnProcMessages = 0
+        self.depletedUnProcMessagesSize = 0
+        self.depletedPUnProcMessages = 0
+        self.depletedPUnProcMessagesSize = 0
+        self.oldDepletedUnProcMessagesSize = 0
+        self.depletedStaticMessages = 0
+        self.depletedStaticMessagesSize = 0
+        self.oldDepletedStaticMessagesSize = 0
+        self.depletedCloudStaticMessages = 0
+        self.oldDepletedCloudStaticMessagesSize = 0
+        self.depletedCloudStaticMessagesSize = 0
+        self.cachedMessages = 0
+        if (self.getHost().hasProcessingCapability()):
+            # self.processSize = processSize
+        self.compressionRate = compressionRate
+        processedRatio = self.compressionRate * 2
+        self.processedSize = self.storageSize / processedRatio
 
+    def getTotalStorageSpace(self):
+        return self.storageSize
+    
+    def getTotalProcessedSpace(self):
+        return self.processedSize
+
+    def getStoredMessagesCollection(self):
+        self.messages = self.staticMessages
+        self.messages.addAll(this.processMessages)
+        return self.messages
+    def getStoredMessages(self):
+        self.storedMessages = self.staticMessages
+        self.storedMessages.addAll(self.processMessages)
+        return self.storedMessages
+
+    def getProcessedMessages(self):
+        return self.processedMessages
+    def getProcessMessages(self):
+        return self.processMessages
+    def getStaticMessages(self):
+        return self.staticMessages
+    def addToStoredMessages(self, sm) :
+        """
+           TODO: Check indentation here! (in original, java implementation)
+            Also, check the "selfs" in the parantheses. Those should mostly
+            be the associated objects for which the functions are called.
+            Does the cache have to have a host, or is IT the host? Should
+            the simulator reference a host, for routing, or the cache itself?
+        """
+
+        curTime = SimClock.getTime(self)
+        if (sm is not None):
+            if ((sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
+                if (host.hasStorageCapability(self)):
+                    self.staticMessages.add(sm)
+                    self.staticSize += sm.getSize(self)
+
+            elif (sm.getProperty("type").equalsIgnoreCase("proc")):
+                if (host.hasProcessingCapability(self)) :
+                    self.processMessages.add(sm)
+                    self.processSize += sm.getSize(self)
+
+                elif (sm.getProperty("type").equalsIgnoreCase("processed")):
+                    self.processedMessages.add(sm)
+
+                elif (sm.getProperty("type")).equalsIgnoreCase("unprocessed"):
+                    if (self.host.hasStorageCapability(self)) :
+                        self.staticMessages.add(sm)
+                        self.staticSize += sm.getSize(self)
+
+            else:
+                self.addToDeplStaticMessages(sm)
+            self.totalReceivedMessages++
+            self.totalReceivedMessagesSize += sm.getSize(self)
+# add space used in the storage space * /
+# System.out.println("There is " + self.getStaticMessagesSize(self) + " storage used");
+
+        if (self.staticSize + self.processSize) >= self.storageSize:
+            for (app in self.getHost(self).getRouter(self).getApplications("ProcApplication")) :
+                self.procApp = app
+# System.out.println("App ID is: " + self.procApp.getAppID(self));
+
+            procApp.updateDeplBW(self.getHost(self))
+            procApp.deplStorage(self.getHost(self))
+
+    def addToDeplStaticMessages(self, sm) :
+        if sm is not None:
+             self.depletedStaticMessages + +
+            self.depletedStaticMessagesSize += sm.getSize(self)
+        if sm.getProperty("overtime") :
+            self.mOvertime + +
+        if sm.getProperty("type") == "unprocessed" :
+            self.mUnProcessed + +
+            self.depletedUnProcMessages + +
+            self.depletedUnProcMessagesSize += sm.getSize(self)
+        if sm.getProperty("satisfied") :
+            self.mSatisfied ++
+        else
+            self.mUnSatisfied ++
+        if sm.getProperty("storTime") is not None:
+            self.mStorTimeNo ++
+            self.mStorTime += sm.getProperty("storTime")
+        if self.mStorTimeMax < sm.getProperty("storTime"):
+            self.mStorTimeMax = sm.getProperty("storTime")
+
+        else :
+            double curTime = SimClock.getTime(self)
+            sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+            self.mStorTimeNo ++
+            self.mStorTime += sm.getProperty("storTime")
+        if self.mStorTimeMax < sm.getProperty("storTime"):
+            self.mStorTimeMax = sm.getProperty("storTime")
+
+    def addToDeplProcMessages(self, sm) :
+        if (sm is not None):
+            self.depletedProcMessages + +
+            self.depletedProcMessagesSize += sm.getSize(self)
+            if (sm.getProperty("overtime"))
+                self.mOvertime + +
+                self.mUnSatisfied + +
+            if (sm.getProperty("type") == "unprocessed") :
+                self.mUnProcessed + +
+                self.depletedUnProcMessages + +
+                self.depletedUnProcMessagesSize += sm.getSize(self)
+
+                if (sm.getProperty("storTime") is not None) :
+                    self.mStorTimeNo ++
+                    self.mStorTime += sm.getProperty("storTime")
+                if (self.mStorTimeMax < sm.getProperty("storTime"))
+                    self.mStorTimeMax = sm.getProperty("storTime")
+
+            else :
+                curTime = SimClock.getTime(self)
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+                self.mStorTimeNo ++
+                self.mStorTime += sm.getProperty("storTime")
+                if (self.mStorTimeMax < sm.getProperty("storTime"))
+                    self.mStorTimeMax = sm.getProperty("storTime")
+
+    def addToCloudDeplStaticMessages(self, sm) :
+        if (sm is not None):
+            self.depletedCloudStaticMessages + +
+            self.depletedCloudStaticMessagesSize += sm.getSize(self)
+            if (sm.getProperty("overtime"))
+                self.mOvertime + +
+            if (sm.getProperty("type") == "unprocessed") :
+                self.mUnProcessed + +
+                self.depletedUnProcMessages + +
+                self.depletedUnProcMessagesSize += sm.getSize(self)
+
+            if (sm.getProperty("satisfied"))
+                self.mSatisfied ++
+            else
+                self.mUnSatisfied ++
+            if (sm.getProperty("storTime") is not None) :
+                self.mStorTimeNo ++
+                self.mStorTime += sm.getProperty("storTime")
+            if (self.mStorTimeMax < sm.getProperty("storTime"))
+                self.mStorTimeMax = sm.getProperty("storTime")
+
+            else :
+                double curTime = SimClock.getTime(self)
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
+                self.mStorTimeNo ++
+                self.mStorTime += sm.getProperty("storTime")
+            if (self.mStorTimeMax < sm.getProperty("storTime"))
+                self.mStorTimeMax = sm.getProperty("storTime")
+
+    def addToDeplUnProcMessages(self, sm) :
+        sm.updateProperty("type", "unprocessed")
+        host.getStorageSystem(self).addToStoredMessages(sm)
+
+    def addToDepletedUnProcMessages(self, sm):
+        if (sm is not None):
+            if ((String)sm.getProperty("type") == "unprocessed"):
+                self.depletedUnProcMessages + +
+            self.depletedUnProcMessagesSize += sm.getSize(self)
+            self.mUnProcessed ++
+
+    def getStaticMessage(self, MessageId) :
+        staticMessage = None
+        for (temp: self.staticMessages):
+            if (temp.getId(self) == MessageId):
+                i = self.staticMessages.indexOf(temp)
+                staticMessage = self.staticMessages.get(i)
+        return staticMessage
+
+    def getProcessedMessage(self, MessageId) :
+        processedMessage = None
+        for (Message temp: self.processedMessages):
+            if (temp.getId(self) == MessageId):
+                i = self.processedMessages.indexOf(temp)
+                processedMessage = self.processedMessages.get(i)
+        return processedMessage
+    def getProcessMessage(self, MessageId) :
+        processMessage = None
+        for (Message temp: self.processMessages):
+            if (temp.getId(self) == MessageId):
+                i = self.processMessages.indexOf(temp)
+                processMessage = self.processMessages.get(i)
+        return processMessage
+    def getStorTimeNo(self):
+        return self.mStorTimeNo
+
+    def getStorTimeAvg(self):
+        self.mStorTimeAvg = self.mStorTime / self.mStorTimeNo
+        return self.mStorTimeAvg
+
+    def getStorTimeMax(self):
+        return self.mStorTimeMax
+
+    def getNrofMessages(self):
+        return self.staticMessages.size(self)
+
+    def getNrofProcessMessages(self):
+        return self.processMessages.size(self)
+
+    def getNrofProcessedMessages(self):
+        return self.processedMessages.size(self)
+
+    def getStaticMessagesSize(self):
+        return self.staticSize
+
+    def getStaleStaticMessagesSize(self):
+        curTime = SimClock.getTime(self)
+        size = 0
+        for (Message m: self.staticMessages) :
+            if (m.getProperty("shelfLife") is not None && ((double) m.getProperty("shelfLife")) >= curTime - m.getReceiveTime(self)) :
+                size += m.getSize(self)
+                return size
+
+    def getProcMessagesSize(self):
+        return self.processSize
+
+    def getProcessedMessagesSize(self):
+        processedUsed = 0
+        for (Message msg:self.processedMessages) :
+            processedUsed += msg.getSize(self)
+            return processedUsed
+            
+    def getFullCachedMessagesNo(self):
+        proc = self.cachedMessages
+        self.cachedMessages = 0
+        return proc
+    
+    def hasMessage(self, MessageId):
+        answer = None
+        for (int j=0 j < self.processedMessages.size(self) j++):
+            if (self.processedMessages.get(j).getId(self) == MessageId):
+                answer =  self.processedMessages.get(j)
+        for (int i=0 i < self.staticMessages.size(self) i++):
+            if (self.staticMessages.get(i).getId(self) == MessageId):
+                answer =  self.staticMessages.get(i)
+        for (int i=0 i < self.processMessages.size(self) i++):
+            if (self.processMessages.get(i).getId(self) == MessageId):
+                answer =  self.processMessages.get(i)
+        return answer
+
+
+    def deleteStaticMessage(self, MessageId):
+        for i in range(0, self.staticMessages.size()):
+            if (self.staticMessages.get(i).getId() == MessageId):
+                self.staticSize -= self.staticMessages.get(i).getSize()
+                self.staticMessages.remove(i)
+                return True
+        return False
+
+
+
+    """
+    *Method
+    for deleting specific message to be processed
+    * @ param MessageId ID of message to be deleted
+    * @
+    return successful
+    deletion
+    status
+    """
+
+    def deleteProcMessage(self, MessageId):
+        for i in (0, self.processMessages.size()):
+            if (self.processMessages.get(i).getId(self) == MessageId):
+                self.processSize -= self.processMessages.get(i).getSize(self)
+                self.processMessages.remove(i)
+                return True
+
+
+        return False
+
+
+    """
+    *Method
+    for deleting specific message from storage
+    * @ param MessageId ID of message to be deleted
+    * @
+    return successful
+    deletion
+    status
+    """
+
+
+    def deleteMessage(self, MessageId):
+        m = self.hasMessage(MessageId)
+        if m is not None:
+            if m.getProperty("type").equalsIgnoreCase("proc") && deleteProcMessage(MessageId):
+                return True
+
+            elif m.getProperty("type").equalsIgnoreCase("nonproc") && deleteStaticMessage(MessageId):
+                return True
+
+            elif m.getProperty("type").equalsIgnoreCase("unprocessed") && deleteStaticMessage(MessageId):
+                return True
+
+            if (!self.getHost(self).hasStorageCapability(self)):
+                self.nrofDeletedMessages + +
+                self.deletedMessagesSize += m.getSize(self)
+
+
+        return False
+
+
+    """
+    *Method
+    for deleting specific processed message
+    * @ param MessageId ID of message to be deleted
+    * @
+    return successful
+    deletion
+    status
+    """
+
+
+    def deleteProcessedMessage(self, MessageId, report):
+        """
+        *To
+        be
+        used in event,
+        for deleting processed messages
+        *after
+        "sending" / depleting
+        them.
+
+        TODO: Check the ifs in original code - make code right. did not report every message.
+            Reporting is not done right.
+        """
+        for ( i=0 i < processedMessages.size(self) i + +):
+            if (processedMessages.get(i).getId(self) == MessageId):
+                self.depletedCloudProcMessages + +
+                self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize(self)
+
+        if (self.processedMessages.get(i).getProperty("overtime") is not None):
+            if (self.processedMessages.get(i).getProperty("overtime")):
+                self.mOvertime + +
+
+        if (self.processedMessages.get(i).getProperty("satisfied") is not None):
+            if(self.processedMessages.get(i).getProperty("satisfied")):
+                self.mSatisfied + +
+        else
+            self.mUnSatisfied + +
+
+        if (self.processedMessages.get(i).getProperty("Fresh") is not None):
+            if(processedMessages.get(i).getProperty("Fresh")):
+                self.mFresh + +
+            elif (!self.processedMessages.get(i).getProperty("Fresh")):
+                self.mStale + +
+
+        self.processedMessages.remove(i)
+        return True
+
+
+
+
+    def getNrofDeletedMessages(self):
+        return self.nrofDeletedMessages
+
+
+
+
+    def getSizeofDeletedMessages(self):
+        return self.deletedMessagesSize
+
+
+
+
+    def getNrofDepletedCloudProcMessages(self):
+        return self.depletedCloudProcMessages
+
+
+
+
+    def getNrofFreshMessages(self):
+        return self.mFresh
+
+
+
+
+    def getNrofStaleMessages(self):
+        return self.mStale
+
+
+
+
+    def getNrofSatisfiedMessages(self):
+        return self.mSatisfied
+
+
+
+
+    def getNrofUnSatisfiedMessages(self):
+        return self.mUnSatisfied
+
+
+
+
+    def getNrofOvertimeMessages(self):
+        return self.mOvertime
+
+
+
+
+    def getNrofUnProcessedMessages(self):
+        return self.mUnProcessed
+
+
+
+
+    def getNrofDepletedUnProcMessages(self):
+        return self.depletedUnProcMessages
+
+
+
+
+    def getNrofDepletedPUnProcMessages(self):
+        return self.depletedPUnProcMessages
+
+
+
+
+    def getNrofDepletedStaticMessages(self):
+        return self.depletedStaticMessages
+
+
+
+
+    def getNrofDepletedCloudStaticMessages(self):
+        return self.depletedCloudStaticMessages
+
+
+
+
+    def getOverallMeanIncomingMesssageNo(self):
+        return (self.totalReceivedMessages / SimClock.getTime(self))
+
+    def getOverallMeanIncomingSpeed(self):
+        return (self.totalReceivedMessagesSize / SimClock.getTime(self))
+
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used
+    for processed messages.
+    * @ param reporting Whether the function is used for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    processed
+    depletion
+    BW
+    used
+    upstream
+    """
+
+
+    def getDepletedCloudProcMessagesBW(self, reporting):
+
+        procBW = self.depletedCloudProcMessagesSize - self.oldDepletedCloudProcMessagesSize
+        if (reporting):
+            self.oldDepletedCloudProcMessagesSize = self.depletedCloudProcMessagesSize
+    
+        return (procBW)
+
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used in off - loading
+    static
+    messages
+    to
+    the
+    cloud.
+    * @ param
+    reporting
+    Whether
+    the
+    function is used
+    for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    static
+    depletion
+    BW
+    used
+    upstream
+    """
+
+    
+    def getDepletedUnProcMessagesBW(self, reporting):
+    
+        procBW = self.depletedUnProcMessagesSize - self.oldDepletedUnProcMessagesSize
+        if (reporting):
+            self.oldDepletedUnProcMessagesSize = self.depletedUnProcMessagesSize
+        return (procBW)
+        
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used in off - loading
+    unprocessed
+    messages
+    to
+    the
+    cloud.
+    * @ param
+    reporting
+    Whether
+    the
+    function is used
+    for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    unprocessed
+    depletion
+    BW
+    used
+    upstream
+    """
+
+        
+    def getDepletedPUnProcMessagesBW(self, reporting):
+        
+        procBW = self.depletedPUnProcMessagesSize - self.oldDepletedPUnProcMessagesSize
+        if (reporting):
+            self.oldDepletedPUnProcMessagesSize = self.depletedPUnProcMessagesSize
+            
+        return (procBW)
+            
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used
+    for non - processing messages.
+    * @ param reporting Whether the function is used for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    non - processing
+    depletion
+    BW
+    used
+    upstream
+    """
+
+            
+    def getDepletedCloudStaticMessagesBW(self, reporting):
+        statBW = self.depletedCloudStaticMessagesSize - self.oldDepletedCloudStaticMessagesSize
+        if (reporting):
+            self.oldDepletedCloudStaticMessagesSize = self.depletedCloudStaticMessagesSize
+                
+        return (statBW)
+                
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used
+    for processed messages.
+    * @ param reporting Whether the function is used for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    processed
+    depletion
+    BW
+    used
+    upstream
+    """
+
+                
+    def getDepletedProcMessagesBW(self, reporting):
+        procBW = self.depletedProcMessagesSize - self.oldDepletedProcMessagesSize
+        if (reporting):
+            self.oldDepletedProcMessagesSize = self.depletedProcMessagesSize
+                    
+        return (procBW)
+                    
+
+    """
+    *Method
+    that
+    returns
+    depletion
+    BW
+    used
+    for non - processing messages.
+    * @ param reporting Whether the function is used for reporting,
+    * as a final method of the update, or for checking BW usage.
+    * @
+    return the
+    non - processing
+    depletion
+    BW
+    used
+    upstream
+    """
+
+                    
+    def getDepletedStaticMessagesBW(self, reporting):
+        statBW = self.depletedStaticMessagesSize - self.oldDepletedStaticMessagesSize
+        if (reporting):
+            self.oldDepletedStaticMessagesSize = self.depletedStaticMessagesSize
+        return (statBW)
+
+    def clearAllStaticMessages(self):
+        self.staticMessages.clear(self)
+        return true
+                        
+
+
+                        
+    def getFreeStorageSpace(self):
+        usedStorage = self.getStaticMessagesSize(self)
+        # System.out.prln("There is " + usedStorage + " storage used in " + self.getHost(self))
+        freeStorage = self.storageSize - usedStorage
+        # System.out.prln("There is " + freeStorage + " free storage space in " + self.getHost(self))
+        return freeStorage
+                        
+
+    """
+                        
+    isStorageFull(self):
+    usedStorage = self.getStaticMessagesSize(self)
+                        if (usedStorage >= self.storageSize - 100000000):
+                            return true
+                        
+                        else:
+                        return false
+                        
+                        
+
+
+                        
+                        isProcessingFull(self)
+                        :
+                        
+                        usedProc = self.getProcMessagesSize(self)
+                        if (usedProc >= self.processSize - 2000000)
+                        :
+                            #
+                        System.out.prln("There is enough storage space: " + freeStorage)
+                        return true
+                        
+                        else:
+                        # System.out.prln("There is not enough storage space: " + freeStorage)
+                        return false
+                        
+    """
+
+                        
+    def isProcessingEmpty(self):
+                        #try:
+                        # System.setOut(new PrStream(new FileOutputStream("log.txt")))
+                        # catch(Exception e):
+                        if (self.processSize <= 2000000):
+                        # System.out.prln("There is enough storage space: " + freeStorage)
+                            return true
+                            
+                        else:
+                            # System.out.prln("There is not enough storage space: " + freeStorage)
+                            return false
+                            
+                            
+
+
+                            
+    def isProcessedFull(self):
+        usedProcessed = self.getProcessedMessagesSize(self)
+        #try:
+        # System.setOut(new Stream(new FileOutputStream("log.txt")))
+        # catch(Exception e):
+        if (usedProcessed >= self.processedSize - 500000):
+        # System.out.prln("There is enough storage space: " + freeStorage)
+            return true
+                                
+        else:
+            # System.out.prln("There is not enough storage space: " + freeStorage)
+            return false
+                                
+                                
+
+
+                                
+    def isProcessedEmpty(self):
+        usedProc = self.getProcessedMessagesSize(self)
+        #try:
+        # System.setOut(new PrStream(new FileOutputStream("log.txt")))
+        # catch(Exception e):
+        if (usedProc <= 2000000):
+        # System.out.prln("There is enough storage space: " + freeStorage)
+            return true
+
+        else:
+            # System.out.prln("There is not enough storage space: " + freeStorage)
+            return false
+                                    
+                                    
+
+
+    def getOldestProcessMessage(self):
+        oldest = null
+        for (Message m: self.processMessages):
+            if (oldest == null):
+                oldest = m
+                                    
+            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
+                oldest = m
+
+        return oldest
+                                    
+
+    def getOldestValidProcessMessage(self):
+        oldest = null
+        for (Message m: self.processMessages):
+            if (oldest == null):
+                if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
+                    if (!(()m.getProperty("type")).equalsIgnoreCase("unprocessed") & & !(() m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                                    
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
+                    if (!(() m.getProperty("type")).equalsIgnoreCase("unprocessed") & & !(() m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                                    
+        return oldest
+                                    
+
+
+    def getOldestInvalidProcessMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.processMessages):
+            if (oldest == null):
+                if (m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("proc") & & (() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+                        oldest = m
+                                    
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("proc") & & (() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+                        oldest = m
+                                    
+        return oldest
+                                    
+
+    def getOldestDeplUnProcMessage(self):
+        oldest = null
+        for (Message m: self.staticMessages):
+            if (oldest == null):
+                if (m.getProperty("type") is not None):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("unprocessed")):
+                        oldest = m
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("unprocessed")):
+                        oldest = m
+
+        return oldest
+                                    
+
+
+
+
+    def getNewestProcessMessage(self):
+        newest = null
+        for (Message m: self.processMessages):
+            if (newest == null):
+                if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("proc")):
+                        newest = m
+                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
+                    if ((() m.getProperty("type")).equalsIgnoreCase("proc")):
+                        newest = m
+                                    
+        return newest
+                                    
+
+
+    def getOldestProcessedMessage(self):
+        oldest = null
+        for (Message m: self.processedMessages):
+            if (oldest == null):
+                oldest = m
+                                    
+            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
+                oldest = m
+                                    
+        return oldest
+
+
+    def getOldestFreshMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.processedMessages):
+            if (oldest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                                    
+        return oldest
+                                    
+
+    def GetNewestFreshMessage(self):
+        curTime = SimClock.getTime(self)
+        newest = null
+        for (Message m: self.processedMessages):
+            if (newest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
+                        newest = m
+                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if ((() m.getProperty("Fresh")) & & (m.getProperty("type")).equalsIgnoreCase("processed")):
+                        newest = m
+                                    
+        return newest
+                                    
+
+    def getOldestShelfMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.processedMessages):
+            if (oldest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if (!(()m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if (!(() m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                                    
+        return oldest
+                                    
+    def getNewestShelfMessage(self):
+        curTime = SimClock.getTime(self)
+        newest = null
+        for (Message m: self.processedMessages):
+            if (newest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if (!(()m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+                        newest = m
+                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
+                    if (!(() m.getProperty("Fresh") & & (() m.getProperty("type")).equalsIgnoreCase("processed"))):
+                        newest = m
+                                    
+        return newest
+
+
+    def getOldestQueueFreshMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.processMessages):
+            if (oldest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if ((() m.getProperty("Fresh")) & & ()m.getProperty("procTime") <= curTime):
+                        oldest = m
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+                                          m.getProperty("procTime") is not None):
+                                    if ((() m.getProperty("Fresh")) & & (
+                                    )m.getProperty("procTime") <= curTime):
+                                        oldest = m
+                                    
+        return oldest
+                                    
+
+
+    def getNewestQueueFreshMessage(self):
+        curTime = SimClock.getTime(self)
+        newest = null
+        for (Message m: self.processMessages):
+            if (newest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if ((() m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
+                        newest = m
+                                    
+                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if ((() m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
+                        newest = m
+                                    
+        return newest
+                                    
+
+    def getOldestQueueShelfMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.processMessages):
+            if (oldest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if (!(m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
+                        oldest = m
+                                    
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if (!(m.getProperty("Fresh")) & & ()m.getProperty("procTime") <= curTime):
+                        oldest = m
+                                    
+        return oldest
+                                    
+
+    def getNewestQueueShelfMessage(self):
+        curTime = SimClock.getTime(self)
+        newest = null
+        for (Message m: self.processMessages):
+            if (newest == null):
+                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if(!m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
+                        newest = m
+                                    
+                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
+                    if (!(() m.getProperty("Fresh") & & ()m.getProperty("procTime") <= curTime)):
+                        newest = m
+                                    
+        return newest
+
+
+    def getOldestStaticMessage(self):
+        oldest = null
+        for (Message m: self.staticMessages):
+            if (oldest == null):
+                oldest = m
+                                    
+            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
+                oldest = m
+                                    
+                                    
+        return oldest
+                                    
+
+    def getOldestStaleStaticMessage(self):
+        curTime = SimClock.getTime(self)
+        oldest = null
+        for (Message m: self.staticMessages):
+            if (oldest == null):
+                if (m.getProperty("shelfLife") is not None):
+                    if ((() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+                        oldest = m
+                                    
+                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("shelfLife") is not None):
+                    if ((() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+                        oldest = m
+
+        return oldest
+                                    
+
+
+                                    
+    def getCompressionRate(self):
+        return self.compressionRate
+                                    
 
 class Cache(object):
     """Base implementation of a cache object"""
