@@ -11,6 +11,12 @@ A valid ICN topology must have the following attributes:
    of router nodes on which a cache may be possibly deployed. Caches are not
    deployed directly at topology creation, instead they are deployed by a
    cache placement algorithm.
+
+   TODO: This file shows the topology nodes and their
+        This might need to be changed, because the structure seems a bit different
+        in our case. Are "receivers" strictly receivers, even if they send requests
+        for services? If that is the case, then that's fine. Or, even so, I'd imagine
+        some nodes could be both at different instances of time, anyway...?
 """
 from __future__ import division
 

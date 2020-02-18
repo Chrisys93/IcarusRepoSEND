@@ -4,6 +4,9 @@
 This module provides algorithms for performing cache placement, i.e., given
 a cumulative cache size and a topology where each possible node candidate is
 labelled, these functions deploy caching space to the nodes of the topology.
+
+TODO:
+        THIS IS THE FILE WHERE CACHES ARE ASSOCIATED TO NODES!
 """
 from __future__ import division
 import random

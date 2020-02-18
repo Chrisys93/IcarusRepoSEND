@@ -448,7 +448,7 @@ class LinkedSet(object):
         """Empty the set"""
         self._top = None
         self._bottom = None
-        self._map.clear()
+        self._map.clear
 
 
 
@@ -460,7 +460,7 @@ class LinkedSet(object):
 
 
 private DTNHost host
-private double compressionRate
+private  compressionRate
 
 
 protected ArrayList  staticMessages
@@ -475,7 +475,7 @@ private ProcApplication procApp
 
 protected Collection  messages
 
- void init(DTNHost dtnHost, long storageSize, double compressionRate) :
+ void init(DTNHost dtnHost, long storageSize,  compressionRate) :
 self.host = dtnHost
 // self.messages = new Collection  (self)
 self.staticMessages = new ArrayList  (self)
@@ -521,7 +521,7 @@ self.cachedMessages = 0
 if (self.getHost(self).hasProcessingCapability(self)):
 // self.processSize = processSize
 self.compressionRate = compressionRate
-double processedRatio = self.compressionRate * 2
+ processedRatio = self.compressionRate * 2
 self.processedSize = (long)(self.storageSize / processedRatio)
 }
 }
@@ -664,7 +664,7 @@ message
 to
 add
 * @
-return true if the
+return True if the
 message is added
 correctly
 * /
@@ -672,49 +672,49 @@ correctly
 void
 addToStoredMessages(Message
 sm) :
-    double
-curTime = SimClock.getTime(self)
+    
+
 if (sm is not None)
 :
-if (((String) sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
+if (( sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
 if (host.hasStorageCapability(self))
 :
     self.staticMessages.add(sm)
 self.staticSize += sm.getSize(self)
 }
 }
-elif (((String) sm.getProperty("type")).equalsIgnoreCase("proc")) :
+elif (( sm.getProperty("type")).equalsIgnoreCase("proc")) :
 if (host.hasProcessingCapability(self)) :
 self.processMessages.add(sm)
-self.processSize += sm.getSize(self)
+self.processSize += sm.getSize()
 }
 }
-elif (((String) sm.getProperty("type")).equalsIgnoreCase("processed")) :
+elif (( sm.getProperty("type")).equalsIgnoreCase("processed")) :
 self.processedMessages.add(sm)
 }
-elif (((String) sm.getProperty("type")).equalsIgnoreCase("unprocessed")) :
-if (host.hasStorageCapability(self)) :
+elif (( sm.getProperty("type")).equalsIgnoreCase("unprocessed")) :
+if (host.hasStorageCapability()) :
 self.staticMessages.add(sm)
-self.staticSize += sm.getSize(self)
+self.staticSize += sm.getSize()
 }
 else :
 addToDeplStaticMessages(sm)
 }
 }
-self.totalReceivedMessages++
-self.totalReceivedMessagesSize += sm.getSize(self)
+self.totalReceivedMessages+= 1
+self.totalReceivedMessagesSize += sm.getSize()
 / * add space used in the storage space * /
-// System.out.println("There is " + self.getStaticMessagesSize(self) + " storage used")
+// System.out.println("There is " + self.getStaticMessagesSize() + " storage used")
 }
 if ((self.staticSize + self.processSize) >= self.storageSize) :
-for (Application app: self.getHost(self).getRouter(self).getApplications("ProcApplication")) :
+for (Application app: self.getHost().getRouter().getApplications("ProcApplication")) :
     self.procApp = (ProcApplication)
 app
-// System.out.println("App ID is: " + self.procApp.getAppID(self))
+// System.out.println("App ID is: " + self.procApp.getAppID())
 }
 
-procApp.updateDeplBW(self.getHost(self))
-procApp.deplStorage(self.getHost(self))
+procApp.updateDeplBW(self.getHost())
+procApp.deplStorage(self.getHost())
 }
 }
 
@@ -733,7 +733,7 @@ The
 message
 to
 add
-* @ return true if the
+* @ return True if the
 message is added
 correctly
 * /
@@ -743,32 +743,32 @@ addToDeplStaticMessages(Message
 sm) :
 if (sm is not None)
 :
-    self.depletedStaticMessages + +
-self.depletedStaticMessagesSize += sm.getSize(self)
+    self.depletedStaticMessages += 1
+self.depletedStaticMessagesSize += sm.getSize()
 if ((Boolean)sm.getProperty("overtime"))
-self.mOvertime + +
-if ((String)sm.getProperty("type") == "unprocessed") :
-    self.mUnProcessed + +
-self.depletedUnProcMessages + +
+self.mOvertime += 1
+if (sm.getProperty("type") == "unprocessed") :
+    self.mUnProcessed += 1
+self.depletedUnProcMessages += 1
 self.depletedUnProcMessagesSize += sm.getSize(self)
 }
 if ((Boolean)sm.getProperty("satisfied"))
-self.mSatisfied ++
+self.mSatisfied += 1
 else
-self.mUnSatisfied ++
+self.mUnSatisfied += 1
 if (sm.getProperty("storTime") is not None) :
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime(self)
-sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+ 
+sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 }
 }
@@ -788,7 +788,7 @@ The
 message
 to
 add
-* @ return true if the
+* @ return True if the
 message is added
 correctly
 * /
@@ -798,29 +798,29 @@ addToDeplProcMessages(Message
 sm) :
 if (sm is not None)
 :
-    self.depletedProcMessages + +
+    self.depletedProcMessages += 1
 self.depletedProcMessagesSize += sm.getSize(self)
 if ((Boolean)sm.getProperty("overtime"))
-self.mOvertime + +
-self.mUnSatisfied + +
-if ((String)sm.getProperty("type") == "unprocessed") :
-    self.mUnProcessed + +
-self.depletedUnProcMessages + +
+self.mOvertime += 1
+self.mUnSatisfied += 1
+if (sm.getProperty("type") == "unprocessed") :
+    self.mUnProcessed += 1
+self.depletedUnProcMessages += 1
 self.depletedUnProcMessagesSize += sm.getSize(self)
 }
 if (sm.getProperty("storTime") is not None) :
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime(self)
-sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+ 
+sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 }
 }
@@ -840,7 +840,7 @@ The
 message
 to
 add
-* @ return true if the
+* @ return True if the
 message is added
 correctly
 * /
@@ -850,32 +850,32 @@ addToCloudDeplStaticMessages(Message
 sm) :
 if (sm is not None)
 :
-    self.depletedCloudStaticMessages + +
+    self.depletedCloudStaticMessages += 1
 self.depletedCloudStaticMessagesSize += sm.getSize(self)
 if ((Boolean)sm.getProperty("overtime"))
-self.mOvertime + +
-if ((String)sm.getProperty("type") == "unprocessed") :
-    self.mUnProcessed + +
-self.depletedUnProcMessages + +
+self.mOvertime += 1
+if (sm.getProperty("type") == "unprocessed") :
+    self.mUnProcessed += 1
+self.depletedUnProcMessages += 1
 self.depletedUnProcMessagesSize += sm.getSize(self)
 }
 if ((Boolean)sm.getProperty("satisfied"))
-self.mSatisfied ++
+self.mSatisfied += 1
 else
-self.mUnSatisfied ++
+self.mUnSatisfied += 1
 if (sm.getProperty("storTime") is not None) :
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 else :
-double curTime = SimClock.getTime(self)
-sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-self.mStorTimeNo ++
-self.mStorTime += (double)sm.getProperty("storTime")
-if (self.mStorTimeMax < (double)sm.getProperty("storTime"))
-self.mStorTimeMax = (double)sm.getProperty("storTime")
+ 
+sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+self.mStorTimeNo += 1
+self.mStorTime += 1 sm.getProperty("storTime")
+if (self.mStorTimeMax < sm.getProperty("storTime"))
+self.mStorTimeMax = sm.getProperty("storTime")
 }
 }
 }
@@ -913,7 +913,7 @@ The
 message
 to
 add
-* @ return true if the
+* @ return True if the
 message is added
 correctly
 * /
@@ -940,7 +940,7 @@ The
 message
 to
 add
-* @ return true if the
+* @ return True if the
 message is added
 correctly
 * /
@@ -950,10 +950,10 @@ addToDepletedUnProcMessages(Message
 sm) :
 if (sm is not None)
 :
-if ((String)sm.getProperty("type") == "unprocessed") :
-    self.depletedUnProcMessages + +
+if (sm.getProperty("type") == "unprocessed") :
+    self.depletedUnProcMessages += 1
 self.depletedUnProcMessagesSize += sm.getSize(self)
-self.mUnProcessed + +
+self.mUnProcessed += 1
 }
 }
 }
@@ -979,8 +979,8 @@ Message
 getStaticMessage(String
 MessageId) :
     Message
-staticMessage = null
-for (Message temp: self.staticMessages)
+staticMessage is None
+for temp in self.staticMessages)
 :
 if (temp.getId(self) == MessageId)
 :
@@ -1014,8 +1014,8 @@ Message
 getProcessedMessage(String
 MessageId) :
     Message
-processedMessage = null
-for (Message temp: self.processedMessages)
+processedMessage is None
+for temp in self.processedMessages)
 :
 if (temp.getId(self) == MessageId)
 :
@@ -1049,8 +1049,8 @@ Message
 getProcessMessage(String
 MessageId) :
     Message
-processMessage = null
-for (Message temp: self.processMessages)
+processMessage is None
+for temp in self.processMessages)
 :
 if (temp.getId(self) == MessageId)
 :
@@ -1108,7 +1108,7 @@ system
 has
 * /
 
-double
+
 getStorTimeAvg(self)
 :
     self.mStorTimeAvg = self.mStorTime / self.mStorTimeNo
@@ -1135,7 +1135,7 @@ system
 has
 * /
 
-double
+
 getStorTimeMax(self)
 :
 return self.mStorTimeMax
@@ -1276,14 +1276,14 @@ for valid, satisfied shelf - life
     long
     getStaleStaticMessagesSize(self)
     :
-        double
-    curTime = SimClock.getTime(self)
+        
+    
     long
     size = 0
-    for (Message m: self.staticMessages) :
-    if (m.getProperty("shelfLife") is not None & &
-        ((double) m.getProperty("shelfLife")) >= curTime - m.getReceiveTime(self)) :
-    size += m.getSize(self)
+    for m: self.staticMessages) :
+    if (m.getProperty("shelfLife") is not None and
+        ( m.getProperty("shelfLife")) >= curTime - m.getReceiveTime(m)) :
+    size += 1 m.getSize(self)
     }
     }
     return size
@@ -1348,8 +1348,8 @@ for valid, satisfied shelf - life
     :
         long
     processedUsed = 0
-    for (Message msg:self.processedMessages) :
-        processedUsed += msg.getSize(self)
+    for msg:self.processedMessages) :
+        processedUsed += 1 msg.getSize(self)
     }
     return processedUsed
     }
@@ -1425,7 +1425,7 @@ for valid, satisfied shelf - life
     the
     file
     * @
-    return true if self
+    return True if self
     file
     system
     has
@@ -1437,19 +1437,19 @@ for valid, satisfied shelf - life
     hasMessage(String
     MessageId) :
         Message
-    answer = null
+    answer is None
 
-    for (int j=0 j < self.processedMessages.size(self) j++):
+    for (int j=0 j < self.processedMessages.size(self) j+= 1):
     if (self.processedMessages.get(j).getId(self) == MessageId):
     answer =  self.processedMessages.get(j)
     }
     }
-    for (int i=0 i < self.staticMessages.size(self) i++):
+    for (int i=0 i < self.staticMessages.size(self) i+= 1):
     if (self.staticMessages.get(i).getId(self) == MessageId):
     answer =  self.staticMessages.get(i)
     }
     }
-    for (int i=0 i < self.processMessages.size(self) i++):
+    for (int i=0 i < self.processMessages.size(self) i+= 1):
     if (self.processMessages.get(i).getId(self) == MessageId):
     answer =  self.processMessages.get(i)
     }
@@ -1470,14 +1470,14 @@ for valid, satisfied shelf - life
     boolean
     deleteStaticMessage(String
     MessageId):
-    for (int i=0 i < staticMessages.size(self) i++):
+    for (int i=0 i < staticMessages.size(self) i+= 1):
     if (staticMessages.get(i).getId(self) == MessageId):
     self.staticSize -= staticMessages.get(i).getSize(self)
     self.staticMessages.remove(i)
-    return true
+    return True
     }
     }
-    return false
+    return False
     }
 
     / **
@@ -1493,14 +1493,14 @@ for valid, satisfied shelf - life
     boolean
     deleteProcMessage(String
     MessageId):
-    for (int i=0 i < processMessages.size(self) i++):
+    for (int i=0 i < processMessages.size(self) i+= 1):
     if (processMessages.get(i).getId(self) == MessageId):
     self.processSize -= processMessages.get(i).getSize(self)
     self.processMessages.remove(i)
-    return true
+    return True
     }
     }
-    return false
+    return False
     }
 
     / **
@@ -1519,21 +1519,21 @@ for valid, satisfied shelf - life
         Message
     m = self.hasMessage(MessageId)
     if (m is not None):
-    if (((String)m.getProperty("type")).equalsIgnoreCase("proc") & & deleteProcMessage(MessageId)) :
-    return true
+    if ((m.getProperty("type")).equalsIgnoreCase("proc") and deleteProcMessage(MessageId)) :
+    return True
     }
-    elif (((String)m.getProperty("type")).equalsIgnoreCase("nonproc") & & deleteStaticMessage(MessageId)) :
-    return true
+    elif ((m.getProperty("type")).equalsIgnoreCase("nonproc") and deleteStaticMessage(MessageId)) :
+    return True
 }
-elif (((String)m.getProperty("type")).equalsIgnoreCase("unprocessed") & & deleteStaticMessage(MessageId)) :
-return true
+elif ((m.getProperty("type")).equalsIgnoreCase("unprocessed") and deleteStaticMessage(MessageId)) :
+return True
 }
-if (!self.getHost(self).hasStorageCapability(self)) :
-self.nrofDeletedMessages + +
-self.deletedMessagesSize += m.getSize(self)
+if (notself.getHost(self).hasStorageCapability(self)) :
+self.nrofDeletedMessages += 1
+self.deletedMessagesSize += 1 m.getSize(self)
 }
 }
-return false
+return False
 }
 
 / **
@@ -1557,33 +1557,33 @@ used in event,
 for deleting processed messages
 * after "sending" / depleting them.
 * /
-for (int i=0 i < processedMessages.size(self) i++):
+for (int i=0 i < processedMessages.size(self) i+= 1):
 if (processedMessages.get(i).getId(self) == MessageId):
-self.depletedCloudProcMessages++
+self.depletedCloudProcMessages+= 1
 self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize(self)
 if (report) :
 if (self.processedMessages.get(i).getProperty("overtime") is not None) :
 if ((Boolean)self.processedMessages.get(i).getProperty("overtime"))
-self.mOvertime ++
+self.mOvertime += 1
 }
 if (self.processedMessages.get(i).getProperty("satisfied") is not None) :
 if ((Boolean)self.processedMessages.get(i).getProperty("satisfied"))
-self.mSatisfied ++
+self.mSatisfied += 1
 else
-self.mUnSatisfied ++
+self.mUnSatisfied += 1
 }
 if (self.processedMessages.get(i).getProperty("Fresh") is not None) :
 if ((Boolean)processedMessages.get(i).getProperty("Fresh"))
-self.mFresh++
-elif (!(Boolean)processedMessages.get(i).getProperty("Fresh"))
-self.mStale++
+self.mFresh+= 1
+elif (not(Boolean)processedMessages.get(i).getProperty("Fresh"))
+self.mStale+= 1
 }
 }
 self.processedMessages.remove(i)
-return true
+return True
 }
 }
-return false
+return False
 }
 
 
@@ -1678,14 +1678,14 @@ return self.depletedCloudStaticMessages
 }
 
 
-double
+
 getOverallMeanIncomingMesssageNo(self)
 :
 return (self.totalReceivedMessages / SimClock.getTime(self))
 }
 
 
-double
+
 getOverallMeanIncomingSpeed(self)
 :
 return (self.totalReceivedMessagesSize / SimClock.getTime(self))
@@ -1900,7 +1900,7 @@ boolean
 clearAllStaticMessages(self)
 :
 self.staticMessages.clear(self)
-return true
+return True
 }
 
 
@@ -1923,10 +1923,10 @@ isStorageFull(self)
 long
 usedStorage = self.getStaticMessagesSize(self)
 if (usedStorage >= self.storageSize - 100000000):
-return true
+return True
 }
 else :
-return false
+return False
 }
 }
 
@@ -1939,11 +1939,11 @@ usedProc = self.getProcMessagesSize(self)
 if (usedProc >= self.processSize - 2000000)
 :
 // System.out.println("There is enough storage space: " + freeStorage)
-return true
+return True
 }
 else :
 // System.out.println("There is not enough storage space: " + freeStorage)
-return false
+return False
 }
 } * /
 
@@ -1957,11 +1957,11 @@ try :
 //} catch(Exception e) :}
 if (self.processSize <= 2000000):
 // System.out.println("There is enough storage space: " + freeStorage)
-return true
+return True
 }
 else :
 // System.out.println("There is not enough storage space: " + freeStorage)
-return false
+return False
 }
 }
 
@@ -1976,11 +1976,11 @@ usedProcessed = self.getProcessedMessagesSize(self)
 //} catch(Exception e) :}
 if (usedProcessed >= self.processedSize - 500000):
 // System.out.println("There is enough storage space: " + freeStorage)
-return true
+return True
 }
 else :
 // System.out.println("There is not enough storage space: " + freeStorage)
-return false
+return False
 }
 }
 
@@ -1995,11 +1995,11 @@ usedProc = self.getProcessedMessagesSize(self)
 //} catch(Exception e) :}
 if (usedProc <= 2000000):
 // System.out.println("There is enough storage space: " + freeStorage)
-return true
+return True
 }
 else :
 // System.out.println("There is not enough storage space: " + freeStorage)
-return false
+return False
 }
 }
 
@@ -2008,14 +2008,14 @@ Message
 getOldestProcessMessage(self)
 :
     Message
-oldest = null
-for (Message m: self.processMessages)
+oldest is None
+for m: self.processMessages)
 :
 
-if (oldest == null) :
+if (oldest is None) :
 oldest = m
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m)) :
 oldest = m
 }
 }
@@ -2027,21 +2027,21 @@ Message
 getOldestValidProcessMessage(self)
 :
 Message
-oldest = null
-for (Message m: self.processMessages) :
+oldest is None
+for m: self.processMessages) :
 
-if (oldest == null) :
-if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null) :
-if (!((String) m.getProperty("type")).equalsIgnoreCase("unprocessed") & &
-!((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+if (oldest is None) :
+if (m.getProperty("type") is not None and m.getProperty("Fresh") is None) :
+if (not( m.getProperty("type")).equalsIgnoreCase("unprocessed") and
+not( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & &
-m.getProperty("Fresh") == null) :
-if (!((String) m.getProperty("type")).equalsIgnoreCase("unprocessed") & &
-!((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("type") is not None and
+m.getProperty("Fresh") is None) :
+if (not( m.getProperty("type")).equalsIgnoreCase("unprocessed") and
+not( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
@@ -2053,23 +2053,23 @@ return oldest
 Message
 getOldestInvalidProcessMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.processMessages) :
 
-if (oldest == null) :
-if (m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("proc") & &
-((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+
+Message
+oldest is None
+for m: self.processMessages) :
+
+if (oldest is None) :
+if (m.getProperty("type") is not None and m.getProperty("shelfLife") is not None) :
+if (( m.getProperty("type")).equalsIgnoreCase("proc") and
+( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("proc") & &
-((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("type") is not None and m.getProperty("shelfLife") is not None) :
+if (( m.getProperty("type")).equalsIgnoreCase("proc") and
+( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)) :
 oldest = m
 }
 }
@@ -2082,18 +2082,18 @@ Message
 getOldestDeplUnProcMessage(self)
 :
 Message
-oldest = null
-for (Message m: self.staticMessages) :
+oldest is None
+for m: self.staticMessages) :
 
-if (oldest == null) :
+if (oldest is None) :
 if (m.getProperty("type") is not None) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
+if (( m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("type") is not None) :
+if (( m.getProperty("type")).equalsIgnoreCase("unprocessed")) :
 oldest = m
 }
 }
@@ -2108,19 +2108,19 @@ Message
 getNewestProcessMessage(self)
 :
 Message
-newest = null
-for (Message m: self.processMessages) :
+newest is None
+for m: self.processMessages) :
 
-if (newest == null) :
-if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("proc")) :
+if (newest is None) :
+if (m.getProperty("type") is not None and m.getProperty("Fresh") is None) :
+if (( m.getProperty("type")).equalsIgnoreCase("proc")) :
 newest = m
 }
 }
 }
-elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("type") is not None & &
-m.getProperty("Fresh") == null) :
-if (((String) m.getProperty("type")).equalsIgnoreCase("proc")) :
+elif (newest.getReceiveTime(self) < m.getReceiveTime(m) and m.getProperty("type") is not None and
+m.getProperty("Fresh") is None) :
+if (( m.getProperty("type")).equalsIgnoreCase("proc")) :
 newest = m
 }
 }
@@ -2133,13 +2133,13 @@ Message
 getOldestProcessedMessage(self)
 :
 Message
-oldest = null
-for (Message m: self.processedMessages) :
+oldest is None
+for m: self.processedMessages) :
 
-if (oldest == null) :
+if (oldest is None) :
 oldest = m
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m)) :
 oldest = m
 }
 }
@@ -2150,22 +2150,22 @@ return oldest
 Message
 getOldestFreshMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.processedMessages) :
 
-if (oldest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+
+Message
+oldest is None
+for m: self.processedMessages) :
+
+if (oldest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None) :
+if (((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("type") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+if (((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
@@ -2177,22 +2177,22 @@ return oldest
 Message
 getNewestFreshMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-newest = null
-for (Message m: self.processedMessages) :
 
-if (newest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+
+Message
+newest is None
+for m: self.processedMessages) :
+
+if (newest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None) :
+if (((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 newest = m
 }
 }
 }
-elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (newest.getReceiveTime(self) < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("type") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+if (((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 newest = m
 }
 }
@@ -2204,22 +2204,22 @@ return newest
 Message
 getOldestShelfMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.processedMessages) :
 
-if (oldest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+
+Message
+oldest is None
+for m: self.processedMessages) :
+
+if (oldest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None) :
+if (not((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("type") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+if (not((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 oldest = m
 }
 }
@@ -2231,22 +2231,22 @@ return oldest
 Message
 getNewestShelfMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-newest = null
-for (Message m: self.processedMessages) :
 
-if (newest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & ((String) m.getProperty("type")).equalsIgnoreCase("processed")) :
+
+Message
+newest is None
+for m: self.processedMessages) :
+
+if (newest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None) :
+if (not((Boolean) m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")) :
 newest = m
 }
 }
 }
-elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (newest.getReceiveTime(self) < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("type") is not None) :
-if (!((Boolean) m.getProperty("Fresh") & & ((String) m.getProperty("type")).equalsIgnoreCase("processed"))) :
+if (not((Boolean) m.getProperty("Fresh") and ( m.getProperty("type")).equalsIgnoreCase("processed"))) :
 newest = m
 }
 }
@@ -2261,22 +2261,22 @@ return newest
 Message
 getOldestQueueFreshMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.processMessages) :
 
-if (oldest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+
+Message
+oldest is None
+for m: self.processMessages) :
+
+if (oldest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None) :
+if (((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("procTime") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+if (((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 oldest = m
 }
 }
@@ -2288,22 +2288,22 @@ return oldest
 Message
 getNewestQueueFreshMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-newest = null
-for (Message m: self.processMessages) :
 
-if (newest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+
+Message
+newest is None
+for m: self.processMessages) :
+
+if (newest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None) :
+if (((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 newest = m
 }
 }
 }
-elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (newest.getReceiveTime(self) < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("procTime") is not None) :
-if (((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+if (((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 newest = m
 }
 }
@@ -2315,22 +2315,22 @@ return newest
 Message
 getOldestQueueShelfMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.processMessages) :
 
-if (oldest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+
+Message
+oldest is None
+for m: self.processMessages) :
+
+if (oldest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None) :
+if (not((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("procTime") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+if (not((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 oldest = m
 }
 }
@@ -2342,22 +2342,22 @@ return oldest
 Message
 getNewestQueueShelfMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-newest = null
-for (Message m: self.processMessages) :
 
-if (newest == null) :
-if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None) :
-if (!((Boolean) m.getProperty("Fresh")) & & (double)m.getProperty("procTime") <= curTime) :
+
+Message
+newest is None
+for m: self.processMessages) :
+
+if (newest is None) :
+if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None) :
+if (not((Boolean) m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
 newest = m
 }
 }
 }
-elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
+elif (newest.getReceiveTime(self) < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and
 m.getProperty("procTime") is not None) :
-if (!((Boolean) m.getProperty("Fresh") & & (double)m.getProperty("procTime") <= curTime)) :
+if (not((Boolean) m.getProperty("Fresh") and m.getProperty("procTime") <= curTime)) :
 newest = m
 }
 }
@@ -2372,13 +2372,13 @@ Message
 getOldestStaticMessage(self)
 :
 Message
-oldest = null
-for (Message m: self.staticMessages) :
+oldest is None
+for m: self.staticMessages) :
 
-if (oldest == null) :
+if (oldest is None) :
 oldest = m
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m)) :
 oldest = m
 }
 }
@@ -2389,21 +2389,21 @@ return oldest
 Message
 getOldestStaleStaticMessage(self)
 :
-double
-curTime = SimClock.getTime(self)
-Message
-oldest = null
-for (Message m: self.staticMessages) :
 
-if (oldest == null) :
+
+Message
+oldest is None
+for m: self.staticMessages) :
+
+if (oldest is None) :
 if (m.getProperty("shelfLife") is not None) :
-if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+if (( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)) :
 oldest = m
 }
 }
 }
-elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("shelfLife") is not None) :
-if (((double) m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)) :
+elif (oldest.getReceiveTime(self) > m.getReceiveTime(m) and m.getProperty("shelfLife") is not None) :
+if (( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)) :
 oldest = m
 }
 }
@@ -2412,7 +2412,7 @@ return oldest
 }
 
 
-double
+
 getCompressionRate(self)
 :
 return self.compressionRate
@@ -2420,7 +2420,7 @@ return self.compressionRate
     """
 
 class RepoStorage(object):
-    def __init__(self, storageSize, compressionRate):
+    def __init__(self, dtnHost, storageSize, compressionRate):
         """Constructor
 
         Parameters
@@ -2430,11 +2430,11 @@ class RepoStorage(object):
         """
         self.host = dtnHost
         #self.messages = new
-        #Collection  ()
-        self.staticMessages = list ()
-        self.processMessages = list ()
-        self.processedMessages = list ()
-        self.storedMessages = list ()
+        #Collection
+        self.staticMessages = list
+        self.processMessages = list
+        self.processedMessages = list
+        self.storedMessages = list
         self.storageSize = storageSize
         self.processSize = 0
         self.staticSize = 0
@@ -2471,21 +2471,21 @@ class RepoStorage(object):
         self.oldDepletedCloudStaticMessagesSize = 0
         self.depletedCloudStaticMessagesSize = 0
         self.cachedMessages = 0
-        if (self.getHost().hasProcessingCapability()):
-            # self.processSize = processSize
-        self.compressionRate = compressionRate
-        processedRatio = self.compressionRate * 2
-        self.processedSize = self.storageSize / processedRatio
+        if (self.getHost.hasProcessingCapability):
+            #self.processSize = processSize
+            self.compressionRate = compressionRate
+            processedRatio = self.compressionRate * 2
+            self.processedSize = self.storageSize / processedRatio
 
     def getTotalStorageSpace(self):
         return self.storageSize
-    
+
     def getTotalProcessedSpace(self):
         return self.processedSize
 
     def getStoredMessagesCollection(self):
         self.messages = self.staticMessages
-        self.messages.addAll(this.processMessages)
+        self.messages.addAll(self.processMessages)
         return self.messages
     def getStoredMessages(self):
         self.storedMessages = self.staticMessages
@@ -2500,161 +2500,161 @@ class RepoStorage(object):
         return self.staticMessages
     def addToStoredMessages(self, sm) :
         """
-           TODO: Check indentation here! (in original, java implementation)
+           TODO: Check indentation herenot (in original, java implementation)
             Also, check the "selfs" in the parantheses. Those should mostly
             be the associated objects for which the functions are called.
             Does the cache have to have a host, or is IT the host? Should
             the simulator reference a host, for routing, or the cache itself?
         """
 
-        curTime = SimClock.getTime(self)
+
         if (sm is not None):
             if ((sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
-                if (host.hasStorageCapability(self)):
+                if (host.hasStorageCapability()):
                     self.staticMessages.add(sm)
-                    self.staticSize += sm.getSize(self)
+                    self.staticSize += sm.getSize()
 
             elif (sm.getProperty("type").equalsIgnoreCase("proc")):
-                if (host.hasProcessingCapability(self)) :
+                if (self.getHost().hasProcessingCapability()) :
                     self.processMessages.add(sm)
-                    self.processSize += sm.getSize(self)
+                    self.processSize += sm.getSize()
 
-                elif (sm.getProperty("type").equalsIgnoreCase("processed")):
-                    self.processedMessages.add(sm)
+            elif (sm.getProperty("type").equalsIgnoreCase("processed")):
+                 self.processedMessages.add(sm)
 
-                elif (sm.getProperty("type")).equalsIgnoreCase("unprocessed"):
-                    if (self.host.hasStorageCapability(self)) :
-                        self.staticMessages.add(sm)
-                        self.staticSize += sm.getSize(self)
+            elif (sm.getProperty("type")).equalsIgnoreCase("unprocessed"):
+                if (self.host.hasStorageCapability()) :
+                    self.staticMessages.add(sm)
+                    self.staticSize += sm.getSize()
 
             else:
                 self.addToDeplStaticMessages(sm)
-            self.totalReceivedMessages++
-            self.totalReceivedMessagesSize += sm.getSize(self)
+            self.totalReceivedMessages+= 1
+            self.totalReceivedMessagesSize += sm.getSize()
 # add space used in the storage space * /
-# System.out.println("There is " + self.getStaticMessagesSize(self) + " storage used");
+# System.out.println("There is " + self.getStaticMessagesSize() + " storage used");
 
         if (self.staticSize + self.processSize) >= self.storageSize:
-            for (app in self.getHost(self).getRouter(self).getApplications("ProcApplication")) :
+            for app in self.getHost().getRouter(self.getHost).getApplications("ProcApplication"):
                 self.procApp = app
-# System.out.println("App ID is: " + self.procApp.getAppID(self));
+# System.out.println("App ID is: " + self.procApp.getAppID());
 
-            procApp.updateDeplBW(self.getHost(self))
-            procApp.deplStorage(self.getHost(self))
+            self.procApp.updateDeplBW(self.getHost())
+            self.procApp.deplStorage(self.getHost())
 
     def addToDeplStaticMessages(self, sm) :
         if sm is not None:
-             self.depletedStaticMessages + +
-            self.depletedStaticMessagesSize += sm.getSize(self)
+            self.depletedStaticMessages += 1
+            self.depletedStaticMessagesSize += sm.getSize()
         if sm.getProperty("overtime") :
-            self.mOvertime + +
+            self.mOvertime += 1
         if sm.getProperty("type") == "unprocessed" :
-            self.mUnProcessed + +
-            self.depletedUnProcMessages + +
-            self.depletedUnProcMessagesSize += sm.getSize(self)
+            self.mUnProcessed += 1
+            self.depletedUnProcMessages += 1
+            self.depletedUnProcMessagesSize += sm.getSize()
         if sm.getProperty("satisfied") :
-            self.mSatisfied ++
-        else
-            self.mUnSatisfied ++
+            self.mSatisfied += 1
+        else:
+            self.mUnSatisfied += 1
         if sm.getProperty("storTime") is not None:
-            self.mStorTimeNo ++
+            self.mStorTimeNo += 1
             self.mStorTime += sm.getProperty("storTime")
         if self.mStorTimeMax < sm.getProperty("storTime"):
             self.mStorTimeMax = sm.getProperty("storTime")
 
         else :
-            double curTime = SimClock.getTime(self)
-            sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-            self.mStorTimeNo ++
+
+            sm.addProperty("storTime", curTime - sm.getReceiveTime(sm))
+            self.mStorTimeNo += 1
             self.mStorTime += sm.getProperty("storTime")
         if self.mStorTimeMax < sm.getProperty("storTime"):
             self.mStorTimeMax = sm.getProperty("storTime")
 
     def addToDeplProcMessages(self, sm) :
         if (sm is not None):
-            self.depletedProcMessages + +
-            self.depletedProcMessagesSize += sm.getSize(self)
-            if (sm.getProperty("overtime"))
-                self.mOvertime + +
-                self.mUnSatisfied + +
+            self.depletedProcMessages += 1
+            self.depletedProcMessagesSize += sm.getSize()
+            if (sm.getProperty("overtime")):
+                self.mOvertime += 1
+                self.mUnSatisfied += 1
             if (sm.getProperty("type") == "unprocessed") :
-                self.mUnProcessed + +
-                self.depletedUnProcMessages + +
-                self.depletedUnProcMessagesSize += sm.getSize(self)
+                self.mUnProcessed += 1
+                self.depletedUnProcMessages += 1
+                self.depletedUnProcMessagesSize += sm.getSize()
 
                 if (sm.getProperty("storTime") is not None) :
-                    self.mStorTimeNo ++
+                    self.mStorTimeNo += 1
                     self.mStorTime += sm.getProperty("storTime")
-                if (self.mStorTimeMax < sm.getProperty("storTime"))
+                if (self.mStorTimeMax < sm.getProperty("storTime")):
                     self.mStorTimeMax = sm.getProperty("storTime")
 
             else :
-                curTime = SimClock.getTime(self)
-                sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-                self.mStorTimeNo ++
+
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+                self.mStorTimeNo += 1
                 self.mStorTime += sm.getProperty("storTime")
-                if (self.mStorTimeMax < sm.getProperty("storTime"))
+                if (self.mStorTimeMax < sm.getProperty("storTime")):
                     self.mStorTimeMax = sm.getProperty("storTime")
 
     def addToCloudDeplStaticMessages(self, sm) :
         if (sm is not None):
-            self.depletedCloudStaticMessages + +
-            self.depletedCloudStaticMessagesSize += sm.getSize(self)
-            if (sm.getProperty("overtime"))
-                self.mOvertime + +
+            self.depletedCloudStaticMessages += 1
+            self.depletedCloudStaticMessagesSize += sm.getSize()
+            if (sm.getProperty("overtime")):
+                self.mOvertime += 1
             if (sm.getProperty("type") == "unprocessed") :
-                self.mUnProcessed + +
-                self.depletedUnProcMessages + +
-                self.depletedUnProcMessagesSize += sm.getSize(self)
+                self.mUnProcessed += 1
+                self.depletedUnProcMessages += 1
+                self.depletedUnProcMessagesSize += sm.getSize()
 
-            if (sm.getProperty("satisfied"))
-                self.mSatisfied ++
-            else
-                self.mUnSatisfied ++
+            if (sm.getProperty("satisfied")):
+                self.mSatisfied += 1
+            else:
+                self.mUnSatisfied += 1
             if (sm.getProperty("storTime") is not None) :
-                self.mStorTimeNo ++
+                self.mStorTimeNo += 1
                 self.mStorTime += sm.getProperty("storTime")
-            if (self.mStorTimeMax < sm.getProperty("storTime"))
+            if (self.mStorTimeMax < sm.getProperty("storTime")):
                 self.mStorTimeMax = sm.getProperty("storTime")
 
-            else :
-                double curTime = SimClock.getTime(self)
-                sm.addProperty("storTime", curTime - sm.getReceiveTime(self))
-                self.mStorTimeNo ++
+            else:
+
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+                self.mStorTimeNo += 1
                 self.mStorTime += sm.getProperty("storTime")
-            if (self.mStorTimeMax < sm.getProperty("storTime"))
+            if (self.mStorTimeMax < sm.getProperty("storTime")):
                 self.mStorTimeMax = sm.getProperty("storTime")
 
     def addToDeplUnProcMessages(self, sm) :
         sm.updateProperty("type", "unprocessed")
-        host.getStorageSystem(self).addToStoredMessages(sm)
+        self.host.getStorageSystem().addToStoredMessages(sm)
 
     def addToDepletedUnProcMessages(self, sm):
         if (sm is not None):
-            if ((String)sm.getProperty("type") == "unprocessed"):
-                self.depletedUnProcMessages + +
-            self.depletedUnProcMessagesSize += sm.getSize(self)
-            self.mUnProcessed ++
+            if (sm.getProperty("type") == "unprocessed"):
+                self.depletedUnProcMessages += 1
+            self.depletedUnProcMessagesSize += sm.getSize()
+            self.mUnProcessed += 1
 
     def getStaticMessage(self, MessageId) :
         staticMessage = None
-        for (temp: self.staticMessages):
-            if (temp.getId(self) == MessageId):
+        for temp in self.staticMessages:
+            if (temp.getId() == MessageId):
                 i = self.staticMessages.indexOf(temp)
                 staticMessage = self.staticMessages.get(i)
         return staticMessage
 
     def getProcessedMessage(self, MessageId) :
         processedMessage = None
-        for (Message temp: self.processedMessages):
-            if (temp.getId(self) == MessageId):
+        for temp in self.processedMessages:
+            if (temp.getId() == MessageId):
                 i = self.processedMessages.indexOf(temp)
                 processedMessage = self.processedMessages.get(i)
         return processedMessage
     def getProcessMessage(self, MessageId) :
         processMessage = None
-        for (Message temp: self.processMessages):
-            if (temp.getId(self) == MessageId):
+        for temp in self.processMessages:
+            if (temp.getId() == MessageId):
                 i = self.processMessages.indexOf(temp)
                 processMessage = self.processMessages.get(i)
         return processMessage
@@ -2669,23 +2669,23 @@ class RepoStorage(object):
         return self.mStorTimeMax
 
     def getNrofMessages(self):
-        return self.staticMessages.size(self)
+        return self.staticMessages.size()
 
     def getNrofProcessMessages(self):
-        return self.processMessages.size(self)
+        return self.processMessages.size()
 
     def getNrofProcessedMessages(self):
-        return self.processedMessages.size(self)
+        return self.processedMessages.size()
 
     def getStaticMessagesSize(self):
         return self.staticSize
 
     def getStaleStaticMessagesSize(self):
-        curTime = SimClock.getTime(self)
+
         size = 0
-        for (Message m: self.staticMessages) :
-            if (m.getProperty("shelfLife") is not None && ((double) m.getProperty("shelfLife")) >= curTime - m.getReceiveTime(self)) :
-                size += m.getSize(self)
+        for m in self.staticMessages :
+            if m.getProperty("shelfLife") is not None and ( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m) :
+                size += m.getSize()
                 return size
 
     def getProcMessagesSize(self):
@@ -2693,33 +2693,41 @@ class RepoStorage(object):
 
     def getProcessedMessagesSize(self):
         processedUsed = 0
-        for (Message msg:self.processedMessages) :
-            processedUsed += msg.getSize(self)
+        for msg in self.processedMessages :
+            processedUsed += 1 msg.getSize()
             return processedUsed
-            
+
     def getFullCachedMessagesNo(self):
         proc = self.cachedMessages
         self.cachedMessages = 0
         return proc
-    
+
+    """
+    *Returns the host this repo storage system is in
+    * @ return The host object
+    """
+    def getHost(self):
+        return self.host
+
+
     def hasMessage(self, MessageId):
         answer = None
-        for (int j=0 j < self.processedMessages.size(self) j++):
-            if (self.processedMessages.get(j).getId(self) == MessageId):
+        for j in range (0, self.processedMessages.size()):
+            if (self.processedMessages.get(j).getId() == MessageId):
                 answer =  self.processedMessages.get(j)
-        for (int i=0 i < self.staticMessages.size(self) i++):
-            if (self.staticMessages.get(i).getId(self) == MessageId):
+        for i in range (0, self.staticMessages.size()):
+            if (self.staticMessages.get(i).getId() == MessageId):
                 answer =  self.staticMessages.get(i)
-        for (int i=0 i < self.processMessages.size(self) i++):
-            if (self.processMessages.get(i).getId(self) == MessageId):
+        for i in range (0, self.processMessages.size()):
+            if (self.processMessages.get(i).getId() == MessageId):
                 answer =  self.processMessages.get(i)
         return answer
 
 
     def deleteStaticMessage(self, MessageId):
-        for i in range(0, self.staticMessages.size()):
-            if (self.staticMessages.get(i).getId() == MessageId):
-                self.staticSize -= self.staticMessages.get(i).getSize()
+        for i in range(0, self.staticMessages.size):
+            if (self.staticMessages.get(i).getId == MessageId):
+                self.staticSize -= self.staticMessages.get(i).getSize
                 self.staticMessages.remove(i)
                 return True
         return False
@@ -2737,9 +2745,9 @@ class RepoStorage(object):
     """
 
     def deleteProcMessage(self, MessageId):
-        for i in (0, self.processMessages.size()):
-            if (self.processMessages.get(i).getId(self) == MessageId):
-                self.processSize -= self.processMessages.get(i).getSize(self)
+        for i in (0, self.processMessages.size):
+            if (self.processMessages.get(i).getId() == MessageId):
+                self.processSize -= self.processMessages.get(i).getSize()
                 self.processMessages.remove(i)
                 return True
 
@@ -2761,18 +2769,18 @@ class RepoStorage(object):
     def deleteMessage(self, MessageId):
         m = self.hasMessage(MessageId)
         if m is not None:
-            if m.getProperty("type").equalsIgnoreCase("proc") && deleteProcMessage(MessageId):
+            if m.getProperty("type").equalsIgnoreCase("proc") and self.deleteProcMessage(MessageId):
                 return True
 
-            elif m.getProperty("type").equalsIgnoreCase("nonproc") && deleteStaticMessage(MessageId):
+            elif m.getProperty("type").equalsIgnoreCase("nonproc") and self.deleteStaticMessage(MessageId):
                 return True
 
-            elif m.getProperty("type").equalsIgnoreCase("unprocessed") && deleteStaticMessage(MessageId):
+            elif m.getProperty("type").equalsIgnoreCase("unprocessed") and self.deleteStaticMessage(MessageId):
                 return True
 
-            if (!self.getHost(self).hasStorageCapability(self)):
-                self.nrofDeletedMessages + +
-                self.deletedMessagesSize += m.getSize(self)
+            if not self.getHost().hasStorageCapability(self.getHost()):
+                self.nrofDeletedMessages += 1
+                self.deletedMessagesSize += m.getSize()
 
 
         return False
@@ -2802,30 +2810,30 @@ class RepoStorage(object):
         TODO: Check the ifs in original code - make code right. did not report every message.
             Reporting is not done right.
         """
-        for ( i=0 i < processedMessages.size(self) i + +):
-            if (processedMessages.get(i).getId(self) == MessageId):
-                self.depletedCloudProcMessages + +
-                self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize(self)
+        for i in range(0, self.processedMessages.size()):
+            if (self.processedMessages.get(i).getId() == MessageId):
+                self.depletedCloudProcMessages += 1
+                self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize()
 
-        if (self.processedMessages.get(i).getProperty("overtime") is not None):
-            if (self.processedMessages.get(i).getProperty("overtime")):
-                self.mOvertime + +
+                if (self.processedMessages.get(i).getProperty("overtime") is not None):
+                    if (self.processedMessages.get(i).getProperty("overtime")):
+                        self.mOvertime += 1
 
-        if (self.processedMessages.get(i).getProperty("satisfied") is not None):
-            if(self.processedMessages.get(i).getProperty("satisfied")):
-                self.mSatisfied + +
-        else
-            self.mUnSatisfied + +
+                if (self.processedMessages.get(i).getProperty("satisfied") is not None):
+                    if(self.processedMessages.get(i).getProperty("satisfied")):
+                        self.mSatisfied += 1
+                else:
+                    self.mUnSatisfied += 1
 
-        if (self.processedMessages.get(i).getProperty("Fresh") is not None):
-            if(processedMessages.get(i).getProperty("Fresh")):
-                self.mFresh + +
-            elif (!self.processedMessages.get(i).getProperty("Fresh")):
-                self.mStale + +
+                if (self.processedMessages.get(i).getProperty("Fresh") is not None):
+                    if(self.processedMessages.get(i).getProperty("Fresh")):
+                        self.mFresh += 1
+                    elif (not self.processedMessages.get(i).getProperty("Fresh")):
+                        self.mStale += 1
 
-        self.processedMessages.remove(i)
-        return True
-
+                self.processedMessages.remove(i)
+                return True
+        return False
 
 
 
@@ -2908,10 +2916,10 @@ class RepoStorage(object):
 
 
     def getOverallMeanIncomingMesssageNo(self):
-        return (self.totalReceivedMessages / SimClock.getTime(self))
+        return (self.totalReceivedMessages / SimClock.getTime())
 
     def getOverallMeanIncomingSpeed(self):
-        return (self.totalReceivedMessagesSize / SimClock.getTime(self))
+        return (self.totalReceivedMessagesSize / SimClock.getTime())
 
 
     """
@@ -2939,7 +2947,7 @@ class RepoStorage(object):
         procBW = self.depletedCloudProcMessagesSize - self.oldDepletedCloudProcMessagesSize
         if (reporting):
             self.oldDepletedCloudProcMessagesSize = self.depletedCloudProcMessagesSize
-    
+
         return (procBW)
 
 
@@ -2971,14 +2979,14 @@ class RepoStorage(object):
     upstream
     """
 
-    
+
     def getDepletedUnProcMessagesBW(self, reporting):
-    
+
         procBW = self.depletedUnProcMessagesSize - self.oldDepletedUnProcMessagesSize
         if (reporting):
             self.oldDepletedUnProcMessagesSize = self.depletedUnProcMessagesSize
         return (procBW)
-        
+
 
     """
     *Method
@@ -3008,15 +3016,15 @@ class RepoStorage(object):
     upstream
     """
 
-        
+
     def getDepletedPUnProcMessagesBW(self, reporting):
-        
+
         procBW = self.depletedPUnProcMessagesSize - self.oldDepletedPUnProcMessagesSize
         if (reporting):
             self.oldDepletedPUnProcMessagesSize = self.depletedPUnProcMessagesSize
-            
+
         return (procBW)
-            
+
 
     """
     *Method
@@ -3037,14 +3045,14 @@ class RepoStorage(object):
     upstream
     """
 
-            
+
     def getDepletedCloudStaticMessagesBW(self, reporting):
         statBW = self.depletedCloudStaticMessagesSize - self.oldDepletedCloudStaticMessagesSize
         if (reporting):
             self.oldDepletedCloudStaticMessagesSize = self.depletedCloudStaticMessagesSize
-                
+
         return (statBW)
-                
+
 
     """
     *Method
@@ -3065,14 +3073,14 @@ class RepoStorage(object):
     upstream
     """
 
-                
+
     def getDepletedProcMessagesBW(self, reporting):
         procBW = self.depletedProcMessagesSize - self.oldDepletedProcMessagesSize
         if (reporting):
             self.oldDepletedProcMessagesSize = self.depletedProcMessagesSize
-                    
+
         return (procBW)
-                    
+
 
     """
     *Method
@@ -3093,7 +3101,7 @@ class RepoStorage(object):
     upstream
     """
 
-                    
+
     def getDepletedStaticMessagesBW(self, reporting):
         statBW = self.depletedStaticMessagesSize - self.oldDepletedStaticMessagesSize
         if (reporting):
@@ -3101,347 +3109,361 @@ class RepoStorage(object):
         return (statBW)
 
     def clearAllStaticMessages(self):
-        self.staticMessages.clear(self)
-        return true
-                        
+        self.staticMessages.clear()
+        return True
 
 
-                        
+
+
     def getFreeStorageSpace(self):
-        usedStorage = self.getStaticMessagesSize(self)
-        # System.out.prln("There is " + usedStorage + " storage used in " + self.getHost(self))
+        usedStorage = self.getStaticMessagesSize()
+        # System.out.prln("There is " + usedStorage + " storage used in " + self.getHost())
         freeStorage = self.storageSize - usedStorage
-        # System.out.prln("There is " + freeStorage + " free storage space in " + self.getHost(self))
+        # System.out.prln("There is " + freeStorage + " free storage space in " + self.getHost())
         return freeStorage
-                        
+
 
     """
                         
     isStorageFull(self):
-    usedStorage = self.getStaticMessagesSize(self)
+    usedStorage = self.getStaticMessagesSize()
                         if (usedStorage >= self.storageSize - 100000000):
-                            return true
+                            return True
                         
                         else:
-                        return false
+                        return False
                         
                         
 
 
                         
-                        isProcessingFull(self)
+                        isProcessingFull()
                         :
                         
-                        usedProc = self.getProcMessagesSize(self)
+                        usedProc = self.getProcMessagesSize()
                         if (usedProc >= self.processSize - 2000000)
                         :
                             #
                         System.out.prln("There is enough storage space: " + freeStorage)
-                        return true
+                        return True
                         
                         else:
                         # System.out.prln("There is not enough storage space: " + freeStorage)
-                        return false
+                        return False
                         
     """
 
-                        
+
     def isProcessingEmpty(self):
                         #try:
                         # System.setOut(new PrStream(new FileOutputStream("log.txt")))
                         # catch(Exception e):
                         if (self.processSize <= 2000000):
                         # System.out.prln("There is enough storage space: " + freeStorage)
-                            return true
-                            
+                            return True
+
                         else:
                             # System.out.prln("There is not enough storage space: " + freeStorage)
-                            return false
-                            
-                            
+                            return False
 
 
-                            
+
+
+
     def isProcessedFull(self):
-        usedProcessed = self.getProcessedMessagesSize(self)
+        usedProcessed = self.getProcessedMessagesSize()
         #try:
         # System.setOut(new Stream(new FileOutputStream("log.txt")))
         # catch(Exception e):
         if (usedProcessed >= self.processedSize - 500000):
         # System.out.prln("There is enough storage space: " + freeStorage)
-            return true
-                                
+            return True
+
         else:
             # System.out.prln("There is not enough storage space: " + freeStorage)
-            return false
-                                
-                                
+            return False
 
 
-                                
+
+
+
     def isProcessedEmpty(self):
-        usedProc = self.getProcessedMessagesSize(self)
+        usedProc = self.getProcessedMessagesSize()
         #try:
         # System.setOut(new PrStream(new FileOutputStream("log.txt")))
         # catch(Exception e):
         if (usedProc <= 2000000):
         # System.out.prln("There is enough storage space: " + freeStorage)
-            return true
+            return True
 
         else:
             # System.out.prln("There is not enough storage space: " + freeStorage)
-            return false
-                                    
-                                    
+            return False
 
 
+
+
+    @property
     def getOldestProcessMessage(self):
-        oldest = null
-        for (Message m: self.processMessages):
-            if (oldest == null):
+        oldest = None
+        for m in self.processMessages:
+            if (oldest is None):
                 oldest = m
-                                    
-            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
+
+            elif (oldest.getReceiveTime() > m.getReceiveTime(m)):
                 oldest = m
 
         return oldest
-                                    
 
+
+    @property
     def getOldestValidProcessMessage(self):
-        oldest = null
-        for (Message m: self.processMessages):
-            if (oldest == null):
-                if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
-                    if (!(()m.getProperty("type")).equalsIgnoreCase("unprocessed") & & !(() m.getProperty("type")).equalsIgnoreCase("processed")):
+        oldest = None
+        for m in self.processMessages:
+            if (oldest is None):
+                if (m.getProperty("type") is not None and m.getProperty("Fresh") is None):
+                    if (not(m.getProperty("type")).equalsIgnoreCase("unprocessed") and not( m.getProperty("type")).equalsIgnoreCase("processed")):
                         oldest = m
-                                    
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
-                    if (!(() m.getProperty("type")).equalsIgnoreCase("unprocessed") & & !(() m.getProperty("type")).equalsIgnoreCase("processed")):
+
+                elif oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("type") is not None and m.getProperty("Fresh") is None:
+                    if not( m.getProperty("type")).equalsIgnoreCase("unprocessed") and not( m.getProperty("type")).equalsIgnoreCase("processed"):
                         oldest = m
-                                    
+
         return oldest
-                                    
 
 
+
+    @property
     def getOldestInvalidProcessMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.processMessages):
-            if (oldest == null):
-                if (m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("proc") & & (() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
-                        oldest = m
-                                    
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("shelfLife") is not None):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("proc") & & (() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
-                        oldest = m
-                                    
-        return oldest
-                                    
 
+        oldest = None
+        for m in self.processMessages:
+            if (oldest is None):
+                if (m.getProperty("type") is not None and m.getProperty("shelfLife") is not None):
+                    if (( m.getProperty("type")).equalsIgnoreCase("proc") and ( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)):
+                        oldest = m
+
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("type") is not None and m.getProperty("shelfLife") is not None):
+                    if (( m.getProperty("type")).equalsIgnoreCase("proc") and ( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)):
+                        oldest = m
+
+        return oldest
+
+
+    @property
     def getOldestDeplUnProcMessage(self):
-        oldest = null
-        for (Message m: self.staticMessages):
-            if (oldest == null):
+        oldest = None
+        for m in self.staticMessages:
+            if (oldest is None):
                 if (m.getProperty("type") is not None):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("unprocessed")):
+                    if (( m.getProperty("type")).equalsIgnoreCase("unprocessed")):
                         oldest = m
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("type") is not None):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("unprocessed")):
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("type") is not None):
+                    if (( m.getProperty("type")).equalsIgnoreCase("unprocessed")):
                         oldest = m
 
         return oldest
-                                    
 
 
 
 
+
+    @property
     def getNewestProcessMessage(self):
-        newest = null
-        for (Message m: self.processMessages):
-            if (newest == null):
-                if (m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("proc")):
+        newest = None
+        for m in self.processMessages:
+            if (newest is None):
+                if (m.getProperty("type") is not None and m.getProperty("Fresh") is None):
+                    if (( m.getProperty("type")).equalsIgnoreCase("proc")):
                         newest = m
-                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("type") is not None & & m.getProperty("Fresh") == null):
-                    if ((() m.getProperty("type")).equalsIgnoreCase("proc")):
+                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("type") is not None and m.getProperty("Fresh") is None):
+                    if (( m.getProperty("type")).equalsIgnoreCase("proc")):
                         newest = m
-                                    
+
         return newest
-                                    
 
 
+
+    @property
     def getOldestProcessedMessage(self):
-        oldest = null
-        for (Message m: self.processedMessages):
-            if (oldest == null):
+        oldest = None
+        for m in self.processedMessages:
+            if (oldest is None):
                 oldest = m
-                                    
-            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
+
+            elif (oldest.getReceiveTime() > m.getReceiveTime(m)):
                 oldest = m
-                                    
+
         return oldest
 
 
+    @property
     def getOldestFreshMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.processedMessages):
-            if (oldest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
-                        oldest = m
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
-                        oldest = m
-                                    
-        return oldest
-                                    
 
+        oldest = None
+        for m in self.processedMessages:
+            if (oldest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (( m.getProperty("Fresh")) and (m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (( m.getProperty("Fresh")) and (m.getProperty("type")).equalsIgnoreCase("processed")):
+                        oldest = m
+
+        return oldest
+
+
+    @property
     def GetNewestFreshMessage(self):
-        curTime = SimClock.getTime(self)
-        newest = null
-        for (Message m: self.processedMessages):
-            if (newest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if ((() m.getProperty("Fresh")) & & (()m.getProperty("type")).equalsIgnoreCase("processed")):
-                        newest = m
-                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if ((() m.getProperty("Fresh")) & & (m.getProperty("type")).equalsIgnoreCase("processed")):
-                        newest = m
-                                    
-        return newest
-                                    
 
+        newest = None
+        for m in self.processedMessages:
+            if newest is None:
+                if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (( m.getProperty("Fresh")) and (m.getProperty("type")).equalsIgnoreCase("processed")):
+                        newest = m
+                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (( m.getProperty("Fresh")) and (m.getProperty("type")).equalsIgnoreCase("processed")):
+                        newest = m
+
+        return newest
+
+
+    @property
     def getOldestShelfMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.processedMessages):
-            if (oldest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if (!(()m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+
+        oldest = None
+        for m in self.processedMessages:
+            if (oldest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (not(m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")):
                         oldest = m
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if (!(() m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (not( m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")):
                         oldest = m
-                                    
+
         return oldest
-                                    
+
+    @property
     def getNewestShelfMessage(self):
-        curTime = SimClock.getTime(self)
-        newest = null
-        for (Message m: self.processedMessages):
-            if (newest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if (!(()m.getProperty("Fresh")) & & (() m.getProperty("type")).equalsIgnoreCase("processed")):
+
+        newest = None
+        for m in self.processedMessages:
+            if (newest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (not(m.getProperty("Fresh")) and ( m.getProperty("type")).equalsIgnoreCase("processed")):
                         newest = m
-                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("type") is not None):
-                    if (!(() m.getProperty("Fresh") & & (() m.getProperty("type")).equalsIgnoreCase("processed"))):
+                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("type") is not None):
+                    if (not( m.getProperty("Fresh") and ( m.getProperty("type")).equalsIgnoreCase("processed"))):
                         newest = m
-                                    
+
         return newest
 
 
+    @property
     def getOldestQueueFreshMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.processMessages):
-            if (oldest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if ((() m.getProperty("Fresh")) & & ()m.getProperty("procTime") <= curTime):
+
+        oldest = None
+        for m in self.processMessages:
+            if (oldest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (( m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
                         oldest = m
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & &
-                                          m.getProperty("procTime") is not None):
-                                    if ((() m.getProperty("Fresh")) & & (
-                                    )m.getProperty("procTime") <= curTime):
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (( m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
                                         oldest = m
-                                    
+
         return oldest
-                                    
 
 
+
+    @property
     def getNewestQueueFreshMessage(self):
-        curTime = SimClock.getTime(self)
-        newest = null
-        for (Message m: self.processMessages):
-            if (newest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if ((() m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
-                        newest = m
-                                    
-                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if ((() m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
-                        newest = m
-                                    
-        return newest
-                                    
 
+        newest = None
+        for m in self.processMessages:
+            if (newest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (( m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
+                        newest = m
+
+                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (( m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
+                        newest = m
+
+        return newest
+
+
+    @property
     def getOldestQueueShelfMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.processMessages):
-            if (oldest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if (!(m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
-                        oldest = m
-                                    
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if (!(m.getProperty("Fresh")) & & ()m.getProperty("procTime") <= curTime):
-                        oldest = m
-                                    
-        return oldest
-                                    
 
+        oldest = None
+        for m in self.processMessages:
+            if (oldest is None):
+                if (m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (not(m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
+                        oldest = m
+
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if (not(m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime):
+                        oldest = m
+
+        return oldest
+
+
+    @property
     def getNewestQueueShelfMessage(self):
-        curTime = SimClock.getTime(self)
-        newest = null
-        for (Message m: self.processMessages):
-            if (newest == null):
-                if (m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if(!m.getProperty("Fresh")) & & m.getProperty("procTime") <= curTime):
+
+        newest = None
+        for m in self.processMessages:
+            if newest is None:
+                if m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None:
+                    if not (m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
                         newest = m
-                                    
-                elif (newest.getReceiveTime(self) < m.getReceiveTime(self) & & m.getProperty("Fresh") is not None & & m.getProperty("procTime") is not None):
-                    if (!(() m.getProperty("Fresh") & & ()m.getProperty("procTime") <= curTime)):
+
+                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
+                    if not (m.getProperty("Fresh") and m.getProperty("procTime") <= curTime) :
                         newest = m
-                                    
+
         return newest
 
 
+    @property
     def getOldestStaticMessage(self):
-        oldest = null
-        for (Message m: self.staticMessages):
-            if (oldest == null):
+        oldest = None
+        for m in self.staticMessages:
+            if (oldest is None):
                 oldest = m
-                                    
-            elif (oldest.getReceiveTime(self) > m.getReceiveTime(self)):
-                oldest = m
-                                    
-                                    
-        return oldest
-                                    
 
+            elif (oldest.getReceiveTime() > m.getReceiveTime(m)):
+                oldest = m
+
+
+        return oldest
+
+
+    @property
     def getOldestStaleStaticMessage(self):
-        curTime = SimClock.getTime(self)
-        oldest = null
-        for (Message m: self.staticMessages):
-            if (oldest == null):
+
+        oldest = None
+        for m in self.staticMessages:
+            if (oldest is None):
                 if (m.getProperty("shelfLife") is not None):
-                    if ((() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+                    if (( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)):
                         oldest = m
-                                    
-                elif (oldest.getReceiveTime(self) > m.getReceiveTime(self) & & m.getProperty("shelfLife") is not None):
-                    if ((() m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(self)):
+
+                elif (oldest.getReceiveTime() > m.getReceiveTime(m) and m.getProperty("shelfLife") is not None):
+                    if (( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m)):
                         oldest = m
 
         return oldest
-                                    
 
 
-                                    
+
+
     def getCompressionRate(self):
         return self.compressionRate
-                                    
+
 
 class Cache(object):
     """Base implementation of a cache object"""
@@ -3760,7 +3782,7 @@ class BeladyMinCache(Cache):
         self._next = defaultdict(deque)
         for i, k in enumerate(trace):
             self._next[k].append(i)
-        for k in self._next.values():
+        for k in self._next.values:
             k.append(np.infty)
         self._cache = {}
 
@@ -3775,7 +3797,7 @@ class BeladyMinCache(Cache):
 
     @inheritdoc(Cache)
     def dump(self):
-        return set(self._cache.keys())
+        return set(self._cache.keys)
 
     @inheritdoc(Cache)
     def has(self, k, *args, **kwargs):
@@ -3783,7 +3805,7 @@ class BeladyMinCache(Cache):
 
     @inheritdoc(Cache)
     def get(self, k, *args, **kwargs):
-        self._next[k].popleft()
+        self._next[k].popleft
         return k in self._cache
 
     def put(self, k, *args, **kwargs):
@@ -3807,7 +3829,7 @@ class BeladyMinCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
 
 
 @register_cache_policy('LRU')
@@ -3827,7 +3849,7 @@ class LruCache(Cache):
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, **kwargs):
-        self._cache = LinkedSet()
+        self._cache = LinkedSet
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
@@ -3874,7 +3896,7 @@ class LruCache(Cache):
     @inheritdoc(Cache)
     def get(self, k, *args, **kwargs):
         # search content over the list
-        # if it has it push on top, otherwise return false
+        # if it has it push on top, otherwise return False
         if k not in self._cache:
             return False
         self._cache.move_to_top(k)
@@ -3902,7 +3924,7 @@ class LruCache(Cache):
             return None
         # if content not in cache append it on top
         self._cache.append_top(k)
-        return self._cache.pop_bottom() if len(self._cache) > self._maxlen else None
+        return self._cache.pop_bottom if len(self._cache) > self._maxlen else None
 
     @inheritdoc(Cache)
     def remove(self, k, *args, **kwargs):
@@ -3913,7 +3935,7 @@ class LruCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
 
 
 @register_cache_policy('SLRU')
@@ -3952,14 +3974,14 @@ class SegmentedLruCache(Cache):
         if not isinstance(segments, int) or segments <= 0 or segments > maxlen:
             raise ValueError('segments must be an integer and 0 < segments <= maxlen')
         if alloc:
-            if len(alloc) != segments:
+            if len(alloc) not= segments:
                 raise ValueError('alloc must be an iterable with as many entries as segments')
             if np.abs(np.sum(alloc) - 1) > 0.001:
                 raise ValueError('All alloc entries must sum up to 1')
         else:
             alloc = [1 / segments for _ in range(segments)]
         self._segment_maxlen = apportionment(maxlen, alloc)
-        self._segment = [LinkedSet() for _ in range(segments)]
+        self._segment = [LinkedSet for _ in range(segments)]
         # This map is a dictionary mapping each item in the cache with the
         # segment in which it is located. This is not strictly necessary to
         # locate an item as we could have used the map in each segment.
@@ -3992,7 +4014,7 @@ class SegmentedLruCache(Cache):
             self._segment[seg - 1].append_top(k)
             self._cache[k] = seg - 1
             if len(self._segment[seg - 1]) > self._segment_maxlen[seg - 1]:
-                demoted = self._segment[seg - 1].pop_bottom()
+                demoted = self._segment[seg - 1].pop_bottom
                 self._segment[seg].append_top(demoted)
                 self._cache[demoted] = seg
         return True
@@ -4023,7 +4045,7 @@ class SegmentedLruCache(Cache):
                 self._segment[seg - 1].append_top(k)
                 self._cache[k] = seg - 1
                 if len(self._segment[seg - 1]) > self._segment_maxlen[seg - 1]:
-                    demoted = self._segment[seg - 1].pop_bottom()
+                    demoted = self._segment[seg - 1].pop_bottom
                     self._segment[seg].append_top(demoted)
                     self._cache[demoted] = seg
             return None
@@ -4032,7 +4054,7 @@ class SegmentedLruCache(Cache):
         self._segment[-1].append_top(k)
         self._cache[k] = len(self._segment) - 1
         if len(self._segment[-1]) > self._segment_maxlen[-1]:
-            evicted = self._segment[-1].pop_bottom()
+            evicted = self._segment[-1].pop_bottom
             self._cache.pop(evicted)
             return evicted
 
@@ -4075,9 +4097,9 @@ class SegmentedLruCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
         for s in self._segment:
-            s.clear()
+            s.clear
 
 
 @register_cache_policy('IN_CACHE_LFU')
@@ -4139,7 +4161,7 @@ class InCacheLfuCache(Cache):
     @inheritdoc(Cache)
     def put(self, k, *args, **kwargs):
         if not self.has(k):
-            self.t += 1
+            self.t += 1 1
             self._cache[k] = (1, self.t)
             if len(self._cache) > self._maxlen:
                 evicted = min(self._cache, key=lambda x: self._cache[x])
@@ -4157,7 +4179,7 @@ class InCacheLfuCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
 
 
 
@@ -4186,7 +4208,7 @@ class PerfectLfuCache(Cache):
         # Dict storing counter for all contents, not only those in cache
         self._counter = {}
         # Set storing only items currently in cache
-        self._cache = set()
+        self._cache = set
         self.t = 0
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
@@ -4211,7 +4233,7 @@ class PerfectLfuCache(Cache):
 
     @inheritdoc(Cache)
     def get(self, k, *args, **kwargs):
-        self.t += 1
+        self.t += 1 1
         if k in self._counter:
             freq, t = self._counter[k]
             self._counter[k] = freq + 1, t
@@ -4249,8 +4271,8 @@ class PerfectLfuCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
-        self._counter.clear()
+        self._cache.clear
+        self._counter.clear
 
 
 @register_cache_policy('FIFO')
@@ -4267,9 +4289,9 @@ class FifoCache(Cache):
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, *args, **kwargs):
-        self._cache = set()
+        self._cache = set
         self._maxlen = int(maxlen)
-        self._d = deque()
+        self._d = deque
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
 
@@ -4312,7 +4334,7 @@ class FifoCache(Cache):
         for c in self._d:
             if c == k:
                 return i
-            i += 1
+            i += 1 1
         raise ValueError('The item %s is not in the cache' % str(k))
 
     @inheritdoc(Cache)
@@ -4326,7 +4348,7 @@ class FifoCache(Cache):
             self._cache.add(k)
             self._d.appendleft(k)
         if len(self._cache) > self.maxlen:
-            evicted = self._d.pop()
+            evicted = self._d.pop
             self._cache.remove(evicted)
         return evicted
 
@@ -4341,8 +4363,8 @@ class FifoCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
-        self._d.clear()
+        self._cache.clear
+        self._d.clear
 
 
 @register_cache_policy('CLIMB')
@@ -4357,7 +4379,7 @@ class ClimbCache(Cache):
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, *args, **kwargs):
-        self._cache = LinkedSet()
+        self._cache = LinkedSet
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
@@ -4403,7 +4425,7 @@ class ClimbCache(Cache):
     @inheritdoc(Cache)
     def get(self, k, *args, **kwargs):
         # search content over the list
-        # if it has it move it one position up, otherwise return false
+        # if it has it move it one position up, otherwise return False
         if k not in self._cache:
             return False
         self._cache.move_up(k)
@@ -4436,7 +4458,7 @@ class ClimbCache(Cache):
         # reference to this in literature. Anyway, I think this should not have
         # an impact on steady state performance
         if len(self._cache) == self._maxlen:
-            evicted = self._cache.pop_bottom()
+            evicted = self._cache.pop_bottom
         else:
             evicted = None
         self._cache.append_bottom(k)
@@ -4451,7 +4473,7 @@ class ClimbCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
 
 @register_cache_policy('RAND')
 class RandEvictionCache(Cache):
@@ -4472,7 +4494,7 @@ class RandEvictionCache(Cache):
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
-        self._cache = set()
+        self._cache = set
         self._a = [None for _ in range(self._maxlen)]
 
     @inheritdoc(Cache)
@@ -4521,7 +4543,7 @@ class RandEvictionCache(Cache):
 
     @inheritdoc(Cache)
     def clear(self):
-        self._cache.clear()
+        self._cache.clear
 
 
 def insert_after_k_hits_cache(cache, k=2, memory=None):
@@ -4562,7 +4584,7 @@ def insert_after_k_hits_cache(cache, k=2, memory=None):
         return cache
     hits = {}
     if memory is not None:
-        queue = LinkedSet()
+        queue = LinkedSet
     c_put = cache.put
 
     def put(item, force_insert=False, *args, **kwargs):
@@ -4573,7 +4595,7 @@ def insert_after_k_hits_cache(cache, k=2, memory=None):
                     queue.remove(item)
             return c_put(item)
         if item in hits:
-            hits[item] += 1
+            hits[item] += 1 1
             if hits[item] < k:
                 return None
             else:
@@ -4587,7 +4609,7 @@ def insert_after_k_hits_cache(cache, k=2, memory=None):
             if memory is not None:
                 queue.append_top(item)
                 if len(queue) > memory:
-                    evicted = queue.pop_bottom()
+                    evicted = queue.pop_bottom
                     hits.pop(evicted)
             return None
 
@@ -4630,7 +4652,7 @@ def rand_insert_cache(cache, p, seed=None):
     random.seed(seed)
     c_put = cache.put
     def put(k, *args, **kwargs):
-        if random.random() < p:
+        if random.random < p:
             return c_put(k)
     cache.put = put
     cache.put.__doc__ = c_put.__doc__
@@ -4745,12 +4767,12 @@ def keyval_cache(cache):
             The list of items currently stored in the cache represented as
             key, value pairs
         """
-        dump = k_dump()
+        dump = k_dump
         return [(k, cache._val[k]) for k in dump]
 
-    def clear():
-        k_clear()
-        cache._val.clear()
+    def clear:
+        k_clear
+        cache._val.clear
 
     def value(k, *args, **kwargs):
         """Return the value of item k
@@ -4827,7 +4849,7 @@ def ttl_cache(cache, f_time):
     cache.f_time = f_time
     cache.expiry = {}
 
-    cache._exp_list = LinkedSet()
+    cache._exp_list = LinkedSet
 
     c_put = cache.put
     c_get = cache.get
@@ -4846,17 +4868,17 @@ def ttl_cache(cache, f_time):
         """
         while cache._exp_list.bottom is not None and \
               cache.expiry[cache._exp_list.bottom] < expiry:
-            expired = cache._exp_list.pop_bottom()
+            expired = cache._exp_list.pop_bottom
             cache.expiry.pop(expired)
             c_remove(expired)
 
-    def purge():
+    def purge:
         """Purge all expired items"""
-        cache._purge_till(cache.f_time())
+        cache._purge_till(cache.f_time)
 
     def get(k, *args, **kwargs):
         if c_get(k):
-            if cache.f_time() < cache.expiry[k]:
+            if cache.f_time < cache.expiry[k]:
                 return True
             else:
                 remove(k)
@@ -4884,7 +4906,7 @@ def ttl_cache(cache, f_time):
         evicted : any hashable type
             The evicted object or *None* if no contents were evicted.
         """
-        now = cache.f_time()
+        now = cache.f_time
         if ttl is not None:
             if expires is not None:
                 raise ValueError('Both expires and ttl parameters provided. '
@@ -4922,14 +4944,14 @@ def ttl_cache(cache, f_time):
         return evicted
 
     def has(k, *args, **kwargs):
-        return c_has(k) and cache.f_time() <= cache.expiry[k]
+        return c_has(k) and cache.f_time <= cache.expiry[k]
 
     def remove(k, *args, **kwargs):
         c_remove(k)
         cache.expiry.pop(k)
         cache._exp_list.remove(k)
 
-    def dump():
+    def dump:
         """Return a dump of all the elements currently in the cache possibly
         sorted according to the eviction policy.
 
@@ -4939,14 +4961,14 @@ def ttl_cache(cache, f_time):
             The list of items currently stored in the cache represented as
             (key, expiration time) pairs
         """
-        cache.purge()
-        dump = c_dump()
+        cache.purge
+        dump = c_dump
         return [(k, cache.expiry[k]) for k in dump]
 
-    def clear():
-        c_clear()
-        cache.expiry.clear()
-        cache._exp_list.clear()
+    def clear:
+        c_clear
+        cache.expiry.clear
+        cache._exp_list.clear
 
     cache._purge_till = _purge_till
 
@@ -4961,5 +4983,5 @@ def ttl_cache(cache, f_time):
 
     return cache
 
-def ttl_keyval_cache():
+def ttl_keyval_cache:
     pass

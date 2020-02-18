@@ -3,6 +3,12 @@
 
 The orchestrator is responsible for scheduling experiments specified in the
 user-provided settings.
+
+
+    This is the file where caches are associated, THROUGH PLACEMENT
+
+    TODO: This is where the placement strategy is determined and, through it,
+        caches are associated to nodes
 """
 from __future__ import division
 import time
