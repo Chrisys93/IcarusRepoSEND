@@ -5,6 +5,8 @@ This module contains the implementations of all the cache replacement policies
 provided by Icarus.
 """
 from __future__ import division
+
+import time
 from collections import deque, defaultdict
 import random
 import abc
@@ -2510,7 +2512,7 @@ class RepoStorage(object):
 
         if (sm is not None):
             if ((sm.getProperty("type")).equalsIgnoreCase("nonproc")) :
-                if (host.hasStorageCapability()):
+                if (self.host.hasStorageCapability()):
                     self.staticMessages.add(sm)
                     self.staticSize += sm.getSize()
 
@@ -2563,7 +2565,7 @@ class RepoStorage(object):
             self.mStorTimeMax = sm.getProperty("storTime")
 
         else :
-
+            curTime = time.time()
             sm.addProperty("storTime", curTime - sm.getReceiveTime(sm))
             self.mStorTimeNo += 1
             self.mStorTime += sm.getProperty("storTime")
@@ -2589,8 +2591,8 @@ class RepoStorage(object):
                     self.mStorTimeMax = sm.getProperty("storTime")
 
             else :
-
-                sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+                curTime = time.time()
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(sm))
                 self.mStorTimeNo += 1
                 self.mStorTime += sm.getProperty("storTime")
                 if (self.mStorTimeMax < sm.getProperty("storTime")):
@@ -2618,8 +2620,8 @@ class RepoStorage(object):
                 self.mStorTimeMax = sm.getProperty("storTime")
 
             else:
-
-                sm.addProperty("storTime", curTime - sm.getReceiveTime(m))
+                curTime = time.time()
+                sm.addProperty("storTime", curTime - sm.getReceiveTime(sm))
                 self.mStorTimeNo += 1
                 self.mStorTime += sm.getProperty("storTime")
             if (self.mStorTimeMax < sm.getProperty("storTime")):
@@ -2681,7 +2683,7 @@ class RepoStorage(object):
         return self.staticSize
 
     def getStaleStaticMessagesSize(self):
-
+        curTime = time.time()
         size = 0
         for m in self.staticMessages :
             if m.getProperty("shelfLife") is not None and ( m.getProperty("shelfLife")) <= curTime - m.getReceiveTime(m) :
@@ -2694,7 +2696,7 @@ class RepoStorage(object):
     def getProcessedMessagesSize(self):
         processedUsed = 0
         for msg in self.processedMessages :
-            processedUsed += 1 msg.getSize()
+            processedUsed += msg.getSize()
             return processedUsed
 
     def getFullCachedMessagesNo(self):
@@ -2916,10 +2918,10 @@ class RepoStorage(object):
 
 
     def getOverallMeanIncomingMesssageNo(self):
-        return (self.totalReceivedMessages / SimClock.getTime())
+        return (self.totalReceivedMessages / time.time())
 
     def getOverallMeanIncomingSpeed(self):
-        return (self.totalReceivedMessagesSize / SimClock.getTime())
+        return (self.totalReceivedMessagesSize / time.time())
 
 
     """
@@ -3235,7 +3237,7 @@ class RepoStorage(object):
 
     @property
     def getOldestInvalidProcessMessage(self):
-
+        curTime = time.time()
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
@@ -3362,7 +3364,7 @@ class RepoStorage(object):
 
     @property
     def getOldestQueueFreshMessage(self):
-
+        curTime = time.time()
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
@@ -3379,7 +3381,7 @@ class RepoStorage(object):
 
     @property
     def getNewestQueueFreshMessage(self):
-
+        curTime = time.time()
         newest = None
         for m in self.processMessages:
             if (newest is None):
@@ -3396,7 +3398,7 @@ class RepoStorage(object):
 
     @property
     def getOldestQueueShelfMessage(self):
-
+        curTime = time.time()
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
@@ -3413,16 +3415,16 @@ class RepoStorage(object):
 
     @property
     def getNewestQueueShelfMessage(self):
-
+        curTime = time.time()
         newest = None
         for m in self.processMessages:
             if newest is None:
                 if m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None:
-                    if not (m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime) :
+                    if not (m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime:
                         newest = m
 
-                elif (newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None):
-                    if not (m.getProperty("Fresh") and m.getProperty("procTime") <= curTime) :
+                elif newest.getReceiveTime() < m.getReceiveTime(m) and m.getProperty("Fresh") is not None and m.getProperty("procTime") is not None:
+                    if not (m.getProperty("Fresh")) and m.getProperty("procTime") <= curTime:
                         newest = m
 
         return newest
@@ -3444,7 +3446,7 @@ class RepoStorage(object):
 
     @property
     def getOldestStaleStaticMessage(self):
-
+        curTime = time.time()
         oldest = None
         for m in self.staticMessages:
             if (oldest is None):
@@ -3974,7 +3976,7 @@ class SegmentedLruCache(Cache):
         if not isinstance(segments, int) or segments <= 0 or segments > maxlen:
             raise ValueError('segments must be an integer and 0 < segments <= maxlen')
         if alloc:
-            if len(alloc) not= segments:
+            if len(alloc) != segments:
                 raise ValueError('alloc must be an iterable with as many entries as segments')
             if np.abs(np.sum(alloc) - 1) > 0.001:
                 raise ValueError('All alloc entries must sum up to 1')
@@ -4161,7 +4163,7 @@ class InCacheLfuCache(Cache):
     @inheritdoc(Cache)
     def put(self, k, *args, **kwargs):
         if not self.has(k):
-            self.t += 1 1
+            self.t += 1
             self._cache[k] = (1, self.t)
             if len(self._cache) > self._maxlen:
                 evicted = min(self._cache, key=lambda x: self._cache[x])
@@ -4233,7 +4235,7 @@ class PerfectLfuCache(Cache):
 
     @inheritdoc(Cache)
     def get(self, k, *args, **kwargs):
-        self.t += 1 1
+        self.t += 1
         if k in self._counter:
             freq, t = self._counter[k]
             self._counter[k] = freq + 1, t
@@ -4334,7 +4336,7 @@ class FifoCache(Cache):
         for c in self._d:
             if c == k:
                 return i
-            i += 1 1
+            i += 1
         raise ValueError('The item %s is not in the cache' % str(k))
 
     @inheritdoc(Cache)
@@ -4595,7 +4597,7 @@ def insert_after_k_hits_cache(cache, k=2, memory=None):
                     queue.remove(item)
             return c_put(item)
         if item in hits:
-            hits[item] += 1 1
+            hits[item] += 1
             if hits[item] < k:
                 return None
             else:
@@ -4770,7 +4772,7 @@ def keyval_cache(cache):
         dump = k_dump
         return [(k, cache._val[k]) for k in dump]
 
-    def clear:
+    def clear(self):
         k_clear
         cache._val.clear
 
@@ -4872,7 +4874,7 @@ def ttl_cache(cache, f_time):
             cache.expiry.pop(expired)
             c_remove(expired)
 
-    def purge:
+    def purge():
         """Purge all expired items"""
         cache._purge_till(cache.f_time)
 
@@ -4951,7 +4953,7 @@ def ttl_cache(cache, f_time):
         cache.expiry.pop(k)
         cache._exp_list.remove(k)
 
-    def dump:
+    def dump():
         """Return a dump of all the elements currently in the cache possibly
         sorted according to the eviction policy.
 
@@ -4965,7 +4967,7 @@ def ttl_cache(cache, f_time):
         dump = c_dump
         return [(k, cache.expiry[k]) for k in dump]
 
-    def clear:
+    def clear():
         c_clear
         cache.expiry.clear
         cache._exp_list.clear
@@ -4983,5 +4985,5 @@ def ttl_cache(cache, f_time):
 
     return cache
 
-def ttl_keyval_cache:
+def ttl_keyval_cache():
     pass
