@@ -489,6 +489,11 @@ class NetworkModel(object):
 
     This object should never be edited by strategies directly, but only through
     calls to the network controller.
+
+    TODO: This is where all the node characteristics are determined, through the "stack" property.
+        Look into this, how it is initiated (discovered in cacheplacement, so maybe start with that)
+        and develop on that, to associate RepoStorage objects and see how messages could be better
+        "instantiated".
     """
 
     def __init__(self, topology, cache_policy, sched_policy, n_services, rate, seed=0, shortest_path=None):

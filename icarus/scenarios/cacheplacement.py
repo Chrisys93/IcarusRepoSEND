@@ -17,6 +17,7 @@ from icarus.registry import register_cache_placement
 from icarus.scenarios.algorithms import compute_clusters, compute_p_median, deploy_clusters
 
 __all__ = [
+    'repo_storage_placement'
     'uniform_cache_placement',
     'uniform_sit_cache_placement',
     'degree_centrality_cache_placement',
@@ -26,7 +27,81 @@ __all__ = [
     'optimal_median_cache_placement',
     'optimal_hashrouting_cache_placement',
     'clustered_hashrouting_cache_placement',
-          ]
+]
+
+
+@register_cache_placement('RepoStoragePlacement')
+def repo_storage_placement(topology, storage_budget, spread=0.5,
+                           metric_dict=None, target='top',
+                           **kwargs):
+    """
+    We shall register a separate strategy in here, to place RepoStorage storage
+    systems on top of nodes, instead of caches.
+
+    TODO: Place and associate storage according to requirements, in the nodes of
+        the (more/different) simulation scenarios. Add/override storageCapability
+        and processingCapability to the nodes' properties. Also, actually associate
+        RepoStorage objects to each node! NOT ONLY SIZES!
+    """
+
+    """Add storage to nodes, by associating RepoStorage objects to each.
+
+    Differently from other cache placement strategies that place cache space
+    to all nodes but proportionally to their centrality, this strategy places
+    storage systems of all the same size in a set of selected nodes.
+
+    Parameters
+    ----------
+    topology : Topology
+        The topology object
+    storage_budget : double
+        The cumulative cache budget
+    spread : float [0, 1], optional
+        The spread factor, The greater it is the more the cache budget is
+        spread among nodes. If it is 1, all candidate nodes are assigned a
+        cache, if it is 0, only the node with the highest/lowest centrality
+        is assigned a cache
+    metric_dict : dict, optional
+        The centrality metric according to which nodes are selected. If not
+        specified, betweenness centrality is selected.
+    target : ("top" | "bottom"), optional
+        The subsection of the ranked node on which to deploy caches.
+    """
+    if spread < 0 or spread > 1:
+        raise ValueError('spread factor must be between 0 and 1')
+    if target not in ('top', 'bottom'):
+        raise ValueError('target argument must be either "top" or "bottom"')
+    if metric_dict is None and spread < 1:
+        metric_dict = nx.betweenness_centrality(topology)
+
+    """
+        The following reminds me that nodes should have the storageCapability and
+        processingCapability properties as well, which should be accessed here and
+        by the RepoStorage systems.
+    """
+
+    icr_candidates = topology.graph['icr_candidates']
+    if spread == 1:
+        target_nodes = icr_candidates
+    else:
+        nodes = sorted(icr_candidates, key=lambda k: metric_dict[k])
+        if target == 'top':
+            nodes = list(reversed(nodes))
+        # cutoff node must be at least one otherwise, if spread is too low, no
+        # nodes would be selected
+        cutoff = max(1, iround(spread * len(nodes)))
+        target_nodes = nodes[:cutoff]
+    storage_size = storage_budget
+    if storage_size == 0:
+        return
+    """
+    This is where nodes receive the storage association. The storage size per node is
+    determined above, and should be used as a parameter, to set the size of each 
+    RepoStorage object associated to each node. \/ In the following code, \/ a copy of
+    the RepoStorage object should be copied and associated to each node.
+    """
+    for v in target_nodes:
+        topology.node[v]['stack'][1]['cache_size'] = storage_size
 
 
 @register_cache_placement('UNIFORM_SIT')
@@ -47,7 +122,7 @@ def uniform_sit_cache_placement(topology, cache_budget, n_contents, **kwargs):
 
     for v in topology.receivers:
         topology.node[v]['stack'][1]['cache_size'] = n_contents
-        
+
 
 @register_cache_placement('UNIFORM')
 def uniform_cache_placement(topology, cache_budget, **kwargs):
@@ -308,7 +383,7 @@ def optimal_hashrouting_cache_placement(topology, cache_budget, n_cache_nodes,
 
 @register_cache_placement('CLUSTERED_HASHROUTING')
 def clustered_hashrouting_cache_placement(topology, cache_budget, n_clusters,
-                            policy, distance='delay', **kwargs):
+                                          policy, distance='delay', **kwargs):
     """Deploy caching nodes for hashrouting in with clusters
 
     Parameters
@@ -354,4 +429,3 @@ def clustered_hashrouting_cache_placement(topology, cache_budget, n_clusters,
                 topology.node[v]['stack'][1]['cache_size'] = cache_size
     else:
         raise ValueError('clustering policy %s not supported' % policy)
-

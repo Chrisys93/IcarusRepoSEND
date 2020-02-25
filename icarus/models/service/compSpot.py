@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 """Computation Spot implementation
-This module contains the implementation of a set of VMs residing at a node. Each VM is abstracted as a FIFO queue. 
+This module contains the implementation of a set of VMs residing at a node. Each VM is abstracted as a FIFO queue.
+
+ All this code needs to be revised, to also fetch all necessary data, once a service (VM) or task (ingress
+processing request) has been decided upon.
+
+TODO: Data needs to be fetched from the closest nodes then, it may be kept in local storage, if available, or,
+    depending on policy/strategy, forwarded to the cloud. Data from the processing nodes should be considered to
+    be another, Edge-produced data, which has its own properties, once stored and/or offloaded - maybe create the
+    processed data with a freshness period and shelf-life that are the mean between its precursors.
 """
 from __future__ import division
 from collections import deque
@@ -30,10 +38,13 @@ SUCCESS = 2
 CLOUD = 3
 NO_INSTANCES = 4
 
+
+
 class VM(object):
     """
     A VM object to simulate a container, Unikernel, VM, etc.
     """
+
     # Time to instantiate a VM
     instantiationDuration = 0.8
 

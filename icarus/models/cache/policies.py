@@ -3,6 +3,10 @@
 
 This module contains the implementations of all the cache replacement policies
 provided by Icarus.
+
+TODO: Add the feedback handling functions in the RepoStorage class definition.
+    Adding messages to the repository must be done through other code files/
+    classes within those files. FIND THEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 """
 from __future__ import division
 
@@ -456,7 +460,7 @@ class LinkedSet(object):
 
 
 class RepoStorage(object):
-    def __init__(self, dtnHost, storageSize, compressionRate):
+    def __init__(self, node, storageSize, compressionRate):
         """Constructor
 
         Parameters
@@ -464,7 +468,7 @@ class RepoStorage(object):
         maxlen : int
             The maximum number of items the cache can store
         """
-        self.host = dtnHost
+        self.host = node
         #self.messages = new
         #Collection
         self.staticMessages = list
@@ -694,6 +698,7 @@ class RepoStorage(object):
                 i = self.processMessages.indexOf(temp)
                 processMessage = self.processMessages.get(i)
         return processMessage
+
     def getStorTimeNo(self):
         return self.mStorTimeNo
 
@@ -734,9 +739,15 @@ class RepoStorage(object):
             return processedUsed
 
     def getFullCachedMessagesNo(self):
+        """
+            Need to add the feedback "functions" and interfacing
+            TODO: Add the outward feedback message generation definitions,
+                like the gets below, under them.
+        """
         proc = self.cachedMessages
         self.cachedMessages = 0
         return proc
+
 
     """
     *Returns the host this repo storage system is in

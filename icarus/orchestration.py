@@ -235,6 +235,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
             # Cache budget is the cumulative number of cache entries across
             # the whole network
             cachepl_spec['cache_budget'] = workload.n_contents * network_cache
+
+            # TODO: ADD STORAGE-SPECIFIC PLACEMENT AND BUDGET VARIABLES!
             
             # Onur: need the full budget to assign to receivers for SIT cache placement
             cachepl_spec['n_contents'] = workload.n_contents
