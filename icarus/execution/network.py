@@ -140,8 +140,24 @@ class NetworkView(object):
             model.compSpot[node].view = self
             model.compSpot[node].node = node
 
-    def service_locations(self, k):
-        """ TODO implement this
+    def service_locations(self, topics):
+        """Return a set of all current locations of a specific content.
+
+                This include both persistent content sources and temporary caches.
+
+                Parameters
+                ----------
+                k : any hashable type
+                    The function identifier
+
+                topics: any function and/or content topics
+                    Topics identifiers, as array
+
+                Returns
+                -------
+                nodes : set
+                    A set of all nodes currently storing the given content
+        TODO implement this - INDEED!
         """
 
     def content_locations(self, k):
@@ -160,6 +176,13 @@ class NetworkView(object):
             A set of all nodes currently storing the given content
         """
         loc = set(v for v in self.model.cache if self.model.cache[v].has(k))
+        # This ^ locates all the nodes which have that content (with that hash)
+        # cached. TODO: Add a content type/topic_present method and a
+        #               hashed_function_present method to the RepoStorage class,
+        #               to check if that node has the requested item and keep note
+        #               in the centralised mgmt system for that service hash/content
+        #               topic. Add RepoStorage - node associations in NetworkModel!!!
+
         source = self.content_source(k)
         if source:
             loc.add(source)
@@ -497,6 +520,11 @@ class NetworkModel(object):
     """
 
     def __init__(self, topology, cache_policy, sched_policy, n_services, rate, seed=0, shortest_path=None):
+        """
+            TODO: Check line 589! That is where the caches are initialised,
+                for each node!
+        """
+
         """Constructor
 
         Parameters
@@ -580,6 +608,7 @@ class NetworkModel(object):
 
         policy_name = cache_policy['name']
         policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
+
         # The actual cache objects storing the content
         self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
                           for node in cache_size}
@@ -716,6 +745,10 @@ class NetworkController(object):
     This class is in charge of executing operations on the network model on
     behalf of a strategy implementation. It is also in charge of notifying
     data collectors of relevant events.
+
+    TODO: Important! One of the main (if not THE MAIN) transmitters of data
+        (and functions) across the network - the main network controller/
+        data plane, it seems.
     """
 
     def __init__(self, model):
@@ -744,7 +777,7 @@ class NetworkController(object):
         """Detach the data collector."""
         self.collector = None
 
-    def start_session(self, timestamp, receiver, content, log, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, log, feedback, flow_id=0, deadline=0):
         """Instruct the controller to start a new session (i.e. the retrieval
         of a content).
 
@@ -759,15 +792,19 @@ class NetworkController(object):
         log : bool
             *True* if this session needs to be reported to the collector,
             *False* otherwise
+        feedback: bool
+            *True* if this session uses feedback for content placement and performance optimisation
+            *False* otherwise
         """
         self.session[flow_id] = dict(timestamp=timestamp,
                             receiver=receiver,
                             content=content,
                             log=log,
+                            feedback=feedback,
                             deadline=deadline)
 
         #if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, flow_id, deadline)
+        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -812,8 +849,65 @@ class NetworkController(object):
         for u, v in path_links(path):
             self.forward_content_hop(u, v, main_path)
 
+
+    def forward_repo_request_path(self, s, t, path=None):
+        """Forward a request from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the forwarding and redirection of the requests,
+            towards the appropriate collectors, for optimal storage placement decisions,
+            depending on service request type and data request source, popularity and distance.
+
+        Parameters
+        ----------
+        s : any hashable type
+            Origin node
+        t : any hashable type
+            Destination node
+        path : list, optional
+            The path to use. If not provided, shortest path is used
+
+        """
+        if path is None:
+            path = self.model.shortest_path[s][t]
+        for u, v in path_links(path):
+            self.forward_request_hop(u, v)
+
+    def forward_repo_content_path(self, u, v, path=None, main_path=True):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+
+        Parameters
+        ----------
+        s : any hashable type
+            Origin node
+        t : any hashable type
+            Destination node
+        path : list, optional
+            The path to use. If not provided, shortest path is used
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        if path is None:
+            path = self.model.shortest_path[u][v]
+        for u, v in path_links(path):
+            self.forward_content_hop(u, v, main_path)
+
+
+
     def forward_request_hop(self, u, v, main_path=True):
         """Forward a request over link  u -> v.
+
+        TODO: Account for feedback collector, as well, on top of the logger.
+            This will be included below, but the session property of 'feedback'
+            also needs to be added in session!
 
         Parameters
         ----------
@@ -826,7 +920,7 @@ class NetworkController(object):
             lead to hit a content. It is normally used to calculate latency
             correctly in multicast cases. Default value is *True*
         """
-        if self.collector is not None and self.session['log']:
+        if self.collector is not None and (self.session['log'] or self.session['feedback']):
             self.collector.request_hop(u, v, main_path)
 
     def forward_content_hop(self, u, v, main_path=True):
@@ -844,7 +938,7 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        if self.collector is not None and self.session['log']:
+        if self.collector is not None and (self.session['log'] or self.session['feedback']):
             self.collector.content_hop(u, v, main_path)
 
     def put_content(self, node, content=0):

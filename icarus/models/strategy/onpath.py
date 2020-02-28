@@ -45,7 +45,8 @@ class Partition(Strategy):
 
     TODO: In case of a miss the request is routed to the source and
         then returned to cache, which will store it and forward it back to the
-        receiver. - !!! this needs to be changed !!!
+        receiver. - !!! this needs to be changed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        THIS IS WHERE CONTENT GETS ASSIGNED TO CACHE!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     This requires median cache placement, which optimizes the placement of
     caches for this strategy.
@@ -309,7 +310,11 @@ class CacheLessForMore(Strategy):
         feedback-led DATA STORAGE MANAGEMENT entity, so that it can obtain updated
         and most-effective data placement, duplication or deletion, depending on
         the latest known system performance diagnosis data for the associated
-        services
+        services. SUPERB! THIS IS EXACTLY WHAT NEEDS TO BE CHANGED TO ASSIGN CACHES
+        DEPENDING ON DISTANCES FROM SERVICE INSTANTIATION!!!!!!!!!!!!!!!!!!!!!!!!!!
+        THIS IS ALSO WHERE INCOMING CONTENT IS HANDLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        (MAY BE BETTER TO WORK ON THIS IN THE OFFPATH.PY FILE, THOUGH, AND FOR ALL
+        SERVICES WITH THE SAME NAME!)
 
     References
     ----------
@@ -331,7 +336,8 @@ class CacheLessForMore(Strategy):
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, log):
         # get all required data
-        source = self.view.content_source(content)
+        source = self.view.content_source(content) # in our case, this should be the original content EDR storage env.
+        #THIS IS WHERE THE MESSAGES AND THEIR METADATA/INFO ARE READ
         path = self.view.shortest_path(receiver, source)
         # Route requests to original source and queries caches on the path
         self.controller.start_session(time, receiver, content, log)

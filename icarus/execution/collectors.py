@@ -9,6 +9,10 @@ latency, path stretch and link load.
 
 To create a new data collector, it is sufficient to create a new class
 inheriting from the `DataCollector` class and override all required methods.
+
+TODO: Create collectors for the different feedback mechanisms, which can then
+    be accessed internally (within the simulation, dynamically, by the routing
+    and storage strategies, to place contents in the appropriate repos.
 """
 from __future__ import division
 import collections
@@ -46,7 +50,7 @@ class DataCollector(object):
         """
         self.view = view
 
-    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, feedback, flow_id=0, deadline=0):
         """Notifies the collector that a new network session started.
 
         A session refers to the retrieval of a content from a receiver, from
@@ -60,6 +64,10 @@ class DataCollector(object):
             The receiver node requesting a content
         content : any hashable type
             The content identifier requested by the receiver
+        feedback: bool
+            *True* if this session and collector uses feedback for the specific content/function,
+                    in content placement and performance optimisation
+            *False* otherwise
         """
         pass
 

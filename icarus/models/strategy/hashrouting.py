@@ -61,6 +61,9 @@ class BaseHashrouting(Strategy):
             The node on which the authoritative cache is deployed
         """
         # TODO: I should probably consider using a better non-cryptographic hash
+        #       also, may need to do smth to include "tags/labels" instead!!!!!!
+        #       THE
+
         # function, like xxhash
         h = hash(content)
         if cluster is not None:
