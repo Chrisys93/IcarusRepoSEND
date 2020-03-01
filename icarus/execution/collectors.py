@@ -13,6 +13,8 @@ inheriting from the `DataCollector` class and override all required methods.
 TODO: Create collectors for the different feedback mechanisms, which can then
     be accessed internally (within the simulation, dynamically, by the routing
     and storage strategies, to place contents in the appropriate repos.
+    CREATE COLLECTOR METHOD FOR RECORDING ALL INCOMING REQUESTS AND ANOTHER FOR
+    RECORDING ALL DATA STORAGE/ENTRIES - REFER TO NETWORK.PY
 """
 from __future__ import division
 import collections

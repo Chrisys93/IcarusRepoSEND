@@ -907,7 +907,8 @@ class NetworkController(object):
 
         TODO: Account for feedback collector, as well, on top of the logger.
             This will be included below, but the session property of 'feedback'
-            also needs to be added in session!
+            also needs to be added in session! THESE SHOULD BE DONE HERE, BUT
+            THEY SHOULD BE PROPERLY DEFINED IN COLLECTORS.PY!!!!!!!!!!!!!!!!!!
 
         Parameters
         ----------
@@ -920,8 +921,10 @@ class NetworkController(object):
             lead to hit a content. It is normally used to calculate latency
             correctly in multicast cases. Default value is *True*
         """
-        if self.collector is not None and (self.session['log'] or self.session['feedback']):
+        if self.collector is not None and self.session['log']:
             self.collector.request_hop(u, v, main_path)
+        if self.collector is not None and self.session['feedback']:
+            self.collector.content_request_labels(u, v, self.collector.session['content'])
 
     def forward_content_hop(self, u, v, main_path=True):
         """Forward a content over link  u -> v.
@@ -938,8 +941,10 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        if self.collector is not None and (self.session['log'] or self.session['feedback']):
+        if self.collector is not None and self.session['log']:
             self.collector.content_hop(u, v, main_path)
+        if self.collector is not None and self.session['feedback']:
+            self.collector.content_storage_labels(u, self.collector.session['content'])
 
     def put_content(self, node, content=0):
         """Store content in the specified node.
