@@ -22,6 +22,7 @@ import collections
 from icarus.registry import register_data_collector
 from icarus.tools import cdf
 from icarus.util import Tree, inheritdoc
+from collections import Counter
 
 
 __all__ = [
@@ -196,7 +197,7 @@ class StoragePlacementCollector(DataCollector):
 
     """
 
-    def __init__(self, request_labels, storage_labels, view, cdf=False):
+    def __init__(self, view, cdf=False):
         """Constructor
 
         Parameters
@@ -236,6 +237,9 @@ class StoragePlacementCollector(DataCollector):
         self.deadline_metric_times = {}
         self.cloud_sat_times = {}
         self.instantiations_times = {}
+
+        self.request_labels = Counter()
+        self.storage_labels = Counter()
 
         if cdf:
             self.latency_data = collections.deque()
@@ -301,7 +305,8 @@ class StoragePlacementCollector(DataCollector):
         self.deadline_metric_interval = 0.0
 
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0, request_labels=Counter(),
+                      storage_labels=Counter()):
         self.sess_count += 1
         self.sess_latency = 0.0
         self.flow_start[flow_id] = timestamp
@@ -309,6 +314,9 @@ class StoragePlacementCollector(DataCollector):
         self.flow_service[flow_id] = content
         self.flow_cloud[flow_id] = False
         self.interval_sess_count += 1
+        #self.session[request_labels] = request_labels
+        #self.session[storage_labels] = storage_labels
+
 
     @inheritdoc(DataCollector)
     def request_hop(self, u, v, main_path=True):

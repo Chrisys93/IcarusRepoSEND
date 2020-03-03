@@ -804,7 +804,8 @@ class NetworkController(object):
                             deadline=deadline)
 
         #if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, content.request_labels, content.storage_labels, feedback, flow_id, deadline)
+        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline, content.request_labels,
+                                     content.storage_labels)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
