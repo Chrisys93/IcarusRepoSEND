@@ -804,7 +804,7 @@ class NetworkController(object):
                             deadline=deadline)
 
         #if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline)
+        self.collector.start_session(timestamp, receiver, content, content.request_labels, content.storage_labels, feedback, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -924,7 +924,7 @@ class NetworkController(object):
         if self.collector is not None and self.session['log']:
             self.collector.request_hop(u, v, main_path)
         if self.collector is not None and self.session['feedback']:
-            self.collector.content_request_labels(u, v, self.collector.session['content'])
+            self.collector.content_request_labels(v, self.collector.request_labels)
 
     def forward_content_hop(self, u, v, main_path=True):
         """Forward a content over link  u -> v.
@@ -944,7 +944,7 @@ class NetworkController(object):
         if self.collector is not None and self.session['log']:
             self.collector.content_hop(u, v, main_path)
         if self.collector is not None and self.session['feedback']:
-            self.collector.content_storage_labels(u, self.collector.session['content'])
+            self.collector.content_storage_labels(u, self.session.storage_labels)
 
     def put_content(self, node, content=0):
         """Store content in the specified node.

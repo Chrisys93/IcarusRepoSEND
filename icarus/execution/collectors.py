@@ -180,6 +180,214 @@ class DataCollector(object):
         """
         pass
 
+
+
+
+@register_data_collector('StoragePlacement')
+class StoragePlacementCollector(DataCollector):
+    """Data collector measuring latency, i.e. the delay taken to delivery a
+    content.
+
+    TODO: The logical flow of feedback-to-action should be:
+        content/request -> network -> collector -> onpath/whatever strategy -> (re)routing
+        BUT: decision on storage placement should either be made oin collector, or another
+        class/entity should be created, specifically for management decisions, to be placed
+        (in the above described process) between collector and "onpath/whatever strategy".
+
+    """
+
+    def __init__(self, request_labels, storage_labels, view, cdf=False):
+        """Constructor
+
+        Parameters
+        ----------
+        request_labels : dictionary with certain amount of dictionary entries
+            Each entry of the dictionary represents an entry for content requested, with that dictionary label
+        storage_labels : dictionary with certain amount of dictionary entries
+            Each entry of the dictionary represents an entry for stored content, with that dictionary label
+        view : NetworkView
+            The network view instance
+        cdf : bool, optional
+            If *True*, also collects a cdf of the latency
+        """
+        self.cdf = cdf
+        self.view = view
+        self.sess_count = 0
+        self.interval_sess_count = 0
+        self.latency_interval = 0.0
+        self.deadline_metric_interval = 0.0
+        self.n_satisfied = 0.0  # number of satisfied requests
+        self.n_satisfied_interval = 0.0
+        self.n_sat_cloud_interval = 0
+        self.n_instantiations_interval = 0
+
+        self.flow_start = {}  # flow_id to start time
+        self.flow_cloud = {}  # True if flow reched cloud
+        self.flow_service = {}  # flow id to service
+        self.flow_deadline = {}  # flow id to deadline
+        self.service_requests = {}  # number of requests per service
+        self.service_satisfied = {}  # number of satisfied requests per service
+
+        # Time series for various metrics
+        self.satrate_times = {}
+        self.latency_times = {}
+        self.idle_times = {}
+        self.node_idle_times = {}
+        self.deadline_metric_times = {}
+        self.cloud_sat_times = {}
+        self.instantiations_times = {}
+
+        if cdf:
+            self.latency_data = collections.deque()
+        self.css = self.view.service_nodes()
+        # self.n_services = self.css.items()[0][1].numOfVMs
+
+    @inheritdoc(DataCollector)
+    def execute_service(self, flow_id, service, node, timestamp, is_cloud):
+        if is_cloud:
+            self.flow_cloud[flow_id] = True
+        else:
+            self.flow_cloud[flow_id] = False
+
+    @inheritdoc(DataCollector)
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
+        self.n_instantiations_interval += 1
+
+    @inheritdoc(DataCollector)
+    def replacement_interval_over(self, replacement_interval, timestamp):
+        if self.interval_sess_count == 0:
+            self.satrate_times[timestamp] = 0.0
+        else:
+            self.satrate_times[timestamp] = self.n_satisfied_interval / self.interval_sess_count
+        print("Number of requests in interval: " + repr(self.interval_sess_count))
+
+        self.instantiations_times[timestamp] = self.n_instantiations_interval
+        self.n_instantiations_interval = 0
+
+        total_idle_time = 0.0
+        total_cores = 0  #  total number of cores in the network
+        for node, cs in self.css.items():
+            if cs.is_cloud:
+                continue
+
+            idle_time = cs.getIdleTime(timestamp)
+            idle_time /= cs.numOfCores
+            total_idle_time += idle_time
+
+            total_cores += cs.numOfCores
+
+            if node not in self.node_idle_times.keys():
+                self.node_idle_times[node] = []
+
+            self.node_idle_times[node].append(idle_time)
+
+            # self.idle_times[timestamp] = total_idle_time
+        self.idle_times[timestamp] = total_idle_time / (total_cores * replacement_interval)
+        if self.n_satisfied_interval == 0:
+            self.latency_times[timestamp] = 0.0
+            self.deadline_metric_times[timestamp] = 0.0
+            self.cloud_sat_times[timestamp] = 0.0
+        else:
+            self.latency_times[timestamp] = self.latency_interval / self.n_satisfied_interval
+            self.deadline_metric_times[timestamp] = self.deadline_metric_interval / self.n_satisfied_interval
+            self.cloud_sat_times[timestamp] = (1.0 * self.n_sat_cloud_interval) / self.n_satisfied_interval
+        # self.per_service_idle_times[timestamp] = [avg_idle_times[x]/replacement_interval for x in range(0, self.n_services)]
+
+        # Initialise interval counts
+        self.n_sat_cloud_interval = 0
+        self.interval_sess_count = 0
+        self.n_satisfied_interval = 0
+        self.latency_interval = 0.0
+        self.deadline_metric_interval = 0.0
+
+    @inheritdoc(DataCollector)
+    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0):
+        self.sess_count += 1
+        self.sess_latency = 0.0
+        self.flow_start[flow_id] = timestamp
+        self.flow_deadline[flow_id] = deadline
+        self.flow_service[flow_id] = content
+        self.flow_cloud[flow_id] = False
+        self.interval_sess_count += 1
+
+    @inheritdoc(DataCollector)
+    def request_hop(self, u, v, main_path=True):
+        if main_path:
+            self.sess_latency += self.view.link_delay(u, v)
+
+    @inheritdoc(DataCollector)
+    def content_hop(self, u, v, main_path=True):
+        if main_path:
+            self.sess_latency += self.view.link_delay(u, v)
+
+    @inheritdoc(DataCollector)
+    def end_session(self, success=True, timestamp=0, flow_id=0):
+        sat = False
+        if not success:
+            return
+        if self.cdf:
+            self.latency_data.append(self.sess_latency)
+
+        if self.flow_deadline[flow_id] >= timestamp:
+            # Request is satisfied
+            if self.flow_cloud[flow_id]:
+                self.n_sat_cloud_interval += 1
+            self.n_satisfied += 1
+            self.n_satisfied_interval += 1
+            sat = True
+            self.latency_interval += timestamp - self.flow_start[flow_id]
+            self.deadline_metric_interval += self.flow_deadline[flow_id] - timestamp
+
+        service = self.flow_service[flow_id]
+        if service not in self.service_requests.keys():
+            self.service_requests[service] = 1
+            self.service_satisfied[service] = 0
+        else:
+            self.service_requests[service] += 1
+
+        if sat:
+            if service in self.service_satisfied.keys():
+                self.service_satisfied[service] += 1
+            else:
+                self.service_satisfied[service] = 1
+
+        del self.flow_deadline[flow_id]
+        del self.flow_start[flow_id]
+        del self.flow_service[flow_id]
+        del self.flow_cloud[flow_id]
+
+    @inheritdoc(DataCollector)
+    def results(self):
+        if self.cdf:
+            self.results['CDF'] = cdf(self.latency_data)
+        results = Tree({'SATISFACTION': 1.0 * self.n_satisfied / self.sess_count})
+        per_service_sats = {}
+        for service in self.service_requests.keys():
+            per_service_sats[service] = 1.0 * self.service_satisfied[service] / self.service_requests[service]
+        results['PER_SERVICE_SATISFACTION'] = per_service_sats
+        results['PER_SERVICE_REQUESTS'] = self.service_requests
+        results['PER_SERVICE_SAT_REQUESTS'] = self.service_satisfied
+        results['SAT_TIMES'] = self.satrate_times
+        results['IDLE_TIMES'] = self.idle_times
+        results['NODE_IDLE_TIMES'] = self.node_idle_times
+        results['LATENCY'] = self.latency_times
+        results['DEADLINE_METRIC'] = self.deadline_metric_times
+        results['CLOUD_SAT_TIMES'] = self.cloud_sat_times
+        results['INSTANTIATION_OVERHEAD'] = self.instantiations_times
+
+        # print "Printing Sat. rate times:"
+        # for key in sorted(self.satrate_times):
+        #    print (repr(key) + " " + repr(self.satrate_times[key]))
+
+        # print "Printing Idle times:"
+        # for key in sorted(self.idle_times):
+        #    print (repr(key) + " " + repr(self.idle_times[key]))
+        # results['VMS_PER_SERVICE'] = self.vms_per_service
+
+        return results
+
+
+
 # Note: The implementation of CollectorProxy could be improved to avoid having
 # to rewrite almost identical methods, for example by playing with __dict__
 # attribute. However, it was implemented this way to make it more readable and
@@ -494,7 +702,7 @@ class LatencyCollector(DataCollector):
     @inheritdoc(DataCollector)
     def results(self):
         if self.cdf:
-            results['CDF'] = cdf(self.latency_data)
+            self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
         per_service_sats = {}
         for service in self.service_requests.keys():
