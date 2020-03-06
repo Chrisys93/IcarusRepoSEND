@@ -32,6 +32,7 @@ from icarus.registry import CACHE_POLICY
 from icarus.util import path_links, iround
 from icarus.models.service.compSpot import ComputationSpot
 from icarus.models.service.compSpot import Task
+from collections import Counter
 
 __all__ = [
     'Service',
@@ -140,7 +141,7 @@ class NetworkView(object):
             model.compSpot[node].view = self
             model.compSpot[node].node = node
 
-    def service_locations(self, topics):
+    def service_locations(self, service_labels=Counter()):
         """Return a set of all current locations of a specific content.
 
                 This include both persistent content sources and temporary caches.
@@ -150,7 +151,7 @@ class NetworkView(object):
                 k : any hashable type
                     The function identifier
 
-                topics: any function and/or content topics
+                service_labels: any function and/or content topics
                     Topics identifiers, as array
 
                 Returns
@@ -162,6 +163,10 @@ class NetworkView(object):
 
     def content_locations(self, k):
         """Return a set of all current locations of a specific content.
+
+        TODO: Add MOST_POPULAR_STORAGE_ and _REQUEST_LABELS, which return
+            the nodes which have the most hits of certain labels, through
+            the "NetworkView" class.
 
         This include both persistent content sources and temporary caches.
 
@@ -359,6 +364,11 @@ class NetworkView(object):
         """Return
         a dictionary consisting of only the nodes with computational spots
         the dict. maps node to its comp. spot
+
+        TODO: EXTEND TO RepoStorage AND labels!
+            Also NOTE: This CompSpot return IS NOT SERVICE-SPECIFIC!!!!!!!
+            NOTE ON NOTE: Check has_computationalSpot and has_service defs
+            below!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
 
         return self.model.compSpot
@@ -442,6 +452,13 @@ class NetworkView(object):
         metrics. It should not be used by strategies to look up for contents
         during the simulation. Instead they should use
         `NetworkController.get_content`
+
+        TODO: Provide another means of showing topics/labels, for RepoStorage
+            in nodes associated with RepoStorage. Provide: node with most of
+            one label, node(s) with the most relevant SET of labels, THEN
+            (more complex) most relevant SET of labels with highest freshness
+            period/shelf-life; could MOST AND LEAST ACCESSED RepoStorage labels
+            be checked???!!!
 
         Parameters
         ----------
@@ -803,9 +820,10 @@ class NetworkController(object):
                             feedback=feedback,
                             deadline=deadline)
 
+        self.sess_content = content
+
         #if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline, content.request_labels,
-                                     content.storage_labels)
+        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -867,12 +885,15 @@ class NetworkController(object):
             Destination node
         path : list, optional
             The path to use. If not provided, shortest path is used
-
+        flow_id : dict, optional
+            The ID of the request and associated flow
         """
         if path is None:
             path = self.model.shortest_path[s][t]
         for u, v in path_links(path):
             self.forward_request_hop(u, v)
+        self.add_request_labels_to_node(s, t, self.sess_content.get_request_labels())
+        self.most_storage_labels_node()
 
     def forward_repo_content_path(self, u, v, path=None, main_path=True):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -884,9 +905,9 @@ class NetworkController(object):
 
         Parameters
         ----------
-        s : any hashable type
+        u : any hashable type
             Origin node
-        t : any hashable type
+        v : any hashable type
             Destination node
         path : list, optional
             The path to use. If not provided, shortest path is used
@@ -900,6 +921,10 @@ class NetworkController(object):
             path = self.model.shortest_path[u][v]
         for u, v in path_links(path):
             self.forward_content_hop(u, v, main_path)
+        # TODO: Add the relevant content labels of the *EDR-admitted* content
+        #       to the network view/model, corresponding to the EDR dictionary/counter
+        #       periodically. (if possible, check here and add, otherwise check
+        #       EDR dictionaries/counters periodically)
 
 
 
@@ -946,6 +971,65 @@ class NetworkController(object):
             self.collector.content_hop(u, v, main_path)
         if self.collector is not None and self.session['feedback']:
             self.collector.content_storage_labels(u, self.session.storage_labels)
+
+    def most_popular_request_node(self, request_labels=Counter()):
+        self.sess_latency = 0.0
+        self.flow_deadline[flow_id] = deadline
+        self.flow_cloud[flow_id] = False
+        self.session[request_labels] = request_labels
+
+    def most_storage_labels_node(self, flow_id=0, deadline_min=0, deadline_max=0, storage_labels=Counter()):
+        # TODO: Maybe storage labels should rather be dictionaries, with only one entry,
+        #       and keep being updated?! (keeping only the request labels as counters)
+        self.sess_latency = 0.0
+        self.session.min_deadline = deadline_min
+        self.session.max_deadline = deadline_max
+        self.flow_cloud[flow_id] = False
+        self.session[storage_labels] = storage_labels
+
+    def add_request_labels_to_node(self, s, t, request_labels):
+        """Forward a request from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the forwarding and redirection of the requests,
+            towards the appropriate collectors, for optimal storage placement decisions,
+            depending on service request type and data request source, popularity and distance.
+
+        Parameters
+        ----------
+        s : any hashable type
+            Origin node
+        t : any hashable type
+            Destination node
+        path : list, optional
+            The path to use. If not provided, shortest path is used
+
+        """
+
+    def add_storage_labels_to_node(self, s, content):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Origin node
+        t : any hashable type
+            Destination node
+        path : list, optional
+            The path to use. If not provided, shortest path is used
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
 
     def put_content(self, node, content=0):
         """Store content in the specified node.

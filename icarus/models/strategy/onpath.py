@@ -64,13 +64,20 @@ class Partition(Strategy):
                              'information. Have you used the optimal median '
                              'cache assignment?')
         self.cache_assignment = self.view.topology().graph['cache_assignment']
+        # TODO: Do repo_assignment, (as mentioned below) to assign RepoStorage
+        #   to all relevant nodes in network!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log):
+    def process_event(self, time, receiver, content, log, feedback=False):
         source = self.view.content_source(content)
         self.controller.start_session(time, receiver, content, log)
+        repoStorage = self.repo_assignment[receiver]
         cache = self.cache_assignment[receiver]
-        self.controller.forward_request_path(receiver, cache)
+        if feedback:
+            self.controller.forward_repo_request_path(receiver, repoStorage)
+        else:
+            self.controller.forward_request_path(receiver, cache)
+
         if not self.controller.get_content(cache):
             self.controller.forward_request_path(cache, source)
             self.controller.get_content(source)
