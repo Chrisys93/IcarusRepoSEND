@@ -253,6 +253,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
             logger.error('No content placement implementation named %s was found.'
                          % contpl_name)
             return None
+        # TODO: THIS IS WHERE COTENTS ARE PLACED!
+        #       It seems like the contents are generated \/\/\/ within workload (workload.contents)
         CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
 
         # caching and routing strategy definition

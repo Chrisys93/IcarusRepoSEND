@@ -98,6 +98,7 @@ class StationaryWorkload(object):
                      if topology.node[v]['stack'][0] == 'receiver']
         self.zipf = TruncatedZipfDist(alpha, n_services-1, seed)
         self.n_contents = n_contents
+        # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.contents = range(0, n_contents)
         self.n_services = n_services
         self.alpha = alpha
@@ -146,7 +147,14 @@ class StationaryWorkload(object):
             else:
                 receiver = self.receivers[self.receiver_dist.rv() - 1]
             node = receiver
-            content = int(self.zipf.rv())
+
+
+
+            content = int(self.zipf.rv())   # TODO: THIS is where the content identifiers are generated! <3
+            content.labels = None
+
+
+
             log = (req_counter >= self.n_warmup)
             flow_id += 1
             deadline = self.model.services[content].deadline + t_event
