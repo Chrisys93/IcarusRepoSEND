@@ -89,7 +89,9 @@ class StationaryWorkload(object):
         dictionary of event attributes.
     """
     def __init__(self, topology, n_contents, alpha, beta=0, rate=1.0,
-                    n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0, n_services=10, **kwargs):
+                 n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
+                 n_services=10, topics='', types='', freshness_pers=0,
+                 shelf_lives=0, msg_sizes=0, **kwargs):
         if alpha < 0:
             raise ValueError('alpha must be positive')
         if beta < 0:
@@ -97,9 +99,17 @@ class StationaryWorkload(object):
         self.receivers = [v for v in topology.nodes_iter()
                      if topology.node[v]['stack'][0] == 'receiver']
         self.zipf = TruncatedZipfDist(alpha, n_services-1, seed)
+
         self.n_contents = n_contents
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # TODO: Associate all below content properties to contents, according to CONFIGURATION required IN FILE!!!!!
         self.contents = range(0, n_contents)
+        self.labels = dict(topics=topics,
+                           types=types)
+        self.freshness_pers = freshness_pers
+        self.shelf_lives = shelf_lives
+        self.sizes = msg_sizes
+
         self.n_services = n_services
         self.alpha = alpha
         self.rate = rate
@@ -150,7 +160,7 @@ class StationaryWorkload(object):
 
 
 
-            content = int(self.zipf.rv())   # TODO: THIS is where the content identifiers are generated! <3
+            content = int(self.zipf.rv())   # TODO: THIS is where the content identifier requests are generated!
             content.labels = None
 
 
@@ -242,6 +252,8 @@ class GlobetraffWorkload(object):
 @register_workload('TRACE_DRIVEN')
 class TraceDrivenWorkload(object):
     """Parse requests from a generic request trace.
+
+    TODO: Maybe check this for modifications, as well
 
     This workload requires two text files:
      * a requests file, where each line corresponds to a string identifying

@@ -101,6 +101,11 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
 
+    TODO: This should be modified, or another one created, to include content
+        placement parameters, like the freshness periods, shelf-lives, topics/types
+        of labels and placement possibilities, maybe depending on hashes, placement
+        of nodes and possibly other scenario-specific/service-specific parameters.
+
     Parameters
     ----------
     topology : Topology

@@ -254,8 +254,10 @@ def run_scenario(settings, params, curr_exp, n_exp):
                          % contpl_name)
             return None
         # TODO: THIS IS WHERE COTENTS ARE PLACED!
-        #       It seems like the contents are generated \/\/\/ within workload (workload.contents)
+        #       It seems like the contents are generated \/\/\/ within workload (workload.contents)!
         CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
+
+        # TODO: THIS IS WHERE contents should be placed, according to ^^^ PLACEMENT SPECIFICATION!!!
 
         # caching and routing strategy definition
         strategy = tree['strategy']
