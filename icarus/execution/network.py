@@ -523,7 +523,30 @@ class NetworkView(object):
         if node in self.model.cache:
             return self.model.cache[node].dump()
 
+    def most_popular_request_node(self, request_labels=Counter()):
+        self.sess_latency = 0.0
+        self.session[request_labels] = request_labels
 
+    def most_storage_labels_node(self, flow_id=0, storage_labels=Counter()):
+        # TODO: Maybe storage labels should rather be dictionaries, with only one entry,
+        #       and keep being updated?! (keeping only the request labels as counters)
+        self.sess_latency = 0.0
+        self.flow_cloud[flow_id] = False
+        self.session[storage_labels] = storage_labels
+
+    def deadline_sensitive_requests(self, flow_id, deadline_min=0, deadline_max=0):
+        """
+        Parameters
+        ----------
+        flow_id : dict, optional
+            The ID of the request and associated flow
+        deadline_min : any hashable type
+            Origin node
+        deadline_max : any hashable type
+            Destination node
+        """
+
+        pass
 class NetworkModel(object):
     """Models the internal state of the network.
 
@@ -893,7 +916,6 @@ class NetworkController(object):
         for u, v in path_links(path):
             self.forward_request_hop(u, v)
         self.add_request_labels_to_node(s, t, self.sess_content.get_request_labels())
-        self.most_storage_labels_node()
 
     def forward_repo_content_path(self, u, v, path=None, main_path=True):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -972,28 +994,17 @@ class NetworkController(object):
         if self.collector is not None and self.session['feedback']:
             self.collector.content_storage_labels(u, self.session.storage_labels)
 
-    def most_popular_request_node(self, request_labels=Counter()):
-        self.sess_latency = 0.0
-        self.flow_deadline[flow_id] = deadline
-        self.flow_cloud[flow_id] = False
-        self.session[request_labels] = request_labels
-
-    def most_storage_labels_node(self, flow_id=0, deadline_min=0, deadline_max=0, storage_labels=Counter()):
-        # TODO: Maybe storage labels should rather be dictionaries, with only one entry,
-        #       and keep being updated?! (keeping only the request labels as counters)
-        self.sess_latency = 0.0
-        self.session.min_deadline = deadline_min
-        self.session.max_deadline = deadline_max
-        self.flow_cloud[flow_id] = False
-        self.session[storage_labels] = storage_labels
-
     def add_request_labels_to_node(self, s, t, request_labels):
         """Forward a request from node *s* to node *t* over the provided path.
 
         TODO: This (and all called methods, defined within this class) should be
             redefined, to account for the forwarding and redirection of the requests,
             towards the appropriate collectors, for optimal storage placement decisions,
-            depending on service request type and data request source, popularity and distance.
+            depending on service request type and data request source, popularity and
+            distance.
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            *AND YES! - flow_id's are basically the identifiers for requests - currently*
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         Parameters
         ----------

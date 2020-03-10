@@ -253,9 +253,23 @@ def run_scenario(settings, params, curr_exp, n_exp):
             logger.error('No content placement implementation named %s was found.'
                          % contpl_name)
             return None
-        # TODO: THIS IS WHERE COTENTS ARE PLACED!
+        #if "_REPO_" in contpl_name:
+        #    contpl_spec = {topics:      workload.labels,
+        #                  types:        ,
+        #                  freshness_pers,
+        #                  shelf_lives   ,
+        #                  msg_sizes}
+        # TODO: THIS IS WHERE CONTENTS ARE PLACED!
+        #       Maybe consider using the ^^^ above spec in the config.py file instead, and not using
+        #       it in workload, or at least use it in both.
+        #       OR Could do the following
+        #       (just to save space and not use the same content specs 2 times in config.py):
         #       It seems like the contents are generated \/\/\/ within workload (workload.contents)!
-        CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
+        if "_REPO_" in contpl_name:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, workload.labels, workload.freshness_pers,
+                                           workload.shelf_lives, workload.sizes, **contpl_spec)
+        else:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
 
         # TODO: THIS IS WHERE contents should be placed, according to ^^^ PLACEMENT SPECIFICATION!!!
 

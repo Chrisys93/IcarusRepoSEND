@@ -11,7 +11,7 @@ from fnss.util import random_from_pdf
 from icarus.registry import register_content_placement
 
 
-__all__ = ['uniform_content_placement', 'weighted_content_placement']
+__all__ = ['uniform_content_placement', 'weighted_content_placement', 'weighted_repo_content_placement']
 
 
 def apply_content_placement(placement, topology):
@@ -73,7 +73,8 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
         The topology object
    contents : iterable
         Iterable of content objects
-    source_weights : dict
+
+   source_weights : dict
         Dict mapping nodes nodes of the topology which are content sources and
         the weight according to which content placement decision is made.
 
@@ -97,7 +98,8 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
 
 
 @register_content_placement('WEIGHTED_REPO')
-def weighted_content_placement(topology, contents, source_weights, seed=None):
+def weighted_repo_content_placement(topology, contents, topics, types, freshness_pers,
+                 shelf_lives, msg_sizes, source_weights, seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
 
@@ -110,8 +112,18 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
     ----------
     topology : Topology
         The topology object
-   contents : iterable
+    contents : iterable
         Iterable of content objects
+    topics :
+
+    types :
+
+    freshness_pers :
+
+    shelf_lives :
+
+    msg_sizes :
+
     source_weights : dict
         Dict mapping nodes nodes of the topology which are content sources and
         the weight according to which content placement decision is made.
@@ -119,17 +131,28 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
     Returns
     -------
     cache_placement : dict
-        Dictionary mapping content objects to source nodes
+       Dictionary mapping content objects to source nodes
 
     Notes
     -----
     A deterministic placement of objects (e.g., for reproducing results) can be
     achieved by using a fix seed value
     """
+
+    # TODO: This is the format that each datum (message) shuold have
+    #       placed_data = {content, msg_topics, msg_type, freshness_per,
+    #                       shelf_life, msg_size}
+
+    placed_data = {}
     random.seed(seed)
+    for c in contents:
+        placed_data[c] = {'content':     c}
     norm_factor = float(sum(source_weights.values()))
+    # TODO: Think about a way to randomise, but still maintain a certain
+    #  distribution among the users that receive data with certain labels.
+    #  Maybe associate the pdf with labels, rather than contents, SOMEHOW!
     source_pdf = dict((k, v / norm_factor) for k, v in source_weights.items())
     content_placement = collections.defaultdict(set)
-    for c in contents:
-        content_placement[random_from_pdf(source_pdf)].add(c)
+    for d in placed_data:
+        content_placement[random_from_pdf(source_pdf)].add(d)
     apply_content_placement(content_placement, topology)
