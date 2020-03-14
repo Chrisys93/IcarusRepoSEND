@@ -214,9 +214,9 @@ class CollectorProxy(DataCollector):
                            for e in self.EVENTS}
 
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, flow_id=0, deadline=0):
         for c in self.collectors['start_session']:
-            c.start_session(timestamp, receiver, content, flow_id, deadline)
+            c.start_session(timestamp, receiver, content, labels, flow_id, deadline)
 
     @inheritdoc(DataCollector)
     def cache_hit(self, node):

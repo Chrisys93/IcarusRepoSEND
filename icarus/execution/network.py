@@ -817,7 +817,7 @@ class NetworkController(object):
         """Detach the data collector."""
         self.collector = None
 
-    def start_session(self, timestamp, receiver, content, log, feedback, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, log, feedback, flow_id=0, deadline=0):
         """Instruct the controller to start a new session (i.e. the retrieval
         of a content).
 
@@ -829,6 +829,8 @@ class NetworkController(object):
             The receiver node requesting a content
         content : any hashable type
             The content identifier requested by the receiver
+        labels :
+
         log : bool
             *True* if this session needs to be reported to the collector,
             *False* otherwise
@@ -839,6 +841,7 @@ class NetworkController(object):
         self.session[flow_id] = dict(timestamp=timestamp,
                             receiver=receiver,
                             content=content,
+                            labels=labels,
                             log=log,
                             feedback=feedback,
                             deadline=deadline)
@@ -846,7 +849,7 @@ class NetworkController(object):
         self.sess_content = content
 
         #if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, feedback, flow_id, deadline)
+        self.collector.start_session(timestamp, receiver, content, labels, feedback, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.

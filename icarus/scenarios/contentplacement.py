@@ -27,6 +27,21 @@ def apply_content_placement(placement, topology):
     for v, contents in placement.items():
         topology.node[v]['stack'][1]['contents'] = contents
 
+def apply_labels_association(association, data, content, topics, types):
+    """
+    Apply association of labels to contents
+
+    Parameters
+    ----------
+    association:
+    topics:
+    types:
+    :return:
+    """
+    for label, content in association.items():
+        if label not in data[content]['labels']:
+            data[content]['labels'].update(association)
+
 def get_sources(topology):
     return [v for v in topology if topology.node[v]['stack'][0] == 'source']
 
@@ -98,8 +113,9 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
 
 
 @register_content_placement('WEIGHTED_REPO')
-def weighted_repo_content_placement(topology, contents, topics, types, freshness_pers,
-                 shelf_lives, msg_sizes, source_weights, seed=None):
+def weighted_repo_content_placement(topology, contents, topics, types, freshness_per,
+                                    shelf_life, msg_size, source_weights, types_weights,
+                                    topics_weights, max_label_nos, seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
 
@@ -118,11 +134,11 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
 
     types :
 
-    freshness_pers :
+    freshness_per :
 
-    shelf_lives :
+    shelf_life :
 
-    msg_sizes :
+    msg_size :
 
     source_weights : dict
         Dict mapping nodes nodes of the topology which are content sources and
@@ -148,11 +164,29 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
     for c in contents:
         placed_data[c] = {'content':     c}
     norm_factor = float(sum(source_weights.values()))
+    # TODO: These ^\/^\/^ might need redefining, to make label-specific
+    #  source weights, and then the labels distributed according to these.
+    #  OR the other way around, distributing sources according to label weights
+    types_labels_norm_factor = float(sum(types_weights.values()))
+    topics_labels_norm_factor = float(sum(topics_weights.values()))
     # TODO: Think about a way to randomise, but still maintain a certain
     #  distribution among the users that receive data with certain labels.
     #  Maybe associate the pdf with labels, rather than contents, SOMEHOW!
     source_pdf = dict((k, v / norm_factor) for k, v in source_weights.items())
+    types_labels_pdf = dict((k, v / types_labels_norm_factor) for k, v in types_weights.items())
+    topics_labels_pdf = dict((k, v / topics_labels_norm_factor) for k, v in topics_weights.items())
+    labels_association = collections.defaultdict(set)
     content_placement = collections.defaultdict(set)
+    # Further TODO: Add all the other data characteristics and maybe place
+    #           content depending on those at a later point (create other
+    #           placement strategies)
+    # NOTE: All label names will come as a list of strings
+    for c in contents:
+        for i in range(1, max_label_nos):
+            if types is not None :
+                labels_association[random_from_pdf(types_labels_pdf)].add(c)
+            labels_association[random_from_pdf(topics_labels_pdf)].add(c)
+        apply_labels_association(labels_association, placed_data, c, topics, types)
     for d in placed_data:
         content_placement[random_from_pdf(source_pdf)].add(d)
     apply_content_placement(content_placement, topology)
