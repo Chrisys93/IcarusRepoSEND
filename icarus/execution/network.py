@@ -597,6 +597,26 @@ class NetworkModel(object):
         # Dictionary mapping the reverse, i.e. nodes to set of contents stored
         self.source_node = {}
 
+        # TODO: ^^^ Need to map labels as contents are mapped above, also the
+        #  other way around. These dicts should be much more extensive than in
+        #  the case of contents, especially since only one content hash normally
+        #  only has a one-to-one mapping and more content hashes mapped to one node
+        #  have many-to-one mappings, being easier to manage as dicts. In our case,
+        #  labels may have one-to-many mappings both ways, making the choice of
+        #  mapping much better, but the choice mechanism more complicated, however
+        #  making it simpler, the more labels (restrictive) the mechanism has to
+        #  choose/filter. Should we also include a label-to-content mapping? - nope,
+        #  nevermind - they already are attached to "contents"
+
+        # Dictionary mapping each node to sets of labels stored in each node
+        # dict of stored labels, keyed by node location, with label counters,
+        # counting number of labels with that name for the node
+        self.node_labels = {}
+        # Dictionary mapping the reverse, i.e. content labels to their storing node(s)
+        # dict of locations of labels keyed by label name, with the number of labels of
+        # that label/key stored in each of these nodes
+        self.labels_node = {}
+
         # A heap with events (see Event class above)
         self.eventQ = []
 
@@ -614,20 +634,24 @@ class NetworkModel(object):
                 self.link_delay[(v, u)] = delay
 
         cache_size = {}
+        storageSize = {}
         comp_size = {}
         service_size = {}
+        all_node_labels = Counter()
         self.rate = rate
-        for node in topology.nodes_iter():
+        for node in topology.nodes():
             stack_name, stack_props = fnss.get_stack(topology, node)
             # get the depth of the tree
             if stack_name == 'router' and 'depth' in self.topology[node].keys():
-                depth = self.topology.node[node]['depth']
+                depth = self.topology.nodes[node]['depth']
                 if depth > self.topology_depth:
                     self.topology_depth = depth
             # get computation size per depth
             if stack_name == 'router':
                 if 'cache_size' in stack_props:
                     cache_size[node] = stack_props['cache_size']
+                if 'storageSize' in stack_props:
+                    storageSize[node] = stack_props['storageSize']
                 if 'computation_size' in stack_props:
                     comp_size[node] = stack_props['computation_size']
                 if 'service_size' in stack_props:
@@ -635,10 +659,20 @@ class NetworkModel(object):
             elif stack_name == 'source': # A Cloud with infinite resources
                 comp_size[node] = float('inf')
                 service_size[node] = float('inf')
+
                 contents = stack_props['contents']
+                for c in contents:
+                    for labels in c['labels']:
+                        all_node_labels.update([labels])
+
                 self.source_node[node] = contents
                 for content in contents:
                     self.content_source[content] = node
+
+                self.labels_node[node].update(all_node_labels)
+                for k, v in all_node_labels:
+                    Counter(self.content_source[k]).update([node, v])
+
         if any(c < 1 for c in cache_size.values()):
             logger.warn('Some content caches have size equal to 0. '
                         'I am setting them to 1 and run the experiment anyway')

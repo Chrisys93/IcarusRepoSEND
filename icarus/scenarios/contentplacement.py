@@ -27,7 +27,7 @@ def apply_content_placement(placement, topology):
     for v, contents in placement.items():
         topology.node[v]['stack'][1]['contents'] = contents
 
-def apply_labels_association(association, data, content, topics, types):
+def apply_labels_association(association, data):
     """
     Apply association of labels to contents
 
@@ -40,7 +40,7 @@ def apply_labels_association(association, data, content, topics, types):
     """
     for label, content in association.items():
         if label not in data[content]['labels']:
-            data[content]['labels'].update(association)
+            data[content]['labels'].update(label)
 
 def get_sources(topology):
     return [v for v in topology if topology.node[v]['stack'][0] == 'source']
@@ -181,12 +181,21 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
     #           content depending on those at a later point (create other
     #           placement strategies)
     # NOTE: All label names will come as a list of strings
+    alter = False
     for c in contents:
         for i in range(1, max_label_nos):
-            if types is not None :
+            if types is not None and not alter:
                 labels_association[random_from_pdf(types_labels_pdf)].add(c)
-            labels_association[random_from_pdf(topics_labels_pdf)].add(c)
-        apply_labels_association(labels_association, placed_data, c, topics, types)
+                alter = True
+            elif alter:
+                labels_association[random_from_pdf(topics_labels_pdf)].add(c)
+                alter = False
+        apply_labels_association(labels_association, placed_data)
+        if freshness_per is not None:
+            placed_data[c]["freshness_per"].update(freshness_per)
+        if shelf_life is not None:
+            placed_data[c]["shelf_life"].update(shelf_life)
+        placed_data[c]["msg_size"].update(msg_size)
     for d in placed_data:
         content_placement[random_from_pdf(source_pdf)].add(d)
     apply_content_placement(content_placement, topology)

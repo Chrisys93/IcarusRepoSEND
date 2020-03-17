@@ -27,10 +27,14 @@ import fnss
 
 from icarus.registry import register_topology_factory
 
+# TODO: Maybe modify ICNTopology, to implement repos
+#  in all nodes, instead of cache_nodes AND sources?
+#  Same goes for network.model...?
 
 __all__ = [
         'IcnTopology',
         'topology_tree',
+        'topology_repo_tree',
         'topology_path',
         'topology_ring',
         'topology_mesh',
@@ -76,6 +80,21 @@ class IcnTopology(fnss.Topology):
                 for v in self
                 if 'stack' in self.node[v]
                 and 'cache_size' in self.node[v]['stack'][1]
+                }
+
+    def repo_nodes(self):
+        """Return a dictionary mapping nodes with a cache and respective cache
+        size
+
+        Returns
+        -------
+        cache_nodes : dict
+            Dictionary mapping node identifiers and cache size
+        """
+        return {v: self.node[v]['stack'][1]['storageSize']
+                for v in self
+                if 'stack' in self.node[v]
+                and 'storageSize' in self.node[v]['stack'][1]
                 }
 
     def sources(self):
@@ -191,6 +210,98 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     topology.graph['edge_routers'] = edge_routers
 
     return IcnTopology(topology)
+
+
+@register_topology_factory('REPO_TREE')
+def topology_repo_tree(k, h, delay=0.020, **kwargs):
+    """
+    Returns a tree topology, with sources (and EDRs) at the leaves, randomly
+    distributed receivers and EDRs at all intermediate nodes.
+
+    Parameters
+    ----------
+    h : int
+        The height of the tree
+    k : int
+        The branching factor of the tree
+    delay : float
+        The link delay in milliseconds
+
+    Returns
+    -------
+    topology : IcnTopology
+        The topology object
+    """
+
+    receiver_access_delay = 0.001
+    topology = fnss.k_ary_tree_topology(k, h)
+    topology.graph['parent'] = [None for x in range(pow(k, h + 1) - 1)]
+    for u, v in topology.edges_iter():
+        if topology.node[u]['depth'] > topology.node[v]['depth']:
+            topology.graph['parent'][u] = v
+        else:
+            topology.graph['parent'][v] = u
+        topology.edge[u][v]['type'] = 'internal'
+        if u is 0 or v is 0:
+            topology.edge[u][v]['delay'] = delay
+            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
+        else:
+            topology.edge[u][v]['delay'] = delay
+            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
+
+    for v in topology.nodes_iter():
+        print("Depth of " + repr(v) + " is " + repr(topology.node[v]['depth']))
+
+    # set weights and delays on all links
+    fnss.set_weights_constant(topology, 1.0)
+    # fnss.set_delays_constant(topology, delay, 'ms')
+
+    routers = topology.nodes()
+    # TODO: Add set of sources to ICR candidates and account for them as routers, as well as sources.
+    topology.graph['icr_candidates'] = set(routers)
+    topology.graph['type'] = 'TREE'
+    topology.graph['height'] = h
+    topology.graph['link_delay'] = delay
+    topology.graph['receiver_access_delay'] = receiver_access_delay
+
+    edge_routers = [v for v in topology.nodes_iter()
+                    if topology.node[v]['depth'] == h]
+    root = [v for v in topology.nodes_iter()
+            if topology.node[v]['depth'] == 0]
+    # routers = [v for v in topology.nodes_iter()
+    #          if topology.node[v]['depth'] > 0
+    #          and topology.node[v]['depth'] < h]
+
+    n_receivers = len(edge_routers)
+    receivers = ['rec_%d' % i for i in range(n_receivers)]
+    for i in range(n_receivers):
+        topology.add_edge(receivers[i], edge_routers[i], delay=receiver_access_delay, type='internal')
+
+    n_sources = len(root)
+    sources = ['src_%d' % i for i in range(n_sources)]
+    for i in range(n_sources):
+        topology.add_edge(sources[i], root[0], delay=3 * delay, type='internal')
+
+    print("The number of sources: " + repr(n_sources))
+    print("The number of receivers: " + repr(n_receivers))
+    topology.graph['receiver_access_delay'] = receiver_access_delay
+    topology.graph['link_delay'] = delay
+    topology.graph['depth'] = h
+    for v in sources:
+        fnss.add_stack(topology, v, 'source')
+    for v in receivers:
+        fnss.add_stack(topology, v, 'receiver')
+    for v in routers:
+        fnss.add_stack(topology, v, 'router')
+    # label links as internal
+
+    topology.graph['receivers'] = receivers
+    topology.graph['sources'] = sources
+    topology.graph['routers'] = routers
+    topology.graph['edge_routers'] = edge_routers
+
+    return IcnTopology(topology)
+
 
 @register_topology_factory('PATH')
 def topology_path(n, delay=1, **kwargs):
