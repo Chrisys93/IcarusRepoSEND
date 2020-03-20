@@ -4,6 +4,9 @@
 # Dictionary storying all cache policy implementations keyed by ID
 CACHE_POLICY = {}
 
+# Dictionary storying all repo storage policy implementations keyed by ID
+REPO_POLICY = {}
+
 # Dictionary storying all strategy implementations keyed by ID
 STRATEGY = {}
 
@@ -62,6 +65,7 @@ def register_decorator(register):
 
 
 register_cache_policy = register_decorator(CACHE_POLICY)
+register_repo_policy = register_decorator(REPO_POLICY)
 register_strategy = register_decorator(STRATEGY)
 register_topology_factory = register_decorator(TOPOLOGY_FACTORY)
 register_cache_placement = register_decorator(CACHE_PLACEMENT)

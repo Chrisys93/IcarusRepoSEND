@@ -28,7 +28,7 @@ import fnss
 
 import heapq
 
-from icarus.registry import CACHE_POLICY
+from icarus.registry import CACHE_POLICY, REPO_POLICY
 from icarus.util import path_links, iround
 from icarus.models.service.compSpot import ComputationSpot
 from icarus.models.service.compSpot import Task
@@ -638,11 +638,12 @@ class NetworkModel(object):
         comp_size = {}
         service_size = {}
         all_node_labels = Counter()
+        contents = {}
         self.rate = rate
         for node in topology.nodes():
             stack_name, stack_props = fnss.get_stack(topology, node)
             # get the depth of the tree
-            if stack_name == 'router' and 'depth' in self.topology[node].keys():
+            if stack_name == 'router' or 'source' and 'depth' in self.topology[node].keys():
                 depth = self.topology.nodes[node]['depth']
                 if depth > self.topology_depth:
                     self.topology_depth = depth
@@ -657,16 +658,19 @@ class NetworkModel(object):
                 if 'service_size' in stack_props:
                     service_size[node] = stack_props['service_size']
             elif stack_name == 'source': # A Cloud with infinite resources
+                # TODO: IMPORTANT QUESTION: do sources need to have EDRs or not...?
+                if 'storageSize' in stack_props:
+                    storageSize[node] = stack_props['storageSize']
                 comp_size[node] = float('inf')
                 service_size[node] = float('inf')
 
-                contents = stack_props['contents']
-                for c in contents:
+                contents[node] = stack_props['contents']
+                for c in contents[node]:
                     for labels in c['labels']:
                         all_node_labels.update([labels])
 
                 self.source_node[node] = contents
-                for content in contents:
+                for content in contents[node]:
                     self.content_source[content] = node
 
                 self.labels_node[node].update(all_node_labels)
@@ -686,6 +690,11 @@ class NetworkModel(object):
         # The actual cache objects storing the content
         self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
                           for node in cache_size}
+        # TODO: Maybe I should make a repo-specific policy, so that both repos and caches could be
+        #  implemented at once?
+        if REPO_POLICY[policy_name] is not None:
+            self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], contents[node], **policy_args)
+                                    for node in storageSize}
 
         # Generate the actual services processing requests
         self.services = []

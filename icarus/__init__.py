@@ -23,6 +23,7 @@ __modules_to_register = [
      'icarus.models.cache',
      'icarus.models.service',
      'icarus.models.strategy',
+     'icarus.models.repo'
      'icarus.execution.collectors',
      'icarus.results.readwrite',
      'icarus.scenarios.topology',

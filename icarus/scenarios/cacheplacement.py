@@ -17,7 +17,7 @@ from icarus.registry import register_cache_placement
 from icarus.scenarios.algorithms import compute_clusters, compute_p_median, deploy_clusters
 
 __all__ = [
-    'repo_storage_placement'
+    'repo_storage_placement',
     'uniform_cache_placement',
     'uniform_sit_cache_placement',
     'degree_centrality_cache_placement',
@@ -30,8 +30,8 @@ __all__ = [
 ]
 
 
-@register_cache_placement('RepoStoragePlacement')
-def repo_storage_placement(topology, storage_budget, spread=0.5,
+@register_cache_placement('CONSOLIDATED_REPO_CACHE')
+def repo_cache_storage_placement(topology, cache_budget, storage_budget, spread=1,
                            metric_dict=None, target='top',
                            **kwargs):
     """
@@ -101,7 +101,31 @@ def repo_storage_placement(topology, storage_budget, spread=0.5,
     the RepoStorage object should be copied and associated to each node.
     """
     for v in target_nodes:
-        topology.node[v]['stack'][1]['cache_size'] = storage_size
+        topology.node[v]['stack'][1]['storageSize'] = storage_size
+
+    if spread < 0 or spread > 1:
+        raise ValueError('spread factor must be between 0 and 1')
+    if target not in ('top', 'bottom'):
+        raise ValueError('target argument must be either "top" or "bottom"')
+    if metric_dict is None and spread < 1:
+        metric_dict = nx.betweenness_centrality(topology)
+
+    icr_candidates = topology.graph['icr_candidates']
+    if spread == 1:
+        target_nodes = icr_candidates
+    else:
+        nodes = sorted(icr_candidates, key=lambda k: metric_dict[k])
+        if target == 'top':
+            nodes = list(reversed(nodes))
+        # cutoff node must be at least one otherwise, if spread is too low, no
+        # nodes would be selected
+        cutoff = max(1, iround(spread * len(nodes)))
+        target_nodes = nodes[:cutoff]
+    cache_size = iround(cache_budget / len(target_nodes))
+    if cache_size == 0:
+        return
+    for v in target_nodes:
+        topology.node[v]['stack'][1]['cache_size'] = cache_size
 
 
 @register_cache_placement('UNIFORM_SIT')
