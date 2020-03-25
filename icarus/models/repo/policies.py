@@ -246,7 +246,7 @@ class RepoStorage(object):
     def getStaticMessage(self, MessageId):
         staticMessage = None
         for temp in self.staticMessages:
-            if (temp.getId() == MessageId):
+            if (temp['content'] == MessageId):
                 i = self.staticMessages.indexOf(temp)
                 staticMessage = self.staticMessages.get(i)
         return staticMessage
@@ -254,7 +254,7 @@ class RepoStorage(object):
     def getProcessedMessage(self, MessageId):
         processedMessage = None
         for temp in self.processedMessages:
-            if (temp.getId() == MessageId):
+            if (temp['content'] == MessageId):
                 i = self.processedMessages.indexOf(temp)
                 processedMessage = self.processedMessages.get(i)
         return processedMessage
@@ -262,7 +262,7 @@ class RepoStorage(object):
     def getProcessMessage(self, MessageId):
         processMessage = None
         for temp in self.processMessages:
-            if (temp.getId() == MessageId):
+            if (temp['content'] == MessageId):
                 i = self.processMessages.indexOf(temp)
                 processMessage = self.processMessages.get(i)
         return processMessage
@@ -324,16 +324,16 @@ class RepoStorage(object):
     def getHost(self):
         return self.host
 
-    def hasMessage(self, MessageId):
+    def hasMessage(self, MessageId, labels): # TODO: Implement labels lookup!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         answer = None
         for j in range(0, self.processedMessages.size()):
-            if (self.processedMessages.get(j).getId() == MessageId):
+            if (self.processedMessages.get(j)['content'] == MessageId):
                 answer = self.processedMessages.get(j)
         for i in range(0, self.staticMessages.size()):
-            if (self.staticMessages.get(i).getId() == MessageId):
+            if (self.staticMessages.get(i)['content'] == MessageId):
                 answer = self.staticMessages.get(i)
         for i in range(0, self.processMessages.size()):
-            if (self.processMessages.get(i).getId() == MessageId):
+            if (self.processMessages.get(i)['content'] == MessageId):
                 answer = self.processMessages.get(i)
         return answer
 
@@ -357,7 +357,7 @@ class RepoStorage(object):
 
     def deleteProcMessage(self, MessageId):
         for i in (0, self.processMessages.size):
-            if (self.processMessages.get(i).getId() == MessageId):
+            if (self.processMessages.get(i)['content'] == MessageId):
                 self.processSize -= self.processMessages.get(i).getSize()
                 self.processMessages.remove(i)
                 return True
@@ -416,7 +416,7 @@ class RepoStorage(object):
             Reporting is not done right.
         """
         for i in range(0, self.processedMessages.size()):
-            if (self.processedMessages.get(i).getId() == MessageId):
+            if (self.processedMessages.get(i)['content'] == MessageId):
                 self.depletedCloudProcMessages += 1
                 self.depletedCloudProcMessagesSize += self.processedMessages.get(i).getSize()
 

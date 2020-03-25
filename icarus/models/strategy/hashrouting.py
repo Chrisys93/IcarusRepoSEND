@@ -3,6 +3,7 @@
 from __future__ import division
 
 import networkx as nx
+from collections import Counter
 
 from icarus.registry import register_strategy
 from icarus.util import inheritdoc, multicast_tree, path_links
@@ -10,6 +11,8 @@ from icarus.scenarios.algorithms import extract_cluster_level_topology
 
 from .base import Strategy
 
+# TODO: THIS IS THE MAIN PLACE TO IMPLEMENT THE STORAGE
+#  ASSIGNMENT STRATEGY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 __all__ = [
        'Hashrouting',
@@ -31,6 +34,7 @@ class BaseHashrouting(Strategy):
     def __init__(self, view, controller, **kwargs):
         super(BaseHashrouting, self).__init__(view, controller)
         self.cache_nodes = view.cache_nodes()
+        self.storage_nodes = view.storage_nodes()
         self.n_cache_nodes = len(self.cache_nodes)
         # Allocate results of hash function to caching nodes
         self.cache_assignment = {i: self.cache_nodes[i]
@@ -75,13 +79,44 @@ class BaseHashrouting(Strategy):
                                   'This class is meant to be extended by other classes.')
 
 
+
+    def authoritative_storage(self, labels_sources, content = 0):
+        """Return the authoritative cache node for the given content
+
+        Parameters
+        ----------
+        labels : strings determining
+            The identifier of the content
+        cluster : int, optional
+            If the topology is divided in clusters, then retun the authoritative
+            cache responsible for the content in the specified cluster
+
+        Returns
+        -------
+        authoritative_cache : any hashable type
+            The node on which the authoritative cache is deployed
+        """
+        # TODO: I should probably consider using a better non-cryptographic hash
+        #       also, may need to do smth to include "tags/labels" instead!!!!!!
+        #       THE
+
+        urrent_count = 0
+
+        # function, like xxhash
+        auth_node = None
+        for n, count in labels_sources:
+            if count >= current_count:
+                auth_node = self.storage_nodes[n]
+                current_count = count
+        return auth_node
+
+        # TODO: Need to understand and get this sorted!
+
 @register_strategy('HASHROUTING')
 class Hashrouting(BaseHashrouting):
     """Unified implementation of the three basic hash-routing schemes:
     symmetric, asymmetric and multicast.
-
     Hash-routing implementations are described in [1]_.
-
     According to these strategies, edge nodes receiving a content request
     compute a hash function mapping the content identifier to a specific caching
     node and forward the request to that specific node. If the cache holds the
@@ -89,7 +124,6 @@ class Hashrouting(BaseHashrouting):
     the original source. Similarly, when a content is delivered to the
     requesting user, it can be cached only by the caching node associated to the
     content identifier by the hash function.
-
     References
     ----------
     .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
@@ -103,7 +137,6 @@ class Hashrouting(BaseHashrouting):
 
     def __init__(self, view, controller, routing, **kwargs):
         """Constructor
-
         Parameters
         ----------
         view : NetworkView
@@ -133,6 +166,127 @@ class Hashrouting(BaseHashrouting):
             self.controller.forward_request_path(cache, source)
             if not self.controller.get_content(source):
                 raise RuntimeError('The content is not found the expected source')
+            if self.routing == 'SYMM':
+                self.controller.forward_content_path(source, cache)
+                # Insert in cache
+                self.controller.put_content(cache)
+                # Forward to receiver
+                self.controller.forward_content_path(cache, receiver)
+            elif self.routing == 'ASYMM':
+                if cache in self.view.shortest_path(source, receiver):
+                    # Forward to cache
+                    self.controller.forward_content_path(source, cache)
+                    # Insert in cache
+                    self.controller.put_content(cache)
+                    # Forward to receiver
+                    self.controller.forward_content_path(cache, receiver)
+                else:
+                    # Forward to receiver straight away
+                    self.controller.forward_content_path(source, receiver)
+            elif self.routing == 'MULTICAST':
+                if cache in self.view.shortest_path(source, receiver):
+                    self.controller.forward_content_path(source, cache)
+                    # Insert in cache
+                    self.controller.put_content(cache)
+                    # Forward to receiver
+                    self.controller.forward_content_path(cache, receiver)
+                else:
+                    # Multicast
+                    cache_path = self.view.shortest_path(source, cache)
+                    recv_path = self.view.shortest_path(source, receiver)
+
+                    # find what is the node that has to fork the content flow
+                    for i in range(1, min([len(cache_path), len(recv_path)])):
+                        if cache_path[i] != recv_path[i]:
+                            fork_node = cache_path[i - 1]
+                            break
+                    else:
+                        fork_node = cache
+                    self.controller.forward_content_path(source, fork_node)
+                    self.controller.forward_content_path(fork_node, receiver)
+                    self.controller.forward_content_path(fork_node, cache,
+                                                         main_path=False)
+                self.controller.put_content(cache)
+            else:
+                raise ValueError("Routing %s not supported" % self.routing)
+        self.controller.end_session()
+
+@register_strategy('REPO_HASHROUTING')
+class Hashrouting(BaseHashrouting):
+    """Unified implementation of the three basic hash-routing schemes:
+    symmetric, asymmetric and multicast.
+
+    Hash-routing implementations are described in [1]_.
+
+    According to these strategies, edge nodes receiving a content request
+    compute a hash function mapping the content identifier to a specific caching
+    node and forward the request to that specific node. If the cache holds the
+    requested content, it is returned to the user, otherwise it is forwarded to
+    the original source. Similarly, when a content is delivered to the
+    requesting user, it can be cached only by the caching node associated to the
+    content identifier by the hash function.
+
+    TODO: For Repo, label routing, this routing should also check for labels, if
+        the request has labels and how many minimum labels are needed for each
+        request
+
+    References
+    ----------
+    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN'13
+           workshop. Available:
+           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf
+    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+           University College London, Dec. 2015. Available:
+           http://discovery.ucl.ac.uk/1473436/
+    """
+
+    def __init__(self, view, controller, routing, **kwargs):
+        """Constructor
+
+        Parameters
+        ----------
+        view : NetworkView
+            An instance of the network view
+        controller : NetworkController
+            An instance of the network controller
+        routing : str (SYMM | ASYMM | MULTICAST)
+            Content routing option
+        """
+        super(Hashrouting, self).__init__(view, controller)
+        self.routing = routing
+
+    @inheritdoc(Strategy)
+    def process_event(self, time, receiver, content, labels, log): # TODO: Maybe add deadline here...?
+        #                                                               (esp. for repo strategies)
+
+        # TODO: This is where data is fetched from and/or
+        #  added to a cache AND NEEDS TO BE ADAPTED TO BE
+        #  ADDED TO THE APPROPRIATE REPOSITORY, DEPENDING
+        #  ON SERVICES/LABELS SERVED, AS WELL!
+        #   Check the "self.routing" options, below!!!
+
+        # get all required data
+        source = self.view.content_source(content)
+        labels_sources = self.view.labels_sources(labels)
+        cache = self.authoritative_cache(content)
+        storage = self.authoritative_storage(labels, labels_sources)
+        # handle (and log if required) actual request
+        self.controller.start_session(time, receiver, content, log)
+        # Forward request to authoritative cache
+        self.controller.forward_request_path(receiver, cache)
+        if self.controller.get_content(cache):
+            # We have a cache hit here
+            self.controller.forward_content_path(cache, receiver)
+        elif storage is not None and self.controller.has_message(content, labels, storage):
+            self.controller.forward_request_path(cache, storage)
+            self.controller.forward_repo_content_path(storage, receiver)
+        else:
+            # Cache miss: go all the way to source
+            self.controller.forward_request_path(cache, source)
+            if not self.controller.get_content(source):
+                raise RuntimeError('The content is not found the expected source')
+            # TODO: REVISE THESE AND ADD MAIN STORAGE STRATEGIES (AFTER)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if self.routing == 'SYMM':
                 self.controller.forward_content_path(source, cache)
                 # Insert in cache

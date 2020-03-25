@@ -18,3 +18,4 @@ doc/source/apidoc
 # Ignore plot files
 *.pdf
 /venv/
+/EDR-Resource-and-Management-Scheme-Development.docx

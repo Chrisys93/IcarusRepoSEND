@@ -466,7 +466,7 @@ class StationaryRepoWorkload(object):
     def __init__(self, topology, n_contents, alpha, beta=0,
                  label_ex=False, alpha_labels=0, rate=1.0,
                  n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
-                 n_services=10, topics=[], types=[], freshness_pers=0,
+                 n_services=10, min_matches=[], topics=[], types=[], freshness_pers=0,
                  shelf_lives=0, msg_sizes=0, **kwargs):
         if alpha < 0:
             raise ValueError('alpha must be positive')
@@ -476,6 +476,7 @@ class StationaryRepoWorkload(object):
                           if topology.node[v]['stack'][0] == 'receiver']
         self.zipf = TruncatedZipfDist(alpha, n_services - 1, seed)
         self.labels_zipf = TruncatedZipfDist(alpha_labels, len(topics)+len(types), seed)
+        self.min_match_zipf = TruncatedZipfDist(alpha, n_services - 1, seed)
 
         self.n_contents = n_contents
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -487,6 +488,7 @@ class StationaryRepoWorkload(object):
         self.freshness_pers = freshness_pers
         self.shelf_lives = shelf_lives
         self.sizes = msg_sizes
+        self.min_matches = min_matches
 
         self.n_services = n_services
         self.alpha = alpha
@@ -528,9 +530,9 @@ class StationaryRepoWorkload(object):
             while eventObj is not None and eventObj.time < t_event:
                 heapq.heappop(self.model.eventQ)
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver': eventObj.receiver, 'content': eventObj.service, 'log': log, 'node': eventObj.node,
-                         'flow_id': eventObj.flow_id, 'deadline': eventObj.deadline, 'rtt_delay': eventObj.rtt_delay,
-                         'status': eventObj.status, 'task': eventObj.task}
+                event = {'receiver': eventObj.receiver, 'content': eventObj.service, 'labels': eventObj.labels,
+                         'log': log, 'node': eventObj.node, 'flow_id': eventObj.flow_id, 'deadline': eventObj.deadline,
+                         'rtt_delay': eventObj.rtt_delay, 'status': eventObj.status, 'task': eventObj.task}
 
                 yield (eventObj.time, event)
                 eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
@@ -577,15 +579,37 @@ class StationaryRepoWorkload(object):
             flow_id += 1
             # TODO: Since services are associated with deadlines based on labels as well now, this should be
             #  accounted for in service placement from now on, as well, the lowest deadline being prioritised
-            #  when instantiated (unless a certain content/service strategy is implemented, maybe).
+            #  when instantiated (unless a certain  content/service strategy is implemented, maybe).
             if content is None:
                 deadline = self.model.services[labels].deadline + t_event
-                event = {'receiver': receiver, 'content': '', 'labels': labels, 'log': log, 'node': node,
-                         'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
+                if self.min_match is not []:
+                    min_match = self.min_match_zipf.rv()
+                    deadline = self.model.services[labels].deadline + t_event
+                    event = {'receiver': receiver, 'content': '', 'labels': labels, 'min_match': min_match,
+                             'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
+                             'status': REQUEST}
+                else:
+                    deadline = self.model.services[labels].deadline + t_event
+                    event = {'receiver': receiver, 'content': '', 'labels': labels, 'min_match': 1, 'log': log,
+                             'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
+                             'status': REQUEST}
+            elif labels is not None:
+                deadline = self.model.services[labels].deadline + t_event
+                if self.min_match is not []:
+                    min_match = self.min_match_zipf.rv()
+                    deadline = self.model.services[labels].deadline + t_event
+                    event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': min_match,
+                             'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
+                             'status': REQUEST}
+                else:
+                    deadline = self.model.services[labels].deadline + t_event
+                    event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': 1,
+                             'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
+                             'status': REQUEST}
             else:
                 deadline = self.model.services[content].deadline + t_event
-                event = {'receiver': receiver, 'content': content, 'labels': '', 'log': log, 'node': node,
-                         'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
+                event = {'receiver': receiver, 'content': content, 'labels': '', 'min_match': 0, 'log': log,
+                         'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
 
             # NOTE: STOPPED HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

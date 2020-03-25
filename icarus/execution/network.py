@@ -40,9 +40,10 @@ __all__ = [
     'NetworkModel',
     'NetworkView',
     'NetworkController'
-          ]
+]
 
 logger = logging.getLogger('orchestration')
+
 
 class Event(object):
     """Implementation of an Event object: arrival of a request to a node"""
@@ -68,12 +69,13 @@ class Event(object):
 
     def __lt__(self, other):
         return self.time < other.time
-        #return cmp(self.time, other.time)
+        # return cmp(self.time, other.time)
+
 
 class Service(object):
     """Implementation of a service object"""
 
-    def __init__(self, service_time=None, deadline=None):
+    def __init__(self, labels, service_time=None, deadline=None):
         """Constructor
         Parameters
         ----------
@@ -85,6 +87,8 @@ class Service(object):
 
         self.service_time = service_time
         self.deadline = deadline
+        self.labels = labels
+
 
 def symmetrify_paths(shortest_paths):
     """Make paths symmetric
@@ -193,6 +197,39 @@ class NetworkView(object):
             loc.add(source)
         return loc
 
+    def label_locations(self, labels):
+        """Return a set of all current locations of a specific content.
+
+        TODO: Add MOST_POPULAR_STORAGE_ and _REQUEST_LABELS, which return
+            the nodes which have the most hits of certain labels, through
+            the "NetworkView" class.
+
+        This include both persistent content sources and temporary caches.
+
+        Parameters
+        ----------
+        labels : any hashable type
+            The content identifier
+
+        Returns
+        -------
+        nodes : set
+            A set of all nodes currently storing the given content
+        """
+        loc = set()
+        # This ^ locates all the nodes which have that content (with that hash)
+        # cached. TODO: Add a content type/topic_present method and a
+        #               hashed_function_present method to the RepoStorage class,
+        #               to check if that node has the requested item and keep note
+        #               in the centralised mgmt system for that service hash/content
+        #               topic. Add RepoStorage - node associations in NetworkModel!!!
+
+        locations = self.labels_sources(labels)
+        if locations:
+            for node, num in locations:
+                loc.add(node)
+        return loc
+
     def content_source(self, k):
         """Return the node identifier where the content is persistently stored.
 
@@ -208,6 +245,32 @@ class NetworkView(object):
             source is unavailable
         """
         return self.model.content_source.get(k, None)
+
+    def labels_sources(self, labels):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+
+        Returns
+        -------
+        node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+        nodes = Counter()
+
+        for label in labels:
+            nodes.update(self.model.labels_sources.get(label, None))
+
+        for n in nodes:
+            for l in labels:
+                if l not in self.model.node_labels[n]:
+                    del nodes[n]
+
+        return nodes
 
     def shortest_path(self, s, t):
         """Return the shortest path from *s* to *t*
@@ -226,7 +289,6 @@ class NetworkView(object):
             included)
         """
         return self.model.shortest_path[s][t]
-
 
     def num_services(self):
         """
@@ -316,8 +378,8 @@ class NetworkView(object):
         """
         path = self.shortest_path(s, t)
         delay = 0.0
-        for indx in range(0, len(path)-1):
-            delay += self.link_delay(path[indx], path[indx+1])
+        for indx in range(0, len(path) - 1):
+            delay += self.link_delay(path[indx], path[indx + 1])
 
         return delay
 
@@ -389,7 +451,25 @@ class NetworkView(object):
             and their size.
         """
         return {v: c.maxlen for v, c in self.model.cache.items()} if size \
-                else list(self.model.cache.keys())
+            else list(self.model.cache.keys())
+
+    def storage_nodes(self, size=False):
+        """Returns a list of nodes with caching capability
+
+        Parameters
+        ----------
+        size: bool, opt
+            If *True* return dict mapping nodes with size
+
+        Returns
+        -------
+        cache_nodes : list or dict
+            If size parameter is False or not specified, it is a list of nodes
+            with caches. Otherwise it is a dict mapping nodes with a cache
+            and their size.
+        """
+        return {v: s.storageSize for v, s in self.model.repoStorage.items()} if size \
+            else list(self.model.repoStorage.keys())
 
     def has_cache(self, node):
         """Check if a node has a content cache.
@@ -547,6 +627,8 @@ class NetworkView(object):
         """
 
         pass
+
+
 class NetworkModel(object):
     """Models the internal state of the network.
 
@@ -585,7 +667,7 @@ class NetworkModel(object):
 
         # Shortest paths of the network
         self.shortest_path = shortest_path if shortest_path is not None \
-                             else symmetrify_paths(nx.all_pairs_dijkstra_path(topology))
+            else symmetrify_paths(nx.all_pairs_dijkstra_path(topology))
 
         # Network topology
         self.topology = topology
@@ -615,9 +697,9 @@ class NetworkModel(object):
         # Dictionary mapping the reverse, i.e. content labels to their storing node(s)
         # dict of locations of labels keyed by label name, with the number of labels of
         # that label/key stored in each of these nodes
-        self.labels_node = {}
+        self.labels_sources = {}
 
-        # A heap with events (see Event class above)
+        #  A heap with events (see Event class above)
         self.eventQ = []
 
         # Dictionary of link types (internal/external)
@@ -637,10 +719,11 @@ class NetworkModel(object):
         storageSize = {}
         comp_size = {}
         service_size = {}
-        all_node_labels = Counter()
+        all_node_labels = {}
         contents = {}
         self.rate = rate
         for node in topology.nodes():
+            all_node_labels[node] = Counter()
             stack_name, stack_props = fnss.get_stack(topology, node)
             # get the depth of the tree
             if stack_name == 'router' or 'source' and 'depth' in self.topology[node].keys():
@@ -657,7 +740,7 @@ class NetworkModel(object):
                     comp_size[node] = stack_props['computation_size']
                 if 'service_size' in stack_props:
                     service_size[node] = stack_props['service_size']
-            elif stack_name == 'source': # A Cloud with infinite resources
+            elif stack_name == 'source':  #  A Cloud with infinite resources
                 # TODO: IMPORTANT QUESTION: do sources need to have EDRs or not...?
                 if 'storageSize' in stack_props:
                     storageSize[node] = stack_props['storageSize']
@@ -667,15 +750,15 @@ class NetworkModel(object):
                 contents[node] = stack_props['contents']
                 for c in contents[node]:
                     for labels in c['labels']:
-                        all_node_labels.update([labels])
+                        all_node_labels[node].update([labels])
 
                 self.source_node[node] = contents
                 for content in contents[node]:
                     self.content_source[content] = node
 
-                self.labels_node[node].update(all_node_labels)
-                for k, v in all_node_labels:
-                    Counter(self.content_source[k]).update([node, v])
+                self.node_labels[node].update(all_node_labels[node])
+                for k, v in all_node_labels[node]:
+                    Counter(self.labels_sources[k]).update([node, v])
 
         if any(c < 1 for c in cache_size.values()):
             logger.warn('Some content caches have size equal to 0. '
@@ -689,36 +772,35 @@ class NetworkModel(object):
 
         # The actual cache objects storing the content
         self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
-                          for node in cache_size}
+                      for node in cache_size}
         # TODO: Maybe I should make a repo-specific policy, so that both repos and caches could be
         #  implemented at once?
         if REPO_POLICY[policy_name] is not None:
             self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], contents[node], **policy_args)
-                                    for node in storageSize}
+                                for node in storageSize}
 
-        # Generate the actual services processing requests
+        #  Generate the actual services processing requests
         self.services = []
         self.n_services = n_services
-        internal_link_delay = 0.001 # This is the delay from receiver to router
+        internal_link_delay = 0.001  #  This is the delay from receiver to router
 
-        service_time_min = 0.10 # used to be 0.001
-        service_time_max = 0.10 # used to be 0.1
-        #delay_min = 0.005
-        delay_min = 2*topology.graph['receiver_access_delay'] + service_time_max
-        delay_max = delay_min + 2*topology.graph['depth']*topology.graph['link_delay'] + 0.005
-
+        service_time_min = 0.10  # used to be 0.001
+        service_time_max = 0.10  # used to be 0.1
+        # delay_min = 0.005
+        delay_min = 2 * topology.graph['receiver_access_delay'] + service_time_max
+        delay_max = delay_min + 2 * topology.graph['depth'] * topology.graph['link_delay'] + 0.005
 
         service_indx = 0
         random.seed(seed)
         for service in range(0, n_services):
             service_time = random.uniform(service_time_min, service_time_max)
-            #service_time = 2*random.uniform(service_time_min, service_time_max)
-            deadline = random.uniform(delay_min, delay_max) + 2*internal_link_delay
-            #deadline = service_time + 1.5*(random.uniform(delay_min, delay_max) + 2*internal_link_delay)
+            # service_time = 2*random.uniform(service_time_min, service_time_max)
+            deadline = random.uniform(delay_min, delay_max) + 2 * internal_link_delay
+            # deadline = service_time + 1.5*(random.uniform(delay_min, delay_max) + 2*internal_link_delay)
             s = Service(service_time, deadline)
-            #print ("Service " + str(service) + " has a deadline of " + str(deadline))
+            # print ("Service " + str(service) + " has a deadline of " + str(deadline))
             self.services.append(s)
-        #""" #END OF Generating Services
+        # """ #END OF Generating Services
 
         ### Prepare input for the optimizer
         if False:
@@ -772,13 +854,13 @@ class NetworkModel(object):
                     ap_node_to_delay[ap] = node_to_delay
                     for node in topology.nodes_iter():
                         for egress, ingress in topology.edges_iter():
-                            #print str(ingress) + " " + str(egress)
+                            # print str(ingress) + " " + str(egress)
                             if ingress in node_to_delay.keys() and egress not in node_to_delay.keys():
                                 node_to_delay[egress] = node_to_delay[ingress] + topology.edge[ingress][egress]['delay']
                                 node_to_services[egress] = []
                                 service_indx = 0
                                 for s in self.services:
-                                    if s.deadline >= (s.service_time + 2*node_to_delay[egress]):
+                                    if s.deadline >= (s.service_time + 2 * node_to_delay[egress]):
                                         node_to_services[egress].append(service_indx)
                                     service_indx += 1
                 aFile.write("# 4. Ap,Node,service1,service2, ....]\n")
@@ -786,13 +868,13 @@ class NetworkModel(object):
                     node_to_services = ap_node_to_services[ap]
                     node_to_delay = ap_node_to_delay[ap]
                     for node, services in node_to_services.items():
-                        s = str(ap) + "," + str(node) #+ "," + str(node_to_delay[node])
+                        s = str(ap) + "," + str(node)  # + "," + str(node_to_delay[node])
                         for serv in services:
                             s += "," + str(serv)
                         s += '\n'
                         aFile.write(s)
                 aFile.write("# 5. AP, rate_service1, rate_service2, ... rate_serviceN\n")
-                rate = 1.0/(len(topology.graph['receivers'])*len(self.services))
+                rate = 1.0 / (len(topology.graph['receivers']) * len(self.services))
                 for ap in topology.graph['receivers']:
                     s = str(ap) + ","
                     for serv in self.services:
@@ -802,9 +884,10 @@ class NetworkModel(object):
 
             aFile.close()
         ComputationSpot.services = self.services
-        self.compSpot = {node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None)
-                            for node in comp_size}
-        #print ("Generated Computation Spot Objects")
+        self.compSpot = {
+            node: ComputationSpot(self, comp_size[node], service_size[node], self.services, node, sched_policy, None)
+            for node in comp_size}
+        # print ("Generated Computation Spot Objects")
         sys.stdout.flush()
         # This is for a local un-coordinated cache (currently used only by
         # Hashrouting with edge cache)
@@ -821,6 +904,7 @@ class NetworkModel(object):
         self.removed_sources = {}
         self.removed_caches = {}
         self.removed_local_caches = {}
+
 
 class NetworkController(object):
     """Network controller
@@ -860,7 +944,7 @@ class NetworkController(object):
         """Detach the data collector."""
         self.collector = None
 
-    def start_session(self, timestamp, receiver, content, labels, log, feedback, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, min_match, log, feedback, flow_id=0, deadline=0):
         """Instruct the controller to start a new session (i.e. the retrieval
         of a content).
 
@@ -882,16 +966,17 @@ class NetworkController(object):
             *False* otherwise
         """
         self.session[flow_id] = dict(timestamp=timestamp,
-                            receiver=receiver,
-                            content=content,
-                            labels=labels,
-                            log=log,
-                            feedback=feedback,
-                            deadline=deadline)
+                                     receiver=receiver,
+                                     content=content,
+                                     labels=labels,
+                                     min_match=min_match,
+                                     log=log,
+                                     feedback=feedback,
+                                     deadline=deadline)
 
         self.sess_content = content
 
-        #if self.collector is not None and self.session[flow_id]['log']:
+        # if self.collector is not None and self.session[flow_id]['log']:
         self.collector.start_session(timestamp, receiver, content, labels, feedback, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
@@ -936,7 +1021,6 @@ class NetworkController(object):
             path = self.model.shortest_path[u][v]
         for u, v in path_links(path):
             self.forward_content_hop(u, v, main_path)
-
 
     def forward_repo_request_path(self, s, t, path=None):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -993,8 +1077,6 @@ class NetworkController(object):
         #       to the network view/model, corresponding to the EDR dictionary/counter
         #       periodically. (if possible, check here and add, otherwise check
         #       EDR dictionaries/counters periodically)
-
-
 
     def forward_request_hop(self, u, v, main_path=True):
         """Forward a request over link  u -> v.
@@ -1058,7 +1140,7 @@ class NetworkController(object):
             Origin node
         t : any hashable type
             Destination node
-        path : list, optional
+        request_labels : list, optional
             The path to use. If not provided, shortest path is used
 
         """
@@ -1125,12 +1207,45 @@ class NetworkController(object):
         if node in self.model.cache:
             cache_hit = self.model.cache[node].get(content)
             if cache_hit:
-                #if self.session['log']:
+                # if self.session['log']:
                 self.collector.cache_hit(node)
             else:
-                #if self.session['log']:
+                # if self.session['log']:
                 self.collector.cache_miss(node)
             return cache_hit
+        name, props = fnss.get_stack(self.model.topology, node)
+        if name == 'source':
+            if self.collector is not None and self.session['log']:
+                self.collector.server_hit(node)
+            return True
+        else:
+            return False
+
+    def has_message(self, node, labels = [], message_ID=''):
+        """Get a content from a server or a cache.
+
+        Parameters
+        ----------
+        node : any hashable type
+            The node where the content is retrieved
+        message_ID : any hashable type
+            The ID of the message/content seeked by the function
+
+        Returns
+        -------
+        storage_hit : bool
+            True if the content is available, False otherwise
+        """
+        if (node in self.model.repoStorage) and message_ID or labels:
+                storage_hit = self.model.repoStorage[node].hasMessage(message_ID, labels)
+                if storage_hit:
+                    # if self.session['log']:
+                    self.collector.storage_hit(node)
+                else:
+                    # if self.session['log']:
+                    self.collector.storage_miss(node)
+                return storage_hit
+
         name, props = fnss.get_stack(self.model.topology, node)
         if name == 'source':
             if self.collector is not None and self.session['log']:
@@ -1166,7 +1281,7 @@ class NetworkController(object):
     def replacement_interval_over(self, flow_id, replacement_interval, timestamp):
         """ Perform replacement of services at each computation spot
         """
-        #if self.collector is not None and self.session[flow_id]['log']:
+        # if self.collector is not None and self.session[flow_id]['log']:
         self.collector.replacement_interval_over(replacement_interval, timestamp)
 
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):
@@ -1194,9 +1309,8 @@ class NetworkController(object):
         use that method always. 
         """
         if serviceToAdd == serviceToReplace:
-            print ("Error in reassign_vm(): serviceToAdd equals serviceToReplace")
+            print("Error in reassign_vm(): serviceToAdd equals serviceToReplace")
             raise ValueError("Error in reassign_vm(): service replaced and added are same")
-
 
         compSpot.reassign_vm(self, time, serviceToReplace, serviceToAdd, debugFlag)
         self.collector.reassign_vm(compSpot.node, serviceToReplace, serviceToAdd)
@@ -1209,7 +1323,7 @@ class NetworkController(object):
         success : bool, optional
             *True* if the session was completed successfully, *False* otherwise
         """
-        #if self.collector is not None and self.session[flow_id]['log']:
+        # if self.collector is not None and self.session[flow_id]['log']:
         self.collector.end_session(success, timestamp, flow_id)
         self.session.pop(flow_id, None)
 
