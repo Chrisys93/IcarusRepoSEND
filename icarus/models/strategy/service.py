@@ -531,7 +531,7 @@ class Hybrid(Strategy):
 
     #HYBRID 
     @inheritdoc(Strategy)
-    def process_event(self, time, receiver, content, log, node, flow_id, deadline, rtt_delay, status, task=None):
+    def process_event(self, time, receiver, content, labels, log, node, flow_id, deadline, rtt_delay, status, task=None):
         """
         response : True, if this is a response from the cloudlet/cloud
         deadline : deadline for the request 
@@ -542,7 +542,7 @@ class Hybrid(Strategy):
         #if node == 12:
         #    self.debug = True
 
-        service = content
+        service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
         source = self.view.content_source(service)
 
         if time - self.last_replacement > self.replacement_interval:
@@ -559,7 +559,7 @@ class Hybrid(Strategy):
 
         # Request reached the cloud
         if source == node and status == REQUEST:
-            ret, reason = compSpot.admit_task(service, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
+            ret, reason = compSpot.admit_task(service, labels, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
             if ret == False:
                 print("This should not happen in Hybrid.")
                 raise ValueError("Task should not be rejected at the cloud.")

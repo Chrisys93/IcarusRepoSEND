@@ -329,12 +329,33 @@ class RepoStorage(object):
         for j in range(0, self.processedMessages.size()):
             if (self.processedMessages.get(j)['content'] == MessageId):
                 answer = self.processedMessages.get(j)
+            else:
+                j_labels = []
+                for label, count in self.processedMessages.get(j)['labels']:
+                    if label in labels:
+                        j_labels.add(label)
+                if (j_labels == labels):
+                    answer = self.processedMessages.get(j)
         for i in range(0, self.staticMessages.size()):
-            if (self.staticMessages.get(i)['content'] == MessageId):
+            if self.staticMessages.get(i)['content'] == MessageId:
                 answer = self.staticMessages.get(i)
+            else:
+                j_labels = []
+                for label, count in self.staticMessages.get(j)['labels']:
+                    if label in labels:
+                        j_labels.add(label)
+                if (j_labels == labels):
+                    answer = self.staticMessages.get(j)
         for i in range(0, self.processMessages.size()):
-            if (self.processMessages.get(i)['content'] == MessageId):
+            if self.processMessages.get(i)['content'] == MessageId:
                 answer = self.processMessages.get(i)
+            else:
+                j_labels = []
+                for label, count in self.processMessages.get(j)['labels']:
+                    if label in labels:
+                        j_labels.add(label)
+                if (j_labels == labels):
+                    answer = self.processMessages.get(j)
         return answer
 
     def deleteStaticMessage(self, MessageId):

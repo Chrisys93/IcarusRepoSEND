@@ -272,6 +272,27 @@ class NetworkView(object):
 
         return nodes
 
+    def all_labels_main_source(self, labels):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+
+        Returns
+        -------
+        node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        for n, count in self.labels_sources(labels):
+            if count >= current_count:
+                auth_node = self.storage_nodes[n]
+                current_count = count
+        return auth_node
+
     def shortest_path(self, s, t):
         """Return the shortest path from *s* to *t*
 
