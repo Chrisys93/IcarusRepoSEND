@@ -7,3 +7,4 @@ from .offpath import *
 from .service import *
 from .optimal import *
 from .placement import *
+from .repo_storage_mgmt_app import *

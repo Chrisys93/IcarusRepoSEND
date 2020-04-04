@@ -132,10 +132,10 @@ class Coordinated(Strategy):
             aTask = Task(time, Task.TASK_TYPE_SERVICE, deadline, rtt_to_cs, n, service, serviceTime, flow_id, receiver, time+delay)
             cs.scheduler.upcomingTaskQueue.append(aTask)
             cs.scheduler.upcomingTaskQueue = sorted(cs.scheduler.upcomingTaskQueue, key=lambda x: x.arrivalTime)
-            cs.compute_completion_times(time, False, self.debug)
+            cs.service_type_completion_times(time, False, self.debug)
             for task in cs.scheduler._taskQueue + cs.scheduler.upcomingTaskQueue:
                 if self.debug:
-                    print("After compute_completion_times:")
+                    print("After service_type_completion_times:")
                     task.print_task()
                 if task.taskType == Task.TASK_TYPE_VM_START:
                     continue
@@ -301,7 +301,7 @@ class Coordinated(Strategy):
             self.last_replacement = time
             self.initialise_metrics()
         # Process request based on status
-        if receiver == node and status == REQUEST:
+        if receiver == node and status == REQUEST and service["service_type"] is "proc":
             self.controller.start_session(time, receiver, service, log, flow_id, deadline)
             path = self.view.shortest_path(node, source)
             upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline, rtt_delay)
@@ -537,6 +537,10 @@ class Hybrid(Strategy):
         deadline : deadline for the request 
         flow_id : Id of the flow that the request/response is part of
         node : the current node at which the request/response arrived
+
+        TODO: Maybe could even implement the old "application" storage
+            space and message services management in here, as well!!!!
+
         """
         #self.debug = False
         #if node == 12:
@@ -598,7 +602,7 @@ class Hybrid(Strategy):
                 newTask = compSpot.scheduler.schedule(time)
                 #schedule the next queued task at this node
                 if newTask is not None:
-                    self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, node, newTask.flow_id, newTask.expiry, newTask.rtt_delay, TASK_COMPLETE, newTask)
+                    self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service, node, newTask.flow_id, newTask.expiry, new.rtt_delay, TASK_COMPLETE, new)
                         
             # forward the completed task 
             if task.taskType == Task.TASK_TYPE_VM_START:
@@ -607,6 +611,11 @@ class Hybrid(Strategy):
             path_delay = self.view.path_delay(node, receiver)
             next_node = path[1]
             delay = self.view.link_delay(node, next_node)
+            if self.view.hasStorageCapability(node):
+                service['service_type'] = None
+                service['receiveTime'] = time
+                service['service_type'] = "processed"
+                self.controller.add_message_to_storage(node, service)
             self.controller.add_event(time+delay, receiver, service, next_node, flow_id, deadline, rtt_delay, RESPONSE)
             if (node != source and time + path_delay > deadline):
                 print ("Error in HYBRID strategy: Request missed its deadline\nResponse at receiver at time: " + str(time+path_delay) + " deadline: " + str(deadline))
@@ -622,7 +631,7 @@ class Hybrid(Strategy):
             deadline_metric = (deadline - time - rtt_delay - compSpot.services[service].service_time) #/deadline
             if self.debug:
                 print ("Deadline metric: " + repr(deadline_metric))
-            if self.view.has_service(node, service):
+            if self.view.has_service(node, service) and service["service_type"] is "proc":
                 if self.debug:
                     print ("Calling admit_task")
                 ret, reason = compSpot.admit_task(service, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)

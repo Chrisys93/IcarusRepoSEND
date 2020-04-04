@@ -22,7 +22,7 @@ import traceback
 
 from icarus.execution import exec_experiment
 from icarus.registry import TOPOLOGY_FACTORY, COMPUTATION_PLACEMENT, CACHE_PLACEMENT, CONTENT_PLACEMENT, COMPUTATION_PLACEMENT, \
-                            CACHE_POLICY, WORKLOAD, DATA_COLLECTOR, STRATEGY
+                            CACHE_POLICY, REPO_POLICY, WORKLOAD, DATA_COLLECTOR, STRATEGY
 from icarus.results import ResultSet
 from icarus.util import SequenceNumber, timestr
 

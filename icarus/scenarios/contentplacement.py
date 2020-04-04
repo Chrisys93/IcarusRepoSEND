@@ -128,8 +128,8 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
 
 
 @register_content_placement('WEIGHTED_REPO')
-def weighted_repo_content_placement(topology, contents, topics, types, freshness_per,
-                                    shelf_life, msg_size, source_weights, service_weights,
+def weighted_repo_content_placement(topology, contents, freshness_per, shelf_life,
+                                    msg_size, source_weights, service_weights,
                                     types_weights, topics_weights, max_label_nos, seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
@@ -183,14 +183,15 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
     # TODO: These ^\/^\/^ might need redefining, to make label-specific
     #  source weights, and then the labels distributed according to these.
     #  OR the other way around, distributing sources according to label weights
-    types_labels_norm_factor = float(sum(types_weights.values()))
+    if types_weights is not None:
+        types_labels_norm_factor = float(sum(types_weights.values()))
+        types_labels_pdf = dict((k, v / types_labels_norm_factor) for k, v in types_weights.items())
     topics_labels_norm_factor = float(sum(topics_weights.values()))
     service_labels_norm_factor = float(sum(service_weights.values()))
     # TODO: Think about a way to randomise, but still maintain a certain
     #  distribution among the users that receive data with certain labels.
     #  Maybe associate the pdf with labels, rather than contents, SOMEHOW!
     source_pdf = dict((k, v / norm_factor) for k, v in source_weights.items())
-    types_labels_pdf = dict((k, v / types_labels_norm_factor) for k, v in types_weights.items())
     topics_labels_pdf = dict((k, v / topics_labels_norm_factor) for k, v in topics_weights.items())
     service_labels_pdf = dict((k, v / service_labels_norm_factor) for k, v in service_weights.items())
     service_association = collections.defaultdict(set)
@@ -203,10 +204,10 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
     alter = False
     for c in contents:
         for i in range(1, max_label_nos):
-            if types is not None and not alter:
+            if types_weights is not None and not alter:
                 labels_association[random_from_pdf(types_labels_pdf)].add(c)
                 alter = True
-            elif topics is not None and alter:
+            elif topics_weights is not None and alter:
                 labels_association[random_from_pdf(topics_labels_pdf)].add(c)
                 alter = False
         apply_labels_association(labels_association, placed_data)
@@ -217,6 +218,7 @@ def weighted_repo_content_placement(topology, contents, topics, types, freshness
         service_association[random_from_pdf(service_labels_pdf)].add(c)
         apply_service_association(service_association, placed_data)
         placed_data[c]["msg_size"].update(msg_size)
+        placed_data[c]["receiveTime"] = 0
     for d in placed_data:
         content_placement[random_from_pdf(source_pdf)].add(d)
     apply_content_placement(content_placement, topology)

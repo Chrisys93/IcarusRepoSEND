@@ -585,11 +585,13 @@ class StationaryRepoWorkload(object):
                 if self.min_match is not []:
                     min_match = self.min_match_zipf.rv()
                     deadline = self.model.services[labels].deadline + t_event
+                    self.model.node_labels[node]["request_labels"].update(labels)
                     event = {'receiver': receiver, 'content': '', 'labels': labels, 'min_match': min_match,
                              'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
                              'status': REQUEST}
                 else:
                     deadline = self.model.services[labels].deadline + t_event
+                    self.model.node_labels[node]["request_labels"].update(labels)
                     event = {'receiver': receiver, 'content': '', 'labels': labels, 'min_match': 1, 'log': log,
                              'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
                              'status': REQUEST}
@@ -598,11 +600,13 @@ class StationaryRepoWorkload(object):
                 if self.min_match is not []:
                     min_match = self.min_match_zipf.rv()
                     deadline = self.model.services[labels].deadline + t_event
+                    self.model.node_labels[node]["request_labels"].update(labels)
                     event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': min_match,
                              'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
                              'status': REQUEST}
                 else:
                     deadline = self.model.services[labels].deadline + t_event
+                    self.model.node_labels[node]["request_labels"].update(labels)
                     event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': 1,
                              'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
                              'status': REQUEST}

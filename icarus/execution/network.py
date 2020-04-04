@@ -48,7 +48,7 @@ logger = logging.getLogger('orchestration')
 class Event(object):
     """Implementation of an Event object: arrival of a request to a node"""
 
-    def __init__(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status, task=None):
+    def __init__(self, time, receiver, service, labels, node, flow_id, deadline, rtt_delay, status, task=None):
         """Constructor
         Parameters
         ----------
@@ -61,6 +61,7 @@ class Event(object):
         self.receiver = receiver
         self.node = node
         self.service = service
+        self.labels = labels
         self.flow_id = flow_id
         self.deadline = deadline
         self.rtt_delay = rtt_delay
@@ -272,6 +273,34 @@ class NetworkView(object):
 
         return nodes
 
+    def labels_requests(self, r_labels):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+
+        Returns
+        -------
+        node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+        nodes = Counter()
+
+        for label in r_labels:
+            nodes.update(self.model.request_labels_nodes.get(label, None))
+
+        for n in nodes:
+            for l in r_labels:
+                if l not in self.model.node_labels[n]["request_labels"]:
+                    del nodes[n]
+
+        return nodes
+
+
+
     def all_labels_main_source(self, labels):
         """Return the node identifier where the content is persistently stored.
 
@@ -287,9 +316,34 @@ class NetworkView(object):
             source is unavailable
         """
 
+        current_count = 0
+        auth_node = None
         for n, count in self.labels_sources(labels):
             if count >= current_count:
-                auth_node = self.storage_nodes[n]
+                auth_node = self.storage_nodes()[n]
+                current_count = count
+        return auth_node
+
+    def all_labels_most_requests(self, request_labels):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+
+        Returns
+        -------
+        node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        current_count = 0
+        auth_node = None
+        for n, count in self.labels_requests(request_labels):
+            if count >= current_count:
+                auth_node = self.storage_nodes()[n]
                 current_count = count
         return auth_node
 
@@ -624,9 +678,14 @@ class NetworkView(object):
         if node in self.model.cache:
             return self.model.cache[node].dump()
 
-    def most_popular_request_node(self, request_labels=Counter()):
-        self.sess_latency = 0.0
-        self.session[request_labels] = request_labels
+    def hasStorageCapability(self, node):
+
+        if self.topology[node] in self.repoStorage:
+            return True
+        else:
+            return False
+
+
 
     def most_storage_labels_node(self, flow_id=0, storage_labels=Counter()):
         # TODO: Maybe storage labels should rather be dictionaries, with only one entry,
@@ -719,6 +778,10 @@ class NetworkModel(object):
         # dict of locations of labels keyed by label name, with the number of labels of
         # that label/key stored in each of these nodes
         self.labels_sources = {}
+        # Dictionary mapping the labels associated with requests, received by each node,
+        # and counted, for a quantisation of service popularity, related to those labels
+        self.request_labels_nodes = {}
+
 
         #  A heap with events (see Event class above)
         self.eventQ = []
@@ -742,6 +805,7 @@ class NetworkModel(object):
         service_size = {}
         all_node_labels = {}
         contents = {}
+        request_labels ={}
         self.rate = rate
         for node in topology.nodes():
             all_node_labels[node] = Counter()
@@ -1143,7 +1207,7 @@ class NetworkController(object):
         if self.collector is not None and self.session['feedback']:
             self.collector.content_storage_labels(u, self.session.storage_labels)
 
-    def add_request_labels_to_node(self, s, t, request_labels):
+    def add_request_labels_to_node(self, s, service_request):
         """Forward a request from node *s* to node *t* over the provided path.
 
         TODO: This (and all called methods, defined within this class) should be
@@ -1165,6 +1229,60 @@ class NetworkController(object):
             The path to use. If not provided, shortest path is used
 
         """
+        Counter(self.model.node_labels[s]["request_labels"]).update(service_request["labels"])
+        for label in service_request["labels"]:
+            Counter(self.model.request_labels_nodes[label]).update([s])
+
+    def add_request_labels_to_storage(self, s, labels):
+        """Forward a request from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the forwarding and redirection of the requests,
+            towards the appropriate collectors, for optimal storage placement decisions,
+            depending on service request type and data request source, popularity and
+            distance.
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            *AND YES! - flow_id's are basically the identifiers for requests - currently*
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Origin node
+        t : any hashable type
+            Destination node
+        request_labels : list, optional
+            The path to use. If not provided, shortest path is used
+
+        """
+        if all(label in labels for label in self.model.node_labels[s]["request_labels"]):
+            for label in labels:
+                self.model.node_labels[s]["request_labels"].remove(label)
+                self.model.node_labels[s].update(label)
+
+    def add_message_to_storage(self, s, content):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Storage node
+        path : list, optional
+            The path to use. If not provided, shortest path is used
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        self.model.repoStorage[s].addToStoredMessages(content)
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1180,16 +1298,10 @@ class NetworkController(object):
         ----------
         s : any hashable type
             Origin node
-        t : any hashable type
-            Destination node
-        path : list, optional
-            The path to use. If not provided, shortest path is used
-        main_path : bool, optional
-            If *True*, indicates that this path is being traversed by content
-            that will be delivered to the receiver. This is needed to
-            calculate latency correctly in multicast cases. Default value is
-            *True*
+        content: hashable object
+            Message with content hash (name), labels and properties
         """
+        self.model.node_labels[s].update(content["labels"])
 
     def put_content(self, node, content=0):
         """Store content in the specified node.
