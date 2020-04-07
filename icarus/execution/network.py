@@ -347,6 +347,71 @@ class NetworkView(object):
                 current_count = count
         return auth_node
 
+
+
+
+    def storage_labels_closest_service(self, labels, path):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+        path :
+
+        Returns
+        -------
+        in_path, node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        current_count = 0
+        auth_node = None
+        for n, count in self.labels_sources(labels):
+            if count >= current_count:
+                auth_node = self.storage_nodes()[n]
+                current_count = count
+        return auth_node
+
+    def service_labels_closest_repo(self, labels, node, path, on_path):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+        path :
+
+        Returns
+        -------
+        in_path, node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        current_hops = float('inf')
+        nodes = Counter()
+        auth_node = None
+        in_path = False
+        for n, count in self.labels_sources(labels):
+            if self.model.repoStorage[n].hasMessage(None, labels):
+                msg = self.model.repoStorage[n].hasMessage(None, labels)
+                hops = len(self.shortest_path(node, n))
+                if msg['service_type'] is "processed":
+                    nodes.update({self.storage_nodes()[n]: hops})
+
+        for n, hops in nodes:
+            if hops < current_hops:
+                if on_path and n in path:
+                    in_path = True
+                    auth_node = n
+                else:
+                    in_path = False
+                    auth_node = n
+
+        return in_path, auth_node
+
     def shortest_path(self, s, t):
         """Return the shortest path from *s* to *t*
 
@@ -364,6 +429,8 @@ class NetworkView(object):
             included)
         """
         return self.model.shortest_path[s][t]
+
+
 
     def num_services(self):
         """

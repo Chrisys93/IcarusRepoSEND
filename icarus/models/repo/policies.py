@@ -41,10 +41,10 @@ class RepoStorage(object):
         self.view = view
         # self.messages =
         # Collection
-        self.Messages = list
-        self.processMessages = list
-        self.processedMessages = list
-        self.storedMessages = list
+        self.Messages = []
+        self.processMessages = []
+        self.processedMessages = []
+        self.storedMessages = []
         self.storageSize = storageSize
         self.processSize = 0
         self.Size = 0
@@ -337,7 +337,7 @@ class RepoStorage(object):
     def hasMessage(self, MessageId, labels):  #
         answer = None
         for j in range(0, len(self.processedMessages)):
-            if self.processedMessages[j]['content'] == MessageId:
+            if MessageId is not None and self.processedMessages[j]['content'] == MessageId:
                 answer = self.processedMessages[j]
             else:
                 j_labels = []
@@ -347,7 +347,7 @@ class RepoStorage(object):
                 if (j_labels == labels):
                     answer = self.processedMessages[j]
         for i in range(0, len(self.Messages)):
-            if self.Messages[i]['content'] == MessageId:
+            if MessageId is not None and self.Messages[i]['content'] == MessageId:
                 answer = self.Messages[i]
             else:
                 j_labels = []
@@ -357,7 +357,7 @@ class RepoStorage(object):
                 if (j_labels == labels):
                     answer = self.Messages[j]
         for i in range(0, len(self.processMessages)):
-            if self.processMessages[i]['content'] == MessageId:
+            if MessageId is not None and self.processMessages[i]['content'] == MessageId:
                 answer = self.processMessages[i]
             else:
                 j_labels = []
@@ -1301,8 +1301,9 @@ class ProcApplication(object):
 					  (self.view.repoStorage[node].getTotalStorageSpace * self.min_stor) +
 					  " Total space is " + self.view.repoStorage[node].getTotalStorageSpace) """
             # System.out.prln("Depleted  messages: " + sdepleted)
-        elif (self.view.repoStorage[node].getProcessedMessagesSize + self.view.repoStorage[
-            node].getStaleMessagesSize) > (self.view.repoStorage[node].getTotalStorageSpace * self.max_stor):
+        elif (self.view.repoStorage[node].getProcessedMessagesSize +
+                self.view.repoStorage[node].getStaleMessagesSize) > \
+                (self.view.repoStorage[node].getTotalStorageSpace * self.max_stor):
             self.cloudEmptyLoop = True
             for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
 
@@ -1310,7 +1311,7 @@ class ProcApplication(object):
 
                 if (self.view.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(self, node)
+                    self.oldestSatisfiedDepletion(node)
 
                     """
 					* Oldest unprocessed messages should be given priority for depletion
@@ -1624,14 +1625,6 @@ class ProcApplication(object):
 
     def getMinStor(self):
         return self.min_stor
-
-    """
-	* @ return depletion
-	rate
-	"""
-
-    def getProcEndTimes(self):
-        return self.procEndTimes
 
     """
 	* @ return depletion
