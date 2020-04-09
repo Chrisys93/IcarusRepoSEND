@@ -267,9 +267,8 @@ class NetworkView(object):
             nodes.update(self.model.labels_sources.get(label, None))
 
         for n in nodes:
-            for l in labels:
-                if l not in self.model.node_labels[n]:
-                    del nodes[n]
+            if not self.model.repoStorage[n].hasMessage(None, labels):
+                del nodes[n]
 
         return nodes
 
@@ -411,6 +410,45 @@ class NetworkView(object):
                     auth_node = n
 
         return in_path, auth_node
+
+    def most_services_labels_closest_repo(self, labels, node, path, on_path):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        labels : list of label strings
+            The identifiers for the labels of interest
+        path :
+
+        Returns
+        -------
+        in_path, node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        current_proc = 0
+        nodes = Counter()
+        auth_node = None
+        in_path = False
+        for n, count in self.labels_sources(labels):
+            no_proc = 0
+            for msg in self.model.repoStorage[n].getProcessedMessages(labels):
+                if msg['service_type'] is "processed":
+                    no_proc += 1
+            nodes.update({self.storage_nodes()[n]: no_proc})
+
+        for n, no_proc in nodes:
+            if no_proc > current_proc:
+                if on_path and n in path:
+                    in_path = True
+                    auth_node = n
+                else:
+                    in_path = False
+                    auth_node = n
+
+        return in_path, auth_node
+
 
     def shortest_path(self, s, t):
         """Return the shortest path from *s* to *t*
@@ -1300,7 +1338,7 @@ class NetworkController(object):
         for label in service_request["labels"]:
             Counter(self.model.request_labels_nodes[label]).update([s])
 
-    def add_request_labels_to_storage(self, s, labels):
+    def add_request_labels_to_storage(self, s, labels, add):
         """Forward a request from node *s* to node *t* over the provided path.
 
         TODO: This (and all called methods, defined within this class) should be
@@ -1325,7 +1363,8 @@ class NetworkController(object):
         if all(label in labels for label in self.model.node_labels[s]["request_labels"]):
             for label in labels:
                 self.model.node_labels[s]["request_labels"].remove(label)
-                self.model.node_labels[s].update(label)
+                if add:
+                    self.model.node_labels[s].update(label)
 
     def add_message_to_storage(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.

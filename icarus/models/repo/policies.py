@@ -334,7 +334,41 @@ class RepoStorage(object):
     def getnode(self):
         return self.node
 
-    def hasMessage(self, MessageId, labels):  #
+    def hasMessage(self, MessageId, labels):
+        answer = None
+        for j in range(0, len(self.processedMessages)):
+            if MessageId is not None and self.processedMessages[j]['content'] == MessageId:
+                answer = self.processedMessages[j]
+            else:
+                j_labels = []
+                for label, count in self.processedMessages[j]['labels']:
+                    if label in labels:
+                        j_labels.append(label)
+                if (j_labels == labels):
+                    answer = self.processedMessages[j]
+        for i in range(0, len(self.Messages)):
+            if MessageId is not None and self.Messages[i]['content'] == MessageId:
+                answer = self.Messages[i]
+            else:
+                j_labels = []
+                for label, count in self.Messages[j]['labels']:
+                    if label in labels:
+                        j_labels.append(label)
+                if (j_labels == labels):
+                    answer = self.Messages[j]
+        for i in range(0, len(self.processMessages)):
+            if MessageId is not None and self.processMessages[i]['content'] == MessageId:
+                answer = self.processMessages[i]
+            else:
+                j_labels = []
+                for label, count in self.processMessages[j]['labels']:
+                    if label in labels:
+                        j_labels.append(label)
+                if (j_labels == labels):
+                    answer = self.processMessages[j]
+        return answer
+
+    def getProcessedMessages(self, labels):
         answer = None
         for j in range(0, len(self.processedMessages)):
             if MessageId is not None and self.processedMessages[j]['content'] == MessageId:
