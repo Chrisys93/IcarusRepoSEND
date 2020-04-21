@@ -111,8 +111,9 @@ def symmetrify_paths(shortest_paths):
     -----
     This function modifies the shortest paths dictionary provided
     """
+    shortest_paths = dict(shortest_paths)
     for u in shortest_paths:
-        for v in shortest_paths[u]:
+        for v in shortest_paths:
             shortest_paths[u][v] = list(reversed(shortest_paths[v][u]))
     return shortest_paths
 
@@ -826,7 +827,7 @@ class NetworkModel(object):
         "instantiated".
     """
 
-    def __init__(self, topology, cache_policy, sched_policy, n_services, rate, seed=0, shortest_path=None):
+    def __init__(self, topology, cache_policy, repo_policy, sched_policy, n_services, rate, seed=0, shortest_path=None):
         """
             TODO: Check line 589! That is where the caches are initialised,
                 for each node!
@@ -910,9 +911,10 @@ class NetworkModel(object):
         service_size = {}
         all_node_labels = {}
         contents = {}
-        request_labels ={}
+        request_labels = {}
         self.rate = rate
         for node in topology.nodes():
+            # TODO: Sort out content association in the case that "contents" aren't objects!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             all_node_labels[node] = Counter()
             stack_name, stack_props = fnss.get_stack(topology, node)
             # get the depth of the tree
@@ -930,25 +932,49 @@ class NetworkModel(object):
                     comp_size[node] = stack_props['computation_size']
                 if 'service_size' in stack_props:
                     service_size[node] = stack_props['service_size']
-            elif stack_name == 'source':  #  A Cloud with infinite resources
-                # TODO: IMPORTANT QUESTION: do sources need to have EDRs or not...?
-                if 'storageSize' in stack_props:
-                    storageSize[node] = stack_props['storageSize']
+                if 'source' and 'router' in stack_name:  #  A Cloud with infinite resources
+                    contents = list(stack_props['contents'])
+                    # print("contents[node][0] is: ", contents[node][0], " and its type is: ", type(contents[node][0]))
+                    # TODO: IMPORTANT QUESTION: do sources need to have EDRs or not...?
+                    if 'storageSize' in stack_props:
+                        storageSize[node] = stack_props['storageSize']
+                    if contents[0]['content']:
+                        for c in contents[node]:
+                            for labels in c['labels']:
+                                all_node_labels[node].update([labels])
+
+                        self.source_node[node] = contents
+                        for content in contents[node]:
+                            self.content_source[content] = node
+
+                        self.node_labels[node].update(all_node_labels[node])
+                        for k, v in all_node_labels[node]:
+                            Counter(self.labels_sources[k]).update([node, v])
+                    else:
+                        self.source_node[node] = contents
+                        for content in contents:
+                            self.content_source[content] = node
+            elif stack_name == 'source' and 'router' not in stack_name:
                 comp_size[node] = float('inf')
                 service_size[node] = float('inf')
+                contents = list(stack_props['contents'])
+                if type(list(contents)[0]) is dict:
+                    for c in contents:
+                        for labels in c['labels']:
+                            all_node_labels[node].update([labels])
 
-                contents[node] = stack_props['contents']
-                for c in contents[node]:
-                    for labels in c['labels']:
-                        all_node_labels[node].update([labels])
+                    self.source_node[node] = contents
+                    for content in contents[node]:
+                        self.content_source[content] = node
 
-                self.source_node[node] = contents
-                for content in contents[node]:
-                    self.content_source[content] = node
-
-                self.node_labels[node].update(all_node_labels[node])
-                for k, v in all_node_labels[node]:
-                    Counter(self.labels_sources[k]).update([node, v])
+                    self.node_labels[node].update(all_node_labels[node])
+                    for k, v in all_node_labels[node]:
+                        Counter(self.labels_sources[k]).update([node, v])
+                else:
+                    contents = stack_props['contents']
+                    self.source_node[node] = contents
+                    for content in contents:
+                        self.content_source[content] = node
 
         if any(c < 1 for c in cache_size.values()):
             logger.warn('Some content caches have size equal to 0. '
@@ -959,14 +985,17 @@ class NetworkModel(object):
 
         policy_name = cache_policy['name']
         policy_args = {k: v for k, v in cache_policy.items() if k != 'name'}
+        if repo_policy is not None:
+            repo_policy_name = repo_policy['name']
+            repo_policy_args = {k: v for k, v in repo_policy.items() if k != 'name'}
 
         # The actual cache objects storing the content
         self.cache = {node: CACHE_POLICY[policy_name](cache_size[node], **policy_args)
                       for node in cache_size}
         # TODO: Maybe I should make a repo-specific policy, so that both repos and caches could be
         #  implemented at once?
-        if REPO_POLICY[policy_name] is not None:
-            self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], contents[node], **policy_args)
+        if REPO_POLICY[repo_policy_name] is not None and repo_policy is not None:
+            self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], contents[node], **repo_policy_args)
                                 for node in storageSize}
 
         #  Generate the actual services processing requests

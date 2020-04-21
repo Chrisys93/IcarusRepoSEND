@@ -265,8 +265,8 @@ def run_scenario(settings, params, curr_exp, n_exp):
         #       OR Could do the following
         #       (just to save space and not use the same content specs 2 times in config.py):
         #       It seems like the contents are generated \/\/\/ within workload (workload.contents)!
-        if "_REPO_" in contpl_name:
-            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, workload.labels, workload.freshness_pers,
+        if "REPO" in contpl_name:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, workload.freshness_pers,
                                            workload.shelf_lives, workload.sizes, **contpl_spec)
         else:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
@@ -289,6 +289,12 @@ def run_scenario(settings, params, curr_exp, n_exp):
             logger.error('No implementation of cache policy %s was found.' % cache_policy['name'])
             return None
 
+        # cache eviction policy definition
+        repo_policy = tree['repo_policy']
+        if repo_policy['name'] not in REPO_POLICY:
+            logger.error('No implementation of repo policy %s was found.' % repo_policy['name'])
+            return None
+
         # task scheduling policy at the computation spots
         sched_policy = tree['sched_policy']
 
@@ -307,7 +313,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
         collectors = {m: {} for m in metrics}
 
         logger.info('Experiment %d/%d | Start simulation', curr_exp, n_exp)
-        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, collectors, warmup_strategy, sched_policy)
+        results = exec_experiment(topology, workload, netconf, strategy, cache_policy, repo_policy, collectors, warmup_strategy, sched_policy)
 
         duration = time.time() - start_time
         logger.info('Experiment %d/%d | End simulation | Duration %s.',

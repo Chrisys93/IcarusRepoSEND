@@ -17,7 +17,6 @@ from icarus.registry import register_cache_placement
 from icarus.scenarios.algorithms import compute_clusters, compute_p_median, deploy_clusters
 
 __all__ = [
-    'repo_storage_placement',
     'uniform_cache_placement',
     'uniform_sit_cache_placement',
     'degree_centrality_cache_placement',

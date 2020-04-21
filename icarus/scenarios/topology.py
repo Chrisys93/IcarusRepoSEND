@@ -145,20 +145,24 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     receiver_access_delay = 0.001
     topology = fnss.k_ary_tree_topology(k, h)
     topology.graph['parent'] = [None for x in range(pow(k,h+1)-1)]
-    for u, v in topology.edges_iter():
+    for u, v in topology.edges():
         if topology.node[u]['depth'] > topology.node[v]['depth']:
             topology.graph['parent'][u] = v
         else:
-            topology.graph['parent'][v] = u 
-        topology.edge[u][v]['type'] = 'internal'
-        if u is 0 or v is 0:
-            topology.edge[u][v]['delay'] = delay
-            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
-        else:
-            topology.edge[u][v]['delay'] = delay
-            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
+            topology.graph['parent'][v] = u
 
-    for v in topology.nodes_iter():
+        # TODO: Change(d) the edge allocation from .edges[u, v] to .edges[u, v]...don't really 
+        #  understand where edges[u, v] came from originally, anyway, really...
+        
+        topology.edges[u, v]['type'] = 'internal'
+        if u is 0 or v is 0:
+            topology.edges[u, v]['delay'] = delay
+            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edges[u, v]['delay']))
+        else:
+            topology.edges[u, v]['delay'] = delay
+            print ("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edges[u, v]['delay']))
+
+    for v in topology.nodes():
         print ("Depth of " + repr(v) + " is " + repr(topology.node[v]['depth']))
     
     # set weights and delays on all links
@@ -172,11 +176,11 @@ def topology_tree(k, h, delay=0.020, **kwargs):
     topology.graph['link_delay'] = delay
     topology.graph['receiver_access_delay'] = receiver_access_delay
     
-    edge_routers = [v for v in topology.nodes_iter()
+    edge_routers = [v for v in topology.nodes()
                  if topology.node[v]['depth'] == h]
-    root = [v for v in topology.nodes_iter()
+    root = [v for v in topology.nodes()
                if topology.node[v]['depth'] == 0]
-    #routers = [v for v in topology.nodes_iter()
+    #routers = [v for v in topology.nodes()
     #          if topology.node[v]['depth'] > 0
     #          and topology.node[v]['depth'] < h]
 
@@ -236,20 +240,20 @@ def topology_repo_tree(k, h, delay=0.020, **kwargs):
     receiver_access_delay = 0.001
     topology = fnss.k_ary_tree_topology(k, h)
     topology.graph['parent'] = [None for x in range(pow(k, h + 1) - 1)]
-    for u, v in topology.edges_iter():
+    for u, v in topology.edges():
         if topology.node[u]['depth'] > topology.node[v]['depth']:
             topology.graph['parent'][u] = v
         else:
             topology.graph['parent'][v] = u
-        topology.edge[u][v]['type'] = 'internal'
+        topology.edges[u, v]['type'] = 'internal'
         if u is 0 or v is 0:
-            topology.edge[u][v]['delay'] = delay
-            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
+            topology.edges[u, v]['delay'] = delay
+            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edges[u, v]['delay']))
         else:
-            topology.edge[u][v]['delay'] = delay
-            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edge[u][v]['delay']))
+            topology.edges[u, v]['delay'] = delay
+            print("Edge between " + repr(u) + " and " + repr(v) + " delay: " + repr(topology.edges[u, v]['delay']))
 
-    for v in topology.nodes_iter():
+    for v in topology.nodes():
         print("Depth of " + repr(v) + " is " + repr(topology.node[v]['depth']))
 
     # set weights and delays on all links
@@ -264,11 +268,11 @@ def topology_repo_tree(k, h, delay=0.020, **kwargs):
     topology.graph['link_delay'] = delay
     topology.graph['receiver_access_delay'] = receiver_access_delay
 
-    edge_routers = [v for v in topology.nodes_iter()
+    edge_routers = [v for v in topology.nodes()
                     if topology.node[v]['depth'] == h]
-    root = [v for v in topology.nodes_iter()
+    root = [v for v in topology.nodes()
             if topology.node[v]['depth'] == 0]
-    # routers = [v for v in topology.nodes_iter()
+    # routers = [v for v in topology.nodes()
     #          if topology.node[v]['depth'] > 0
     #          and topology.node[v]['depth'] < h]
 
@@ -293,10 +297,13 @@ def topology_repo_tree(k, h, delay=0.020, **kwargs):
         fnss.add_stack(topology, v, 'receiver')
     for v in routers:
         fnss.add_stack(topology, v, 'router')
+        fnss.add_stack(topology, v, 'source')
     # label links as internal
 
     topology.graph['receivers'] = receivers
     topology.graph['sources'] = sources
+    topology.graph['sources'].extend(routers)
+    topology.graph['sources'].extend(edge_routers)
     topology.graph['routers'] = routers
     topology.graph['edge_routers'] = edge_routers
 
@@ -335,8 +342,8 @@ def topology_path(n, delay=1, **kwargs):
     fnss.set_weights_constant(topology, 1.0)
     fnss.set_delays_constant(topology, delay, 'ms')
     # label links as internal or external
-    for u, v in topology.edges_iter():
-        topology.edge[u][v]['type'] = 'internal'
+    for u, v in topology.edges():
+        topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -480,14 +487,14 @@ def topology_geant(**kwargs):
     fnss.set_weights_constant(topology, 1.0)
     fnss.set_delays_constant(topology, INTERNAL_LINK_DELAY, 'ms')
     # label links as internal or external
-    for u, v in topology.edges_iter():
+    for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -562,12 +569,12 @@ def topology_tiscali(**kwargs):
     # label links as internal or external
     for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -608,12 +615,12 @@ def topology_wide(**kwargs):
     # label links as internal or external
     for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -655,12 +662,12 @@ def topology_garr(**kwargs):
     # label links as internal or external
     for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -690,14 +697,14 @@ def topology_garr2(**kwargs):
     # receivers are internal nodes with degree = 1
     receivers = [1, 7, 8, 9, 11, 12, 19, 26, 28, 30, 32, 33, 41, 42, 43, 47, 48, 50, 53, 57, 60]
     # routers are all remaining nodes --> 27 caches
-    routers = [n for n in topology.nodes_iter() if n not in receivers + sources]
+    routers = [n for n in topology.nodes() if n not in receivers + sources]
     artificial_receivers = list(range(1000, 1000 + len(routers)))
     for i in range(len(routers)):
         topology.add_edge(routers[i], artificial_receivers[i])
     receivers += artificial_receivers
     # Caches to nodes with degree > 3 (after adding artificial receivers)
     degree = nx.degree(topology)
-    icr_candidates = [n for n in topology.nodes_iter() if degree[n] > 3.5]
+    icr_candidates = [n for n in topology.nodes() if degree[n] > 3.5]
     # set weights and delays on all links
     fnss.set_weights_constant(topology, 1.0)
     fnss.set_delays_constant(topology, INTERNAL_LINK_DELAY, 'ms')
@@ -713,12 +720,12 @@ def topology_garr2(**kwargs):
     # label links as internal or external
     for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -773,14 +780,14 @@ def topology_geant2(**kwargs):
     fnss.set_weights_constant(topology, 1.0)
     fnss.set_delays_constant(topology, INTERNAL_LINK_DELAY, 'ms')
     # label links as internal or external
-    for u, v in topology.edges_iter():
+    for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 @register_topology_factory('TISCALI_2')
@@ -863,12 +870,12 @@ def topology_tiscali2(**kwargs):
     # label links as internal or external
     for u, v in topology.edges():
         if u in sources or v in sources:
-            topology.edge[u][v]['type'] = 'external'
+            topology.edges[u, v]['type'] = 'external'
             # this prevents sources to be used to route traffic
             fnss.set_weights_constant(topology, 1000.0, [(u, v)])
             fnss.set_delays_constant(topology, EXTERNAL_LINK_DELAY, 'ms', [(u, v)])
         else:
-            topology.edge[u][v]['type'] = 'internal'
+            topology.edges[u, v]['type'] = 'internal'
     return IcnTopology(topology)
 
 
@@ -894,8 +901,8 @@ def topology_rocketfuel_latency(asn, source_ratio=1.0, ext_delay=EXTERNAL_LINK_D
     topology = fnss.parse_rocketfuel_isp_latency(f_topo).to_undirected()
     topology = list(nx.connected_component_subgraphs(topology))[0]
     # First mark all current links as inernal
-    for u, v in topology.edges_iter():
-        topology.edge[u][v]['type'] = 'internal'
+    for u, v in topology.edges():
+        topology.edges[u, v]['type'] = 'internal'
     # Note: I don't need to filter out nodes with degree 1 cause they all have
     # a greater degree value but we compute degree to decide where to attach sources
     routers = topology.nodes()
@@ -920,8 +927,8 @@ def topology_rocketfuel_latency(asn, source_ratio=1.0, ext_delay=EXTERNAL_LINK_D
     for i in range(len(routers)):
         topology.add_edge(receivers[i], routers[i], delay=0, type='internal')
     # Set weights to latency values
-    for u, v in topology.edges_iter():
-        topology.edge[u][v]['weight'] = topology.edge[u][v]['delay']
+    for u, v in topology.edges():
+        topology.edges[u, v]['weight'] = topology.edges[u, v]['delay']
     # Deploy stacks on nodes
     topology.graph['icr_candidates'] = set(routers)
     for v in sources:

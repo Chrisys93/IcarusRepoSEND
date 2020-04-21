@@ -7,7 +7,7 @@ import networkx as nx
 import random
 import sys
 # for the optimizer
-import cvxpy as cp
+#import cvxpy as cp
 import numpy as np
 import optparse
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division
 
 import time
@@ -10,7 +11,6 @@ import numpy as np
 
 from icarus.util import inheritdoc, apportionment
 from icarus.registry import register_repo_policy
-from typing import Sized
 
 import networkx as nx
 import random
@@ -1099,7 +1099,6 @@ class HServRepoStorApp(Strategy):
         if self.view.has_computationalSpot(node):
             compSpot = self.view.compSpot(node)
         if service is not None:
-            #  Request reached the cloud
             if source == node and status == REQUEST:
                 self.controller.add_request_labels_to_node(receiver, service)
                 ret, reason = compSpot.admit_task(service, labels, curTime, flow_id, deadline, receiver, rtt_delay,
@@ -1110,7 +1109,7 @@ class HServRepoStorApp(Strategy):
                     raise ValueError("Task should not be rejected at the cloud.")
                 return
 
-                #  Request at the receiver
+            #  Request at the receiver
             if receiver == node and status == REQUEST:
                 self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)

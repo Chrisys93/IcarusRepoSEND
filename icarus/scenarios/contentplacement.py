@@ -25,7 +25,7 @@ def apply_content_placement(placement, topology):
         The topology
     """
     for v, contents in placement.items():
-        topology.node[v]['stack'][1]['contents'] = contents
+        topology.nodes[v]['stack'][1]['contents'] = contents
 
 def apply_service_association(association, data):
     """
@@ -40,7 +40,8 @@ def apply_service_association(association, data):
     """
     for service_type, content in association.items():
         if service_type not in data[content]['service_type']:
-            data[content]['service_type'].update(service_type)
+            dict(data[content]).update(service_type=service_type)
+    return data
 
 def apply_labels_association(association, data):
     """
@@ -55,7 +56,8 @@ def apply_labels_association(association, data):
     """
     for label, content in association.items():
         if label not in data[content]['labels']:
-            data[content]['labels'].update(label)
+            list(dict(data[content])['labels']).append(label)
+    return data
 
 def get_sources(topology):
     return [v for v in topology if topology.node[v]['stack'][0] == 'source']
@@ -175,10 +177,10 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
     #       placed_data = {content, msg_topics, msg_type, freshness_per,
     #                       shelf_life, msg_size}
 
-    placed_data = {}
+    placed_data = dict()
     random.seed(seed)
     for c in contents:
-        placed_data[c] = {'content':     c}
+        dict(placed_data[c]).update(content=c)
     norm_factor = float(sum(source_weights.values()))
     # TODO: These ^\/^\/^ might need redefining, to make label-specific
     #  source weights, and then the labels distributed according to these.
@@ -210,14 +212,14 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
             elif topics_weights is not None and alter:
                 labels_association[random_from_pdf(topics_labels_pdf)].add(c)
                 alter = False
-        apply_labels_association(labels_association, placed_data)
+        placed_data = apply_labels_association(labels_association, placed_data)
         if freshness_per is not None:
-            placed_data[c]["freshness_per"].update(freshness_per)
+            placed_data[c].update(freshness_per=freshness_per)
         if shelf_life is not None:
-            placed_data[c]["shelf_life"].update(shelf_life)
+            placed_data[c].update(shelf_life=shelf_life)
         service_association[random_from_pdf(service_labels_pdf)].add(c)
-        apply_service_association(service_association, placed_data)
-        placed_data[c]["msg_size"].update(msg_size)
+        placed_data = apply_service_association(service_association, placed_data)
+        placed_data[c].update(msg_size=msg_size)
         placed_data[c]["receiveTime"] = 0
     for d in placed_data:
         content_placement[random_from_pdf(source_pdf)].add(d)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division
 
 import time
@@ -10,18 +11,10 @@ import numpy as np
 
 from icarus.util import inheritdoc, apportionment
 from icarus.registry import register_repo_policy
-from typing import Sized
-
-
-class Class(Sized):
-    def __len__(self) -> int:
-        return 1
-
-
-x = Class()
 
 __all__ = [
     'RepoStorage',
+    'RepoNull'
 ]
 
 
@@ -371,35 +364,26 @@ class RepoStorage(object):
     def getProcessedMessages(self, labels):
         answer = None
         for j in range(0, len(self.processedMessages)):
-            if MessageId is not None and self.processedMessages[j]['content'] == MessageId:
+            j_labels = []
+            for label, count in self.processedMessages[j]['labels']:
+                if label in labels:
+                    j_labels.append(label)
+            if (j_labels == labels):
                 answer = self.processedMessages[j]
-            else:
-                j_labels = []
-                for label, count in self.processedMessages[j]['labels']:
-                    if label in labels:
-                        j_labels.append(label)
-                if (j_labels == labels):
-                    answer = self.processedMessages[j]
         for i in range(0, len(self.Messages)):
-            if MessageId is not None and self.Messages[i]['content'] == MessageId:
-                answer = self.Messages[i]
-            else:
-                j_labels = []
-                for label, count in self.Messages[j]['labels']:
-                    if label in labels:
-                        j_labels.append(label)
-                if (j_labels == labels):
-                    answer = self.Messages[j]
+            j_labels = []
+            for label, count in self.Messages[j]['labels']:
+                if label in labels:
+                    j_labels.append(label)
+            if (j_labels == labels):
+                answer = self.Messages[j]
         for i in range(0, len(self.processMessages)):
-            if MessageId is not None and self.processMessages[i]['content'] == MessageId:
-                answer = self.processMessages[i]
-            else:
-                j_labels = []
-                for label, count in self.processMessages[j]['labels']:
-                    if label in labels:
-                        j_labels.append(label)
-                if (j_labels == labels):
-                    answer = self.processMessages[j]
+            j_labels = []
+            for label, count in self.processMessages[j]['labels']:
+                if label in labels:
+                    j_labels.append(label)
+            if (j_labels == labels):
+                answer = self.processMessages[j]
         return answer
 
     def deleteMessage(self, MessageId):
@@ -1064,614 +1048,266 @@ class RepoStorage(object):
 #  \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
 
-class ProcApplication(object):
+
+
+@register_repo_policy('NULL_REPO')
+class RepoNull(RepoStorage):
+    """Implementation of a null cache.
+
+    This is a dummy cache which never stores anything. It is functionally
+    identical to a cache with max size equal to 0.
     """
-	Run in passive mode - don't process messages, but store
-	"""
 
-    def __init__(self, s, view):
-
+    def __init__(self, maxlen=0, *args, **kwargs):
         """
-		TODO: REVISE VARIABLE FETCHING!
-			(CHECK HOW TO GET Settings - s - from the config file, through the orchestrator)
+        Constructor
 
-		s: dict of settings
-			Settings dict imported from config file, through orchestrator
-		view: object
-			Descriptive view of network status via graph
-		"""
-
-        PROC_PASSIVE = "passive"
-        """ Run in storage mode - store non-proc messages for as 
-		* as possible before depletion
-		* Possible settings: store or compute """
-
-        STOR_MODE = "storageMode"
-        """ If
-		running in storage
-		mode - store
-		non - proc
-		messages
-		not er
-			* than
-		the
-		maximum
-		storage
-		time. """
-
-        MAX_STOR_TIME = "maxStorTime"
-        """ Percentage(below
-		unity) of
-		maximum
-		storage
-		occupied """
-
-        MAX_STOR = "maxStorage"
-        """ Percentage(below
-		unity) of
-		minimum
-		storage
-		occupied
-		before
-		any
-		depletion """
-
-        MIN_STOR = "minStorage"
-        """ Depletion
-		rate """
-
-        DEPL_RATE = "depletionRate"
-        """ Cloud
-		Max
-		Update
-		rate """
-
-        CLOUD = "cloudRate"
-        """ Numbers
-		of
-		processing
-		cores """
-
-        PROC_NO = "coreNo"
-
-        """ Application
-		ID """
-
-        APP_ID = "ProcApplication"
-
-        # vars
-
-        lastDepl = 0
-
-        cloudEmptyLoop = True
-
-        deplEmptyLoop = True
-
-        upEmptyLoop = True
-
-        passive = False
-
-        lastCloudUpload = 0
-
-        deplBW = 0
-
-        cloudBW = 0
-
-        procMinI = 0
-        # processedSize = self.procSize * self.proc_ratio
-        if s.contains(PROC_PASSIVE):
-            self.passive = s.get(PROC_PASSIVE)
-
-        if s.contains(STOR_MODE):
-            self.storMode = s.get(STOR_MODE)
-
-        else:
-            self.storMode = False
-
-        if (s.contains(MAX_STOR_TIME)):
-            self.maxStorTime = s.get(MAX_STOR_TIME)
-        else:
-            self.maxStorTime = 2000
-
-        if (s.contains(DEPL_RATE)):
-            self.depl_rate = s.get(DEPL_RATE)
-
-        if (s.contains(CLOUD)):
-            self.cloud_lim = s.get(CLOUD)
-
-        if (s.contains(MAX_STOR)):
-            self.max_stor = s.get(MAX_STOR)
-
-        if (s.contains(MIN_STOR)):
-            self.min_stor = s.get(MIN_STOR)
-
-        self.view = view
-        self.appID = APP_ID
-
-        if (self.storMode):
-            self.maxStorTime = self.maxStorTime
-        else:
-            self.maxStorTime = 0
-
-    # self.processedSize = a.getProcessedSize
-
-    def getAppID(self):
-        return self.appID
-
-    """ 
-	 * Sets the application ID. Should only set once when the application is
-	 * created. Changing the value during simulation runtime is not recommended
-	 * unless you really know what you're doing.
-	 * 
-	 * @param appID
-	"""
-
-    def setAppID(self, appID):
-        self.appID = appID
-
-    def replicate(self, ProcApplication):
-        return ProcApplication(self)
-
-    def handle(self, msg, node):
-        if (self.view.hasStorageCapability(node) and node.hasProcessingCapability):
-            self.view.repoStorage[node].addToStoredMessages(msg)
-
-        elif not self.view.hasStorageCapability(node) and node.hasProcessingCapability and (
-                msg['type']).lower == "nonproc":
-            curTime = time.time()
-            self.view.repoStorage[node].deleteMessage(msg["content"])
-            storTime = curTime - msg['receiveTime']
-            msg['storTime'] = storTime
-            if (msg['storTime'] < msg['shelfLife']):
-                msg['satisfied'] = False
-                msg['overtime'] = False
-            self.view.repoStorage[node].addToDeplMessages(msg)
-
-        else:
-            msg['satisfied'] = True
-            msg['overtime'] = False
-            self.view.repoStorage[node].addToDeplMessages(msg)
-
-        return msg
-
-    def process_event(self, node):
-
-        # System.out.prln("processor update is accessed")
-
+        Parameters
+        ----------
+        maxlen : int, optional
+            The max length of the cache. This parameters is always ignored
         """
-	* DEPLETION PART HERE
-	*
-	* Depletion has to be done in the following order, and ONLY WHEN STORAGE IS FULL up to a certain lower limitnot
-	* non-processing with shelf-life expired, processing with shelf-life expired, non-processing with shelf-life,
-	* processing with shelf-life
-	*
-	* A different depletion pipeline must be made, so that on each update, the processed messages are also sent through,
-	* but self should be limited by a specific namespace / erface limit per second...
-	*
-	* With these, messages also have to be tagged (tags added HERE, at depletion) with: storage time, for shelf - life
-	* correlations, in -time processing tags, for analytics, overtime  tags, shelf-life processing confirmation
-	*  tags
-	* The other tags should be deleted AS THE MESSAGES ARE PROCESSED / COMPRESSED / DELETEDnot
-	*
-		"""
-
-        if self.view.hasStorageCapability(node):
-
-            self.updateCloudBW(node)
-            self.deplCloud(node)
-            self.updateDeplBW(node)
-            self.deplStorage(node)
-
-        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node)
-
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.repoStorage[node].getDepletedCloudMessagesBW(False)
-
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.repoStorage[node].getDepletedMessagesBW(False)
-
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.repoStorage[node].getDepletedProcMessagesBW(False) + \
-                      self.view.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                      self.view.repoStorage[node].getDepletedMessagesBW(False)
-
-    def deplCloud(self, node):
-        curTime = time.time()
-        if (self.view.repoStorage[node].getProcessedMessagesSize +
-                self.view.repoStorage[node].getStaleMessagesSize >
-                (self.view.repoStorage[node].getTotalStorageSpace * self.min_stor)):
-            self.cloudEmptyLoop = True
-
-            """
-			* self for loop stops processed messages from being deleted within later time frames,
-			* if there are satisfied non-processing messages to be uploaded.
-			*
-			* OK, so main problem
-
-			*At the moment, the mechanism is fine, but because of it, the perceived "processing performance" 
-			* is degraded, due to the fact that some messages processed in time may not be shown in the
-			*"fresh" OR "stale" message counts. 
-			*Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
-			"""
-
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
-                """
-				* Oldest processed message is depleted (as a FIFO type of storage,
-				* and a  message for processing is processed
-				"""
-
-                if not self.view.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
-                    """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.repoStorage[node].getOldestDeplUnProcMessage() is not None:
-                    self.oldestUnProcDepletion(node)
-
-                elif not self.storMode and self.view.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
-
-                elif self.storMode and curTime - self.lastCloudUpload >= self.maxStorTime:
-                    self.storMode = False
-
-                else:
-                    self.cloudEmptyLoop = False
-                # System.out.prln("Depletion is at: "+ self.cloudBW)
-
-                # Revise:
-                self.updateCloudBW(node)
-
-                # System.out.prln("Depletion is at: " + deplBW)
-                self.lastDepl = curTime
-                """System.out.prln("self.cloudBW is at " +
-					  self.cloudBW +
-					  " self.cloud_lim is at " +
-					  self.cloud_lim +
-					  " self.view.repoStorage[node].getTotalStorageSpace*self.min_stor equal " +
-					  (self.view.repoStorage[node].getTotalStorageSpace * self.min_stor) +
-					  " Total space is " + self.view.repoStorage[node].getTotalStorageSpace) """
-            # System.out.prln("Depleted  messages: " + sdepleted)
-        elif (self.view.repoStorage[node].getProcessedMessagesSize +
-                self.view.repoStorage[node].getStaleMessagesSize) > \
-                (self.view.repoStorage[node].getTotalStorageSpace * self.max_stor):
-            self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
-
-                """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-
-                if (self.view.repoStorage[node].getOldestStaleMessage() is not None and
-                        self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(node)
-
-                    """
-					* Oldest unprocessed messages should be given priority for depletion
-					* at a certain po.
-					"""
-
-                elif (self.view.repoStorage[node].getOldestDeplUnProcMessage is not None):
-                    self.oldestUnProcDepletion(node)
-
-                    """
-				* Oldest processed message is depleted (as a FIFO type of storage,
-				* and a  message for processing is processed
-					"""
-                elif (not self.view.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
-
-                else:
-                    self.cloudEmptyLoop = False
-                    # System.out.prln("Depletion is at: "+ self.cloudBW)
-
-                    # Revise:
-                    self.updateCloudBW(node)
-                    # System.out.prln("Depletion is at: " + deplBW)
-                    self.lastDepl = curTime
-                    """System.out.prln("self.cloudBW is at " +
-					  self.cloudBW +
-					  " self.cloud_lim is at " +
-					  self.cloud_lim +
-					  " self.view.repoStorage[node].getTotalStorageSpace*self.min_stor equal " +
-					  (self.view.repoStorage[node].getTotalStorageSpace * self.min_stor) +
-					  " Total space is " + self.view.repoStorage[node].getTotalStorageSpace) """
-                # System.out.prln("Depleted  messages: " + sdepleted)
-
-    def deplUp(self, node):
-        curTime = time.time()
-        if (self.view.repoStorage[node].getProcessedMessagesSize >
-                (self.view.repoStorage[node].getTotalStorageSpace * self.min_stor)):
-
-            self.cloudEmptyLoop = True
-
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
-
-                """
-			
-				* Oldest processed	message is depleted(as a FIFO type of storage,
-				* and a	message for processing is processed
-				
-				"""
-                # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
-                if (not self.view.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
-
-                    """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.repoStorage[node].getOldestDeplUnProcMessage is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #				elif (not self.storMod e and self.view.repoStorage[node].getOldestStaleMessage() is not None)
-                #					oldestSatisfiedDepletion(node)
-                #
-                #				elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #					self.storMode = False
-                #
-                else:
-                    self.cloudEmptyLoop = False
-                    # System.out.prln("Depletion is at: "+ self.cloudBW)
-
-                    # Revise:
-                    self.updateUpBW(node)
-
-            # System.out.prln("Depletion is at : "+ deplBW)
-            self.lastDepl = curTime
-            """System.out.prln("self.cloudBW is at " +
-					 self.cloudBW +
-					 " self.cloud_lim is at " +
-					 self.cloud_lim +
-					 " self.view.repoStorage[node].getTotalStorageSpace*self.min_stor equa l "+
-					 (self.view.repoStorage[node].getTotalStorageSpac e *self.min_st or)+
-					 " Total space i s  "+self.view.repoStorage[node].getTotalStorageSpace( ) )"""
-            # System.out.prln("Depleted  messages : "+ sdepleted)
-
-            self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
-            if (not self.view.repoStorage[node].isProcessedEmpty):
-                self.processedDepletion(node)
-
-            elif (not self.view.repoStorage[node].isProcessingEmpty):
-                self.view.repoStorage[node].deleteMessage(self.view.repoStorage[node].getOldestProcessMessage["content"])
-            else:
-                self.upEmptyLoop = False
-
-    # System.out.prln("Depletion is at: "+ self.cloudBW)
-
-    def deplStorage(self, node):
-        curTime = time.time()
-        if (self.view.repoStorage[node].getProcMessagesSize +
-                self.view.repoStorage[node].getMessagesSize >
-                self.view.repoStorage[node].getTotalStorageSpace * self.max_stor):
-            self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.repoStorage[node].getOldestDeplUnProcMessage is not None):
-                    self.oldestUnProcDepletion(node)
-                    """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-
-                elif (self.view.repoStorage[node].getOldestStaleMessage() is not None):
-                    self.oldestSatisfiedDepletion(node)
-
-
-                elif (self.view.repoStorage[node].getOldestInvalidProcessMessage is not None):
-                    self.oldestInvalidProcDepletion(node)
-
-                elif (self.view.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.repoStorage[node].getOldestMessage()
-                    self.view.repoStorage[node].deleteMessage(ctemp["content"])
-                    storTime = curTime - ctemp["receiveTime"]
-                    ctemp['storTime'] = storTime
-                    ctemp['satisfied'] = False
-                    ctemp['overtime'] = False
-                    self.view.repoStorage[node].addToDeplMessages(ctemp)
-                    if (ctemp['type']).lower == "unprocessed":
-                        self.view.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                    else:
-                        self.view.repoStorage[node].addToDeplMessages(ctemp)
-
-
-                elif (self.view.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.repoStorage[node].getNewestProcessMessage()
-                    self.view.repoStorage[node].deleteMessage(ctemp["content"])
-                    storTime = curTime - ctemp['receiveTime']
-                    ctemp['storTime'] = storTime
-                    ctemp['satisfied'] = False
-                    self.view.repoStorage[node].addToDeplProcMessages(ctemp)
-                if storTime <= ctemp['shelfLife'] + 1:
-                    ctemp['overtime'] = False
-
-                elif storTime > ctemp['shelfLife'] + 1:
-                    ctemp['overtime'] = True
-
-                if (ctemp['type']).lower == "unprocessed":
-                    self.view.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.repoStorage[node].addToDeplMessages(ctemp)
-            else:
-                self.deplEmptyLoop = False
-                # System.out.prln("Depletion is at: "+ self.deplBW)
-
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
-            # Revise:
-            self.lastDepl = curTime
-
-    def processedDepletion(self, node):
-        curTime = time.time()
-        if (self.view.repoStorage[node].getOldestFreshMessage is not None):
-            if (self.view.repoStorage[node].getOldestFreshMessage["service_type"] is None):
-                temp = self.view.repoStorage[node].getOldestFreshMessage
-                report = False
-                self.view.repoStorage[node].deleteProcessedMessage(temp["content"], report)
-                """
-				* Make sure here that the added message to the cloud depletion 
-				* tracking is also tracked by whether it 's Fresh or Stale.
-				"""
-                report = True
-                self.view.repoStorage[node].addToStoredMessages(temp)
-                self.view.repoStorage[node].deleteProcessedMessage(temp["content"], report)
-
-
-
-            elif (self.view.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.repoStorage[node].getOldestShelfMessage()["service_type"] is None):
-                    temp = self.view.repoStorage[node].getOldestShelfMessage()
-                    report = False
-                    self.view.repoStorage[node].deleteProcessedMessage(temp["content"], report)
-                    """
-					* Make sure here that the added message to the cloud depletion
-					* tracking is also tracked by whether it's Fresh or Stale.
-					"""
-                    """  storTime = curTime - temp['receiveTime']
-						temp['storTime'] =  storTime)
-						# temp['satisfied'] =  False)
-						if (storTime == temp['shelfLife']) 
-						temp['overtime'] =  False)
-
-						elif (storTime > temp['shelfLife']) 
-						temp['overtime'] =  True)
-					 """
-                    report = True
-                    self.view.repoStorage[node].addToStoredMessages(temp)
-                    self.view.repoStorage[node].deleteProcessedMessage(temp["content"], report)
-
-    def oldestSatisfiedDepletion(self, node):
-        curTime = time.time()
-        ctemp = self.view.repoStorage[node].getOldestStaleMessage()
-        self.view.repoStorage[node].deleteMessage(ctemp["content"])
-        storTime = curTime - ctemp['receiveTime']
-        ctemp['storTime'] = storTime
-        ctemp['satisfied'] = True
-        if (storTime <= ctemp['shelfLife'] + 1):
-            ctemp['overtime'] = False
-        elif (storTime > ctemp['shelfLife'] + 1):
-            ctemp['overtime'] = True
-
-        self.view.repoStorage[node].addToCloudDeplMessages(ctemp)
-
-        self.lastCloudUpload = curTime
-
-    def oldestInvalidProcDepletion(self, node):
-        curTime = time.time()
-        ctemp = self.view.repoStorage[node].getOldestInvalidProcessMessage
-        self.view.repoStorage[node].deleteMessage(ctemp["content"])
-        ctemp = self.compressMessage(node, ctemp)
-        self.view.repoStorage[node].deleteMessage(ctemp["content"])
-        storTime = curTime - ctemp['receiveTime']
-        ctemp['storTime'] = storTime
-        if (storTime <= ctemp['shelfLife'] + 1):
-            ctemp['overtime'] = False
-
-        elif (storTime > ctemp['shelfLife'] + 1):
-            ctemp['overtime'] = True
-
-        ctemp['satisfied'] = False
-        self.view.repoStorage[node].addToDeplProcMessages(ctemp)
-
-    def oldestUnProcDepletion(self, node):
-        curTime = time.time()
-        temp = self.view.repoStorage[node].getOldestDeplUnProcMessage
-        self.view.repoStorage[node].deleteMessage(temp["content"])
-        self.view.repoStorage[node].addToDepletedUnProcMessages(temp)
-
-    """
-	* @
-	return the
-	lastProc
-	"""
-
-    def getLastProc(self):
-        return self.lastProc
-
-    """
-	* @ param
-	lastProc
-	the
-	lastProc
-	to
-	set
-	"""
-
-    def setLastProc(self, lastProc):
-        self.lastProc = lastProc
-
-    """
-	* @ return the
-	lastProc
-	"""
-
-    def getLastDepl(self):
-        return self.lastDepl
-
-    """
-	* @ return the
-	lastProc
-	"""
-
-    def getMaxStorTime(self):
-        return self.maxStorTime
-
-    """
-	* @ return the
-	lastProc
-	"""
-
-    def setLastDepl(self, lastDepl):
-        self.lastDepl = lastDepl
-
-    """
-	* @ return the
-	passive
-	"""
-
-    def isPassive(self):
-        return self.passive
-
-    """
-	* @ return storMode
-	"""
-
-    def inStorMode(self):
-        return self.storMode
-
-    """
-	* @ param
-	passive 
-	the passive to set
-	"""
-
-    def setPassive(self, passive):
-        self.passive = passive
-
-    """
-	* @ return depletion
-	rate
-	"""
-
-    def getMaxStor(self):
-        return self.max_stor
-
-    """
-	* @ return depletion
-	rate
-	"""
-
-    def getMinStor(self):
-        return self.min_stor
-
-    """
-	* @ return depletion
-	rate
-	"""
-
-    def getDeplRate(self):
-        return self.depl_rate
-
-    """
-	* @ return depletion
-	rate
-	"""
-
-    def getCloudLim(self):
-        return self.cloud_lim
+        pass
+
+    def getTotalStorageSpace(self):
+        return 0
+
+    def getTotalProcessedSpace(self):
+        return 0
+
+    def getStoredMessagesCollection(self):
+        return 0
+
+    def getStoredMessages(self):
+        return 0
+
+    def getProcessedMessages(self):
+        return 0
+
+    def getProcessMessages(self):
+        return 0
+
+    def getMessages(self):
+        return 0
+
+    def addToStoredMessages(self, sm):
+
+       return 0
+
+    def addToDeplMessages(self, sm):
+       return 0
+
+    def addToDeplProcMessages(self, sm):
+       return 0
+
+    def addToCloudDeplMessages(self, sm):
+        return 0
+    def addToDeplUnProcMessages(self, sm):
+        return 0
+
+    def addToDepletedUnProcMessages(self, sm):
+        return 0
+
+    def getMessage(self, MessageId):
+        return 0
+
+    def getProcessedMessage(self, MessageId):
+        return 0
+
+    def getProcessMessage(self, MessageId):
+        return 0
+
+    def getStorTimeNo(self):
+        return 0
+
+    def getStorTimeAvg(self):
+        return 0
+
+    def getStorTimeMax(self):
+        return 0
+
+    @property
+    def getNrofMessages(self):
+
+        return 0
+
+    def getNrofProcessMessages(self):
+        return 0
+
+    def getNrofProcessedMessages(self):
+        return 0
+
+    def getMessagesSize(self):
+        return 0
+
+    def getStaleMessagesSize(self):
+        return 0
+
+    def getProcMessagesSize(self):
+        return 0
+
+    def getProcessedMessagesSize(self):
+        return 0
+
+    def getFullCachedMessagesNo(self):
+        return 0
+
+    def getnode(self):
+        return 0
+
+    def hasMessage(self, MessageId, labels):
+        return 0
+
+    def getProcessedMessages(self, labels):
+        return 0
+
+    def deleteMessage(self, MessageId):
+        return 0
+
+    def deleteProcMessage(self, MessageId):
+        return 0
+
+    def deleteMessage(self, MessageId):
+        return 0
+
+    def deleteProcessedMessage(self, MessageId, report):
+        return 0
+
+    def getNrofDeletedMessages(self):
+        return 0
+
+    def getSizeofDeletedMessages(self):
+        return 0
+
+    def getNrofDepletedCloudProcMessages(self):
+        return 0
+
+    def getNrofFreshMessages(self):
+        return 0
+
+    def getNrofStaleMessages(self):
+        return 0
+
+    def getNrofSatisfiedMessages(self):
+        return 0
+
+    def getNrofUnSatisfiedMessages(self):
+        return 0
+
+    def getNrofOvertimeMessages(self):
+        return 0
+
+    def getNrofUnProcessedMessages(self):
+        return 0
+
+    def getNrofDepletedUnProcMessages(self):
+        return 0
+
+    def getNrofDepletedPUnProcMessages(self):
+        return 0
+
+    def getNrofDepletedMessages(self):
+        return 0
+
+    def getNrofDepletedCloudMessages(self):
+        return 0
+
+    def getOverallMeanIncomingMesssageNo(self):
+        return 0
+
+    def getOverallMeanIncomingSpeed(self):
+        return 0
+
+    def getDepletedCloudProcMessagesBW(self, reporting):
+
+        return 0
+
+    def getDepletedUnProcMessagesBW(self, reporting):
+
+        return 0
+
+    def getDepletedPUnProcMessagesBW(self, reporting):
+
+        return 0
+
+    def getDepletedCloudMessagesBW(self, reporting):
+        return 0
+
+    def getDepletedProcMessagesBW(self, reporting):
+        return 0
+
+    def getDepletedMessagesBW(self, reporting):
+        return 0
+
+    def clearAllMessages(self):
+        return 0
+
+    def getFreeStorageSpace(self):
+        return 0
+
+    def isProcessingEmpty(self):
+        return 0
+
+    def isProcessedFull(self):
+        return 0
+
+    def isProcessedEmpty(self):
+        return 0
+
+    @property
+    def getOldestProcessMessage(self):
+        return 0
+
+    @property
+    def getOldestValidProcessMessage(self):
+        return 0
+    @property
+    def getOldestInvalidProcessMessage(self):
+        return 0
+
+    @property
+    def getOldestDeplUnProcMessage(self):
+        return 0
+
+    @property
+    def getNewestProcessMessage(self):
+        return 0
+    @property
+    def getOldestProcessedMessage(self):
+
+        return 0
+
+    @property
+    def getOldestFreshMessage(self):
+
+        return 0
+
+    @property
+    def GetNewestFreshMessage(self):
+
+        return 0
+
+    @property
+    def getOldestShelfMessage(self):
+
+        return 0
+
+    @property
+    def getNewestShelfMessage(self):
+
+        return 0
+
+    @property
+    def getOldestMessage(self):
+        return 0
+
+    @property
+    def getOldestStaleMessage(self):
+        return 0
+
+    def getCompressionRate(self):
+        return 0
+
+    # TODO: NEED TO REVIEW AND REVISE ALL OF THE CODE BELOWnot not not not not not not not not not not not
+    #  \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+

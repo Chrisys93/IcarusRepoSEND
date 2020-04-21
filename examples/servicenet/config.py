@@ -105,6 +105,11 @@ STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU'] #, 'OPTIMAL_PLACEMENT_SCHED
 # Cache policy implmentations are located in ./icarus/models/cache.py
 CACHE_POLICY = 'LRU'
 
+# Repo replacement policy used by the network repositories.
+# Supported policy is the normal, demonstrated REPO_STORAGE and NULL_REPO data storage policy
+# Cache policy implmentations are located in ./icarus/models/repo.py
+REPO_POLICY = 'NULL_REPO'
+
 # Task scheduling policy used by the cloudlets.
 # Supported policies are: 'EDF' (Earliest Deadline First), 'FIFO'
 SCHED_POLICY = 'EDF'
@@ -131,10 +136,11 @@ default['cache_placement']['network_cache'] = default['computation_placement']['
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node 
 default['content_placement']['name'] = 'UNIFORM'
 default['cache_policy']['name'] = CACHE_POLICY
+default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
 default['strategy']['replacement_interval'] = REPLACEMENT_INTERVAL
 default['strategy']['n_replacements'] = NUM_REPLACEMENTS
-default['topology']['name'] = 'TREE'
+default['topology']['name'] = 'REPO_TREE'
 default['topology']['k'] = BRANCH_FACTOR
 default['topology']['h'] = TREE_DEPTH
 default['warmup_strategy']['name'] = WARMUP_STRATEGY

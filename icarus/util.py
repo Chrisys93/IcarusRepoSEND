@@ -21,7 +21,6 @@ __all__ = [
         'step_cdf',
         'Tree',
         'can_import',
-        'overlay_betweenness_centrality',
         'path_links',
         'multicast_tree',
         'apportionment'
