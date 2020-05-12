@@ -29,6 +29,7 @@ from icarus.registry import register_workload
 
 __all__ = [
         'StationaryWorkload',
+        'RepoStationaryWorkload',
         'GlobetraffWorkload',
         'TraceDrivenWorkload',
         'YCSBWorkload',
@@ -96,12 +97,22 @@ class StationaryWorkload(object):
             raise ValueError('alpha must be positive')
         if beta < 0:
             raise ValueError('beta must be positive')
-        self.receivers = [v for v in topology.nodes() if topology.nodes[v]['stack'][0] == 'receiver']
+        self.receivers = [v for v in topology.nodes() if 'receiver' in topology.nodes[v]['stack'][0]]
         self.zipf = TruncatedZipfDist(alpha, n_services-1, seed)
 
         self.n_contents = n_contents
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.contents = range(0, n_contents)
+
+        for c in self.contents:
+            if type(c) is not dict:
+                content = dict()
+                content.update(content=c)
+            else:
+                content = c
+            content.update(labels=[])
+            content.update(service_type="proc")
+            self.contents[c] = content
 
         self.n_services = n_services
         self.alpha = alpha
@@ -136,7 +147,7 @@ class StationaryWorkload(object):
             while eventObj is not None and eventObj.time < t_event:
                 heapq.heappop(self.model.eventQ)
                 log = (req_counter >= self.n_warmup)
-                event = {'receiver' : eventObj.receiver, 'content': eventObj.service, 'log' : log, 'node' : eventObj.node, 'flow_id' : eventObj.flow_id, 'deadline' : eventObj.deadline, 'rtt_delay' : eventObj.rtt_delay,'status' : eventObj.status, 'task' : eventObj.task}
+                event = {'receiver' : eventObj.receiver, 'content': eventObj.service, 'log' : log, 'labels': eventObj.labels, 'node' : eventObj.node, 'flow_id' : eventObj.flow_id, 'deadline' : eventObj.deadline, 'rtt_delay' : eventObj.rtt_delay,'status' : eventObj.status, 'task' : eventObj.task}
 
                 yield (eventObj.time, event)
                 eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
@@ -154,22 +165,167 @@ class StationaryWorkload(object):
 
 
             content = int(self.zipf.rv())   # TODO: THIS is where the content identifier requests are generated!
-            content.labels = None
 
+            if type(content) is not dict:
+                data = dict()
+                data.update(content=content)
+            else:
+                data = content
+            data.update(labels=[])
+            data.update(service_type="proc")
 
 
             log = (req_counter >= self.n_warmup)
             flow_id += 1
             deadline = self.model.services[content].deadline + t_event
-            event = {'receiver': receiver, 'content' : content, 'log' : log, 'node' : node ,'flow_id': flow_id, 'rtt_delay' : 0, 'deadline': deadline, 'status' : REQUEST}
+            event = {'receiver': receiver, 'content' :data, 'log' : log, 'labels' : data['labels'], 'node' : node ,'flow_id': flow_id, 'rtt_delay' : 0, 'deadline': deadline, 'status' : REQUEST}
             neighbors = self.topology.neighbors(receiver)
-            s = str(t_event) + "\t" + str(neighbors[0]) + "\t" + str(content) + "\n"
+            # s = str(t_event) + "\t" + str(neighbors[0]) + "\t" + str(content) + "\n"
             #aFile.write(s)
             yield (t_event, event)
             req_counter += 1
         
         print ("End of iteration: len(eventObj): " + repr(len(self.model.eventQ)))
         #aFile.close()
+        raise StopIteration()
+
+
+@register_workload('REPO_STATIONARY')
+class RepoStationaryWorkload(object):
+    """This function generates events on the fly, i.e. instead of creating an
+    event schedule to be kept in memory, returns an iterator that generates
+    events when needed.
+
+    This is useful for running large schedules of events where RAM is limited
+    as its memory impact is considerably lower.
+
+    These requests are Poisson-distributed while content popularity is
+    Zipf-distributed
+
+    All requests are mapped to receivers uniformly unless a positive *beta*
+    parameter is specified.
+
+    If a *beta* parameter is specified, then receivers issue requests at
+    different rates. The algorithm used to determine the requests rates for
+    each receiver is the following:
+     * All receiver are sorted in decreasing order of degree of the PoP they
+       are attached to. This assumes that all receivers have degree = 1 and are
+       attached to a node with degree > 1
+     * Rates are then assigned following a Zipf distribution of coefficient
+       beta where nodes with higher-degree PoPs have a higher request rate
+
+    Parameters
+    ----------
+    topology : fnss.Topology
+        The topology to which the workload refers
+    n_contents : int
+        The number of content object
+    alpha : float
+        The Zipf alpha parameter
+    beta : float, optional
+        Parameter indicating
+    rate : float, optional
+        The mean rate of requests per second
+    n_warmup : int, optional
+        The number of warmup requests (i.e. requests executed to fill cache but
+        not logged)
+    n_measured : int, optional
+        The number of logged requests after the warmup
+
+    Returns
+    -------
+    events : iterator
+        Iterator of events. Each event is a 2-tuple where the first element is
+        the timestamp at which the event occurs and the second element is a
+        dictionary of event attributes.
+    """
+
+    def __init__(self, topology, n_contents, alpha, beta=0, rate=1.0,
+                 n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
+                 n_services=10, **kwargs):
+        if alpha < 0:
+            raise ValueError('alpha must be positive')
+        if beta < 0:
+            raise ValueError('beta must be positive')
+        self.receivers = [v for v in topology.nodes() if 'receiver' in topology.nodes[v]['stack'][0]]
+        self.zipf = TruncatedZipfDist(alpha, n_services - 1, seed)
+
+        self.n_contents = n_contents
+        # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.contents = {}
+        for content in range(0, n_contents):
+            if self.contents.has_key(content):
+                self.contents[content].update(None)
+            else:
+                self.contents[content] = None
+
+        self.n_services = n_services
+        self.alpha = alpha
+        self.rate = rate
+        self.n_warmup = n_warmup
+        self.n_measured = n_measured
+        self.model = None
+        self.beta = beta
+        self.topology = topology
+        if beta != 0:
+            degree = nx.degree(self.topology)
+            self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.adj[x])], reverse=True)
+            self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers))
+
+        self.seed = seed
+        self.first = True
+
+    def __iter__(self):
+        req_counter = 0
+        t_event = 0.0
+        flow_id = 0
+
+        if self.first:  # TODO remove this first variable, this is not necessary here
+            random.seed(self.seed)
+            self.first = False
+        # aFile = open('workload.txt', 'w')
+        # aFile.write("# Time\tNodeID\tserviceID\n")
+        eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
+        while req_counter < self.n_warmup + self.n_measured or len(self.model.eventQ) > 0:
+            t_event += (random.expovariate(self.rate))
+            eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
+            while eventObj is not None and eventObj.time < t_event:
+                heapq.heappop(self.model.eventQ)
+                log = (req_counter >= self.n_warmup)
+                event = {'receiver': eventObj.receiver, 'content': eventObj.service, 'log': log,
+                         'labels': eventObj.labels, 'node': eventObj.node, 'flow_id': eventObj.flow_id,
+                         'deadline': eventObj.deadline, 'rtt_delay': eventObj.rtt_delay, 'status': eventObj.status,
+                         'task': eventObj.task}
+
+                yield (eventObj.time, event)
+                eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
+
+            if req_counter >= (self.n_warmup + self.n_measured):
+                # skip below if we already sent all the requests
+                continue
+
+            if self.beta == 0:
+                receiver = random.choice(self.receivers)
+            else:
+                receiver = self.receivers[self.receiver_dist.rv() - 1]
+            node = receiver
+
+            content = int(self.zipf.rv())  # TODO: THIS is where the content identifier requests are generated!
+            labels = []
+
+            log = (req_counter >= self.n_warmup)
+            flow_id += 1
+            deadline = self.model.services[content].deadline + t_event
+            event = {'receiver': receiver, 'content': content, 'log': log, 'labels': labels, 'node': node,
+                     'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
+            neighbors = self.topology.neighbors(receiver)
+            # s = str(t_event) + "\t" + str(neighbors[0]) + "\t" + str(content) + "\n"
+            # aFile.write(s)
+            yield (t_event, event)
+            req_counter += 1
+
+        print ("End of iteration: len(eventObj): " + repr(len(self.model.eventQ)))
+        # aFile.close()
         raise StopIteration()
 
 @register_workload('GLOBETRAFF')
@@ -465,7 +621,7 @@ class StationaryRepoWorkload(object):
     def __init__(self, topology, n_contents, alpha, beta=0,
                  label_ex=False, alpha_labels=0, rate=1.0,
                  n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
-                 n_services=10, min_matches=[], topics=[], types=[], freshness_pers=0,
+                 n_services=10, topics=[], types=[], freshness_pers=0,
                  shelf_lives=0, msg_sizes=0, **kwargs):
         if alpha < 0:
             raise ValueError('alpha must be positive')
@@ -475,7 +631,6 @@ class StationaryRepoWorkload(object):
                           if topology.node[v]['stack'][0] == 'receiver']
         self.zipf = TruncatedZipfDist(alpha, n_services - 1, seed)
         self.labels_zipf = TruncatedZipfDist(alpha_labels, len(topics)+len(types), seed)
-        self.min_match_zipf = TruncatedZipfDist(alpha, n_services - 1, seed)
 
         self.n_contents = n_contents
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -487,7 +642,6 @@ class StationaryRepoWorkload(object):
         self.freshness_pers = freshness_pers
         self.shelf_lives = shelf_lives
         self.sizes = msg_sizes
-        self.min_matches = min_matches
 
         self.n_services = n_services
         self.alpha = alpha
@@ -579,6 +733,9 @@ class StationaryRepoWorkload(object):
             # TODO: Since services are associated with deadlines based on labels as well now, this should be
             #  accounted for in service placement from now on, as well, the lowest deadline being prioritised
             #  when instantiated (unless a certain  content/service strategy is implemented, maybe).
+
+            # TODO: CHANGE OF PLANS: This would overcomplicate things - just associating labels to "services"!!!!!!!!!!!
+            """
             if content is None:
                 deadline = self.model.services[labels].deadline + t_event
                 if self.min_match is not []:
@@ -594,24 +751,16 @@ class StationaryRepoWorkload(object):
                     event = {'receiver': receiver, 'content': '', 'labels': labels, 'min_match': 1, 'log': log,
                              'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
                              'status': REQUEST}
-            elif labels is not None:
+            el
+            """
+            if labels is not None:
                 deadline = self.model.services[labels].deadline + t_event
-                if self.min_match is not []:
-                    min_match = self.min_match_zipf.rv()
-                    deadline = self.model.services[labels].deadline + t_event
-                    self.model.node_labels[node]["request_labels"].update(labels)
-                    event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': min_match,
-                             'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
-                             'status': REQUEST}
-                else:
-                    deadline = self.model.services[labels].deadline + t_event
-                    self.model.node_labels[node]["request_labels"].update(labels)
-                    event = {'receiver': receiver, 'content': content, 'labels': labels, 'min_match': 1,
-                             'log': log, 'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline,
-                             'status': REQUEST}
+                self.model.node_labels[node]["request_labels"].update(labels)
+                event = {'receiver': receiver, 'content': content, 'labels': labels, 'log': log, 'node': node,
+                         'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
             else:
                 deadline = self.model.services[content].deadline + t_event
-                event = {'receiver': receiver, 'content': content, 'labels': '', 'min_match': 0, 'log': log,
+                event = {'receiver': receiver, 'content': content, 'labels': '', 'log': log,
                          'node': node, 'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
 
             # NOTE: STOPPED HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

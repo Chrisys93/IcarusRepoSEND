@@ -52,7 +52,7 @@ class DataCollector(object):
         """
         self.view = view
 
-    def start_session(self, timestamp, receiver, content, feedback, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, flow_id=0, deadline=0):
         """Notifies the collector that a new network session started.
 
         A session refers to the retrieval of a content from a receiver, from
@@ -363,6 +363,8 @@ class LatencyCollector(DataCollector):
         self.flow_cloud = {} # True if flow reched cloud
         self.flow_service = {} # flow id to service
         self.flow_deadline = {} # flow id to deadline
+        self.flow_labels = {} # flow id to service-associated labels
+        self.flow_feedback = {} # flow id to service-associated labels
         self.service_requests = {} #number of requests per service
         self.service_satisfied = {} #number of satisfied requests per service
 
@@ -439,7 +441,7 @@ class LatencyCollector(DataCollector):
         self.deadline_metric_interval = 0.0
 
     @inheritdoc(DataCollector)
-    def start_session(self, timestamp, receiver, content, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, flow_id=0, deadline=0):
         self.sess_count += 1
         self.sess_latency = 0.0
         self.flow_start[flow_id] = timestamp
@@ -447,6 +449,7 @@ class LatencyCollector(DataCollector):
         self.flow_service[flow_id] = content
         self.flow_cloud[flow_id] = False
         self.interval_sess_count += 1
+        self.flow_labels[flow_id] = labels
 
     @inheritdoc(DataCollector)
     def request_hop(self, u, v, main_path=True):
@@ -478,16 +481,16 @@ class LatencyCollector(DataCollector):
 
         service = self.flow_service[flow_id]
         if service not in self.service_requests.keys():
-            self.service_requests[service] = 1
-            self.service_satisfied[service] = 0
+            self.service_requests[service['content']] = 1
+            self.service_satisfied[service['content']] = 0
         else:
-            self.service_requests[service] += 1
+            self.service_requests[service['content']] += 1
 
         if sat:
             if service in self.service_satisfied.keys():
-                self.service_satisfied[service] += 1
+                self.service_satisfied[service['content']] += 1
             else:
-                self.service_satisfied[service] = 1
+                self.service_satisfied[service['content']] = 1
 
         del self.flow_deadline[flow_id]
         del self.flow_start[flow_id]

@@ -276,6 +276,9 @@ def topology_repo_tree(k, h, delay=0.020, **kwargs):
     #          if topology.node[v]['depth'] > 0
     #          and topology.node[v]['depth'] < h]
 
+    # TODO: THIS REALLY HAS TO BE CHANGED! NOT ALL RECEIVERS SHOULD BE AT THE EDGE!
+    #  (I would argue that only a few should be, at most)
+
     n_receivers = len(edge_routers)
     receivers = ['rec_%d' % i for i in range(n_receivers)]
     for i in range(n_receivers):
@@ -291,13 +294,29 @@ def topology_repo_tree(k, h, delay=0.020, **kwargs):
     topology.graph['receiver_access_delay'] = receiver_access_delay
     topology.graph['link_delay'] = delay
     topology.graph['depth'] = h
+    for v in routers:
+        fnss.add_stack(topology, v, 'router')
+        if 'source' not in topology.node[v]['stack']:
+            try:
+                if topology.node[v]['type'] == 'leaf':
+                    try:
+                        topology.node[v]['extra_types'].append('source')
+                        topology.node[v]['extra_types'].append('router')
+                    except Exception as e:
+                        err_type = str(type(e)).split("'")[1].split(".")[1]
+                        if err_type == "KeyError":
+                            topology.node[v].update(extra_types=['source'])
+                            topology.node[v]['extra_types'].append('router')
+
+            except Exception as e:
+                err_type = str(type(e)).split("'")[1].split(".")[1]
+                if err_type == "KeyError":
+                    continue
     for v in sources:
         fnss.add_stack(topology, v, 'source')
     for v in receivers:
         fnss.add_stack(topology, v, 'receiver')
-    for v in routers:
-        fnss.add_stack(topology, v, 'router')
-        fnss.add_stack(topology, v, 'source')
+
     # label links as internal
 
     topology.graph['receivers'] = receivers

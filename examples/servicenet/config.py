@@ -97,7 +97,7 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU'] #, 'OPTIMAL_PLACEMENT_SCHED'] 
+STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU', 'HYBRIDS_REPO_APP'] 
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -108,7 +108,7 @@ CACHE_POLICY = 'LRU'
 # Repo replacement policy used by the network repositories.
 # Supported policy is the normal, demonstrated REPO_STORAGE and NULL_REPO data storage policy
 # Cache policy implmentations are located in ./icarus/models/repo.py
-REPO_POLICY = 'NULL_REPO'
+REPO_POLICY = 'REPO_STORAGE'
 
 # Task scheduling policy used by the cloudlets.
 # Supported policies are: 'EDF' (Earliest Deadline First), 'FIFO'
@@ -134,7 +134,7 @@ default['computation_placement']['name'] = 'UNIFORM'
 default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2 
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node 
-default['content_placement']['name'] = 'UNIFORM'
+default['content_placement']['name'] = 'UNIFORM_REPO'
 default['cache_policy']['name'] = CACHE_POLICY
 default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY

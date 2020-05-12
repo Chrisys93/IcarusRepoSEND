@@ -76,7 +76,7 @@ class Event(object):
 class Service(object):
     """Implementation of a service object"""
 
-    def __init__(self, labels, service_time=None, deadline=None):
+    def __init__(self, service_time=None, deadline=None, labels=None):
         """Constructor
         Parameters
         ----------
@@ -85,10 +85,9 @@ class Service(object):
             and network delays) to process the request for this service once the request
             leaves the user, for an acceptable level of QoS.
         """
-
+        self.labels = labels
         self.service_time = service_time
         self.deadline = deadline
-        self.labels = labels
 
 
 def symmetrify_paths(shortest_paths):
@@ -246,7 +245,52 @@ class NetworkView(object):
             The node persistently storing the given content or None if the
             source is unavailable
         """
-        return self.model.content_source.get(k, None)
+        if type(k) is dict:
+            return self.model.content_source[k['content']]
+        else:
+            return self.model.content_source[k]
+
+    def closest_source(self, node, k):
+        """Return the node identifier where the content is persistently stored.
+
+        Parameters
+        ----------
+        k : any hashable type
+            The content identifier
+
+        Returns
+        -------
+        node : any hashable type
+            The node persistently storing the given content or None if the
+            source is unavailable
+        """
+
+        if self.has_cache(node):
+            if self.cache_lookup(node, k) or self.local_cache_lookup(node, k):
+                cache = True
+            else:
+                cache = False
+        else:
+            cache = False
+        hops = 100
+        if node in self.content_source(k):
+            return node, cache
+        for n in self.content_source(k):
+            if len(self.shortest_path(node, n)) < hops:
+                hops = len(self.shortest_path(node, n))
+                res = n
+
+        if self.has_cache(res):
+            if self.cache_lookup(res, k) or self.local_cache_lookup(res, k):
+                cache = True
+            else:
+                cache = False
+        else:
+            cache = False
+
+        return res, cache
+
+
 
     def labels_sources(self, labels):
         """Return the node identifier where the content is persistently stored.
@@ -700,7 +744,7 @@ class NetworkView(object):
             cs = self.model.compSpot[node]
             if cs.is_cloud:
                 return True
-            elif cs.numberOfVMInstances[service] > 0:
+            elif cs.numberOfVMInstances[service['content']] > 0:
                 return True
 
         return False
@@ -786,7 +830,7 @@ class NetworkView(object):
 
     def hasStorageCapability(self, node):
 
-        if self.topology[node] in self.repoStorage:
+        if node in self.model.repoStorage and self.model.repoStorage[node].getTotalStorageSpace():
             return True
         else:
             return False
@@ -910,20 +954,27 @@ class NetworkModel(object):
         comp_size = {}
         service_size = {}
         all_node_labels = {}
-        contents = {}
+        self.contents = {}
         request_labels = {}
         self.rate = rate
         for node in topology.nodes():
             # TODO: Sort out content association in the case that "contents" aren't objects!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             all_node_labels[node] = Counter()
             stack_name, stack_props = fnss.get_stack(topology, node)
+            extra_types = None
+            try:
+                extra_types = topology.node[v]['extra_types']
+            except Exception as e:
+                err_type = str(type(e)).split("'")[1].split(".")[1]
+                if err_type == "KeyError":
+                    extra_types =[]
             # get the depth of the tree
             if stack_name == 'router' or 'source' and 'depth' in self.topology[node].keys():
                 depth = self.topology.nodes[node]['depth']
                 if depth > self.topology_depth:
                     self.topology_depth = depth
             # get computation size per depth
-            if stack_name == 'router':
+            if 'router' in stack_name:
                 if 'cache_size' in stack_props:
                     cache_size[node] = stack_props['cache_size']
                 if 'storageSize' in stack_props:
@@ -932,49 +983,61 @@ class NetworkModel(object):
                     comp_size[node] = stack_props['computation_size']
                 if 'service_size' in stack_props:
                     service_size[node] = stack_props['service_size']
-                if 'source' and 'router' in stack_name:  #  A Cloud with infinite resources
-                    contents = list(stack_props['contents'])
-                    # print("contents[node][0] is: ", contents[node][0], " and its type is: ", type(contents[node][0]))
+                if 'source' and 'router' in extra_types:  #  A Cloud with infinite resources
+                    self.contents[node] = list(stack_props['contents'])
+                    # print("contents[0] is: ", contents[0], " and its type is: ", type(contents[0]))
                     # TODO: IMPORTANT QUESTION: do sources need to have EDRs or not...?
                     if 'storageSize' in stack_props:
                         storageSize[node] = stack_props['storageSize']
-                    if contents[0]['content']:
-                        for c in contents[node]:
+                    if self.contents[node][0]['content']:
+                        for c in self.contents[node]:
                             for labels in c['labels']:
                                 all_node_labels[node].update([labels])
 
-                        self.source_node[node] = contents
-                        for content in contents[node]:
-                            self.content_source[content] = node
+                        self.source_node[node] = self.contents[node]
+                        for content in self.contents[node]:
+                            self.content_source[content].update(node)
 
                         self.node_labels[node].update(all_node_labels[node])
                         for k, v in all_node_labels[node]:
                             Counter(self.labels_sources[k]).update([node, v])
                     else:
-                        self.source_node[node] = contents
-                        for content in contents:
-                            self.content_source[content] = node
+                        self.source_node[node] = self.contents[node]
+                        for content in self.contents[node]:
+                            self.content_source[content].append(node)
             elif stack_name == 'source' and 'router' not in stack_name:
                 comp_size[node] = float('inf')
                 service_size[node] = float('inf')
-                contents = list(stack_props['contents'])
-                if type(list(contents)[0]) is dict:
-                    for c in contents:
-                        for labels in c['labels']:
+                self.contents[node] = stack_props['contents']
+                if type(self.contents[node][0]) is dict:
+                    for c in self.contents[node]:
+                        for labels in self.contents[node][c]['labels']:
                             all_node_labels[node].update([labels])
 
-                    self.source_node[node] = contents
-                    for content in contents[node]:
-                        self.content_source[content] = node
+                    self.source_node[node] = self.contents[node]
+                    for content in self.contents[node]:
+                        if self.content_source.has_key(content):
+                            self.content_source[content].append(node)
+                        else:
+                            self.content_source[content] = [node]
 
-                    self.node_labels[node].update(all_node_labels[node])
+                        if self.node_labels.has_key(node):
+                            self.node_labels[node].update(all_node_labels[node])
+                        else:
+                            self.node_labels[node] = all_node_labels[node]
+
                     for k, v in all_node_labels[node]:
                         Counter(self.labels_sources[k]).update([node, v])
                 else:
-                    contents = stack_props['contents']
-                    self.source_node[node] = contents
-                    for content in contents:
-                        self.content_source[content] = node
+                    self.contents[node] = stack_props['contents']
+                    self.source_node[node] = self.contents[node]
+                    for content in self.contents[node]:
+                        #content = hash(content)
+                        #set(self.content_source[content]).add(node)
+                        if self.content_source.has_key(content):
+                            self.content_source[content].append(node)
+                        else:
+                            self.content_source[content] = [node]
 
         if any(c < 1 for c in cache_size.values()):
             logger.warn('Some content caches have size equal to 0. '
@@ -995,7 +1058,7 @@ class NetworkModel(object):
         # TODO: Maybe I should make a repo-specific policy, so that both repos and caches could be
         #  implemented at once?
         if REPO_POLICY[repo_policy_name] is not None and repo_policy is not None:
-            self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], contents[node], **repo_policy_args)
+            self.repoStorage = {node: REPO_POLICY[policy_name](node, storageSize[node], self.contents[node], **repo_policy_args)
                                 for node in storageSize}
 
         #  Generate the actual services processing requests
@@ -1163,7 +1226,7 @@ class NetworkController(object):
         """Detach the data collector."""
         self.collector = None
 
-    def start_session(self, timestamp, receiver, content, labels, min_match, log, feedback, flow_id=0, deadline=0):
+    def start_session(self, timestamp, receiver, content, labels, log, flow_id=0, deadline=0):
         """Instruct the controller to start a new session (i.e. the retrieval
         of a content).
 
@@ -1188,15 +1251,13 @@ class NetworkController(object):
                                      receiver=receiver,
                                      content=content,
                                      labels=labels,
-                                     min_match=min_match,
                                      log=log,
-                                     feedback=feedback,
                                      deadline=deadline)
 
         self.sess_content = content
 
         # if self.collector is not None and self.session[flow_id]['log']:
-        self.collector.start_session(timestamp, receiver, content, labels, feedback, flow_id, deadline)
+        self.collector.start_session (timestamp, receiver, content, labels, flow_id, deadline)
 
     def forward_request_path(self, s, t, path=None, main_path=True):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -1418,6 +1479,10 @@ class NetworkController(object):
             *True*
         """
         self.model.repoStorage[s].addToStoredMessages(content)
+        if self.content_source.has_key(content):
+            self.content_source[content].append(s)
+        else:
+            self.content_source[content] = [s]
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1504,7 +1569,7 @@ class NetworkController(object):
         storage_hit : bool
             True if the content is available, False otherwise
         """
-        if (node in self.model.repoStorage) and message_ID or labels:
+        if (node in self.model.repoStorage) and (message_ID or labels):
                 storage_hit = self.model.repoStorage[node].hasMessage(message_ID, labels)
                 if storage_hit:
                     # if self.session['log']:
@@ -1538,12 +1603,12 @@ class NetworkController(object):
         if node in self.model.cache:
             return self.model.cache[node].remove(self.session['content'])
 
-    def add_event(self, time, receiver, service, node, flow_id, deadline, rtt_delay, status, task=None):
+    def add_event(self, time, receiver, service, labels, node, flow_id, deadline, rtt_delay, status, task=None):
         """Add an arrival event to the eventQ
         """
         if time == float('inf'):
             raise ValueError("Invalid argument in add_event(): time parameter is infinite")
-        e = Event(time, receiver, service, node, flow_id, deadline, rtt_delay, status, task)
+        e = Event(time, receiver, service, labels, node, flow_id, deadline, rtt_delay, status, task)
         heapq.heappush(self.model.eventQ, e)
 
     def replacement_interval_over(self, flow_id, replacement_interval, timestamp):

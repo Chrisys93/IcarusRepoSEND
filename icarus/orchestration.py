@@ -265,7 +265,9 @@ def run_scenario(settings, params, curr_exp, n_exp):
         #       OR Could do the following
         #       (just to save space and not use the same content specs 2 times in config.py):
         #       It seems like the contents are generated \/\/\/ within workload (workload.contents)!
-        if "REPO" in contpl_name:
+        if "UNIFORM_REPO" in contpl_name:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
+        elif "REPO" in contpl_name:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, workload.freshness_pers,
                                            workload.shelf_lives, workload.sizes, **contpl_spec)
         else:

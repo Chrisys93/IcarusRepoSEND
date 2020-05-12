@@ -845,7 +845,7 @@ class LruCache(Cache):
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, **kwargs):
-        self._cache = LinkedSet
+        self._cache = LinkedSet()
         self._maxlen = int(maxlen)
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
