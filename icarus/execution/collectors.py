@@ -95,6 +95,28 @@ class DataCollector(object):
         """
         pass
 
+    def storage_hit(self, node):
+        """Reports that the requested content has been served by the repo storage at
+        node *node*.
+
+        Parameters
+        ----------
+        node : any hashable type
+            The node whose cache served the content
+        """
+        pass
+
+    def storage_miss(self, node):
+        """Reports that the repo storage at node *node* has been looked up for
+        requested content but there was a repo storage miss.
+
+        Parameters
+        ----------
+        node : any hashable type
+            The node whose cache served the content
+        """
+        pass
+
     def server_hit(self, node):
         """Reports that the requested content has been served by the server at
         node *node*.
@@ -359,6 +381,13 @@ class LatencyCollector(DataCollector):
         self.n_sat_cloud_interval = 0
         self.n_instantiations_interval = 0
 
+        # Cache and storage
+        self.cache_hits = 0
+        self.storage_hits = 0
+        self.cache_misses = 0
+        self.storage_misses = 0
+        self.serv_hits = 0
+
         self.flow_start = {} # flow_id to start time
         self.flow_cloud = {} # True if flow reched cloud
         self.flow_service = {} # flow id to service
@@ -450,6 +479,22 @@ class LatencyCollector(DataCollector):
         self.flow_cloud[flow_id] = False
         self.interval_sess_count += 1
         self.flow_labels[flow_id] = labels
+
+    @inheritdoc(DataCollector)
+    def cache_hit(self, node):
+        self.cache_hits += 1
+
+    @inheritdoc(DataCollector)
+    def storage_hit(self, node):
+        self.storage_hits += 1
+
+    @inheritdoc(DataCollector)
+    def cache_miss(self, node):
+        self.session['cache_misses'].append(node)
+
+    @inheritdoc(DataCollector)
+    def storage_miss(self, node):
+        self.session['storage_misses'].append(node)
 
     @inheritdoc(DataCollector)
     def request_hop(self, u, v, main_path=True):

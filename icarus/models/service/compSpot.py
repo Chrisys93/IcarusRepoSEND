@@ -223,8 +223,8 @@ class Scheduler(object):
                     for aTask in self.upcomingTaskQueue:
                         aTask.print_task()
                     raise ValueError ("Error in addVMStartToTaskQ(): next_task is neither in upcomingTaskQueue nor taskQ")
-                    if next_task.taskType != Task.TASK_TYPE_VM_START:
-                        raise ValueError ("Error in complete_service_task(): nextTask is expected to be a VM_START task")
+                if next_task.taskType != Task.TASK_TYPE_VM_START:
+                    raise ValueError ("Error in complete_service_task(): nextTask is expected to be a VM_START task")
             else: # next_task in self.upcomingTaskQueue
 
                 if arrival_time > curr_time:
@@ -234,9 +234,9 @@ class Scheduler(object):
                     # Add the next_task to the taskQ
                     if len(self._taskQueue) > 0:
                         if self.sched_policy == 'EDF':
-                            next_task.expiry = self._taskQueue[-1].expiry 
+                            next_task.expiry = self._taskQueue[-1].expiry
                         elif self.sched_policy == 'FIFO':
-                            next_task.arrivalTime = time
+                            next_task.arrivalTime = curr_time
                         else:
                             raise ValueError("Invalid scheduling policy")
                         self.addToTaskQueue(next_task, curr_time, update_arrival_time)
@@ -331,10 +331,10 @@ class Scheduler(object):
         ### Move any tasks in the upcomingTasksQueue to taskQueue if they have already arrived
         if len(self.upcomingTaskQueue) > 0:
             new_addition = False
-            for task in self.upcomingTaskQueue:
+            for task in self.upcomingTaskQueue[:]:
                 if time < task.arrivalTime:
                     continue
-                self.upcomingTaskQueue.remove(task)
+                aTask = self.upcomingTaskQueue.remove(task)
                 self.addToTaskQueue(task, time, update_arrival_times)
                 new_addition = True
         numRunning = 0   
@@ -506,7 +506,7 @@ class Scheduler(object):
                     if (len(self.idleVMs[aTask.service]) + len(self.busyVMs[aTask.service])) <= 0:
                         print ("This should not happen in scheduler: no instances, task:")
                         aTask.print_task()
-                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
+#                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
                     self.cs.insufficientVMEvents[aTask.service] += 1
         return None
 
@@ -1038,13 +1038,13 @@ class ComputationSpot(object):
             raise ValueError("Invalid number of instances of service: " + str(serviceToReplace) + " has " + str(self.numberOfVMInstances[serviceToReplace]))
         self.numberOfVMInstances[newService] += 1
         self.numberOfVMInstances[serviceToReplace] -= 1
-        if len(self.scheduler.busyVMs[serviceToReplace]) + len(self.scheduler.idleVMs[serviceToReplace])  <= 0:
-            print ("Error: No VM instance for the service that is to be replaced")
-            print ("Length of the startingVMs is " + str(len(self.scheduler.startingVMs[serviceToReplace])))
-            print ("Node: " + str(self.node))
-            print ("Service to replace: " + str(serviceToReplace))
-            print ("new service: " + str(newService))
-            raise ValueError("Error in reassign_vm(): unable to find a VM instance to replace")
+        # if len(self.scheduler.busyVMs[serviceToReplace]) + len(self.scheduler.idleVMs[serviceToReplace])  <= 0:
+        #     print ("Error: No VM instance for the service that is to be replaced")
+        #     print ("Length of the busyVMs is " + str(len(self.scheduler.busyVMs[serviceToReplace])))
+        #     print ("Node: " + str(self.node))
+        #     print ("Service to replace: " + str(serviceToReplace))
+        #     print ("new service: " + str(newService))
+        #     #raise ValueError("Error in reassign_vm(): unable to find a VM instance to replace")
         
         #lastTask = self.get_latest_task(serviceToReplace)
         lastTask = self.get_latest_service_task()

@@ -3,6 +3,10 @@
 
 This module contains function to decide the allocation of content objects to
 source nodes.
+
+TODO: Work on the content generation and all the labels, characteristics and
+    associated statistics.
+
 """
 import random
 import collections
@@ -39,9 +43,10 @@ def apply_service_association(association, data):
     types:
     :return:
     """
-    for service_type, content in association.items():
-        if service_type not in data[content]['service_type']:
-            dict(data[content]).update(service_type=service_type)
+    for service_type, contents in association.items():
+        for c in contents:
+            if service_type not in data[c]['service_type']:
+                data[c].update(service_type=service_type)
     return data
 
 def apply_labels_association(association, data):
@@ -55,9 +60,10 @@ def apply_labels_association(association, data):
     types:
     :return:
     """
-    for label, content in association.items():
-        if label not in data[content]['labels']:
-            list(dict(data[content])['labels']).append(label)
+    for label, contents in association.items():
+        for c in contents:
+            if label not in data[c]['labels']:
+                data[c]['labels'].append(label)
     return data
 
 def get_sources(topology):
@@ -132,7 +138,7 @@ def uniform_repo_content_placement(topology, contents, seed=None):
     content_placement = collections.defaultdict(dict)
     for c in contents:
         choice = random.choice(source_nodes)
-        dict1 = {c['content']: c}
+        dict1 = {contents[c]['content']: c}
         content_placement[choice].update(dict1)
     apply_content_placement(content_placement, topology)
 
@@ -183,7 +189,7 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
         placement parameters, like the freshness periods, shelf-lives, topics/types
         of labels and placement possibilities, maybe depending on hashes, placement
         of nodes and possibly other scenario-specific/service-specific parameters.
-        ADD SERCICE TYPE TO MESSAGE PROPERTIES!
+        ADD SERVICE TYPE TO MESSAGE PROPERTIES!
 
     Parameters
     ----------
@@ -202,7 +208,7 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
     msg_size :
 
     source_weights : dict
-        Dict mapping nodes nodes of the topology which are content sources and
+        Dict mapping nodes of the topology which are content sources and
         the weight according to which content placement decision is made.
 
     Returns
@@ -222,8 +228,6 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
 
     placed_data = dict()
     random.seed(seed)
-    for c in contents:
-        dict(placed_data[c]).update(content=c)
     norm_factor = float(sum(source_weights.values()))
     # TODO: These ^\/^\/^ might need redefining, to make label-specific
     #  source weights, and then the labels distributed according to these.
@@ -246,25 +250,40 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
     #           content depending on those at a later point (create other
     #           placement strategies)
     # NOTE: All label names will come as a list of strings
-    alter = False
     for c in contents:
-        for i in range(1, max_label_nos):
+        alter = False
+        for i in range(0, max_label_nos):
             if types_weights is not None and not alter:
                 labels_association[random_from_pdf(types_labels_pdf)].add(c)
                 alter = True
             elif topics_weights is not None and alter:
                 labels_association[random_from_pdf(topics_labels_pdf)].add(c)
                 alter = False
-        placed_data = apply_labels_association(labels_association, placed_data)
         if freshness_per is not None:
-            placed_data[c].update(freshness_per=freshness_per)
+            if placed_data.has_key(contents[c]['content']):
+                placed_data[contents[c]['content']].update(freshness_per=freshness_per)
+            else:
+                placed_data[contents[c]['content']] = dict()
+                placed_data[contents[c]['content']]['freshness_per'] = freshness_per
         if shelf_life is not None:
-            placed_data[c].update(shelf_life=shelf_life)
+            placed_data[contents[c]['content']].update(shelf_life=shelf_life)
         service_association[random_from_pdf(service_labels_pdf)].add(c)
-        placed_data = apply_service_association(service_association, placed_data)
-        placed_data[c].update(msg_size=msg_size)
-        placed_data[c]["receiveTime"] = 0
+        placed_data[contents[c]['content']].update(content=c)
+        placed_data[contents[c]['content']].update(msg_size=msg_size)
+        placed_data[contents[c]['content']]["receiveTime"] = 0
+        placed_data[contents[c]['content']]['labels'] = contents[c]['labels']
+        placed_data[contents[c]['content']]['service_type'] = contents[c]['service_type']
+
+    placed_data = apply_labels_association(labels_association, placed_data)
+    placed_data = apply_service_association(service_association, placed_data)
     for d in placed_data:
-        content_placement[random_from_pdf(source_pdf)].add(d)
+        rand = random_from_pdf(source_pdf)
+        if not content_placement[rand]:
+            content_placement[rand] = dict()
+        if content_placement[rand].has_key(d):
+            content_placement[rand][d].update(placed_data[d])
+        else:
+            content_placement[rand][d] = dict()
+            content_placement[rand][d] = placed_data[d]
     apply_content_placement(content_placement, topology)
     topology.placed_data = placed_data

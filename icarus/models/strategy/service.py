@@ -112,7 +112,7 @@ class Coordinated(Strategy):
         tasks that require closer comp. spots.
         """
 
-        source = self.view.closest_source(service)
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
         aTask = None
@@ -293,7 +293,7 @@ class Coordinated(Strategy):
         service = content
         if self.debug:
             print ("\nEvent\n time: " + repr(time) + " receiver  " + repr(receiver) + " service " + repr(service) + " node " + repr(node) + " flow_id " + repr(flow_id) + " deadline " + repr(deadline) + " status " + repr(status))
-        source = self.view.closest_source(service)
+        source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
@@ -302,56 +302,31 @@ class Coordinated(Strategy):
             self.initialise_metrics()
         # Process request based on status
         if receiver == node and status == REQUEST:
-            if self.view.hasStorageCapability(node):
-                if service["service_type"] is "proc":
-                    self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
-                    path = self.view.shortest_path(node, source)
-                    upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline, rtt_delay)
-                    delay = self.view.path_delay(node, upstream_node)
-                    rtt_delay += delay*2
-                    if upstream_node != source:
-                        self.controller.add_event(time+delay, receiver, service, labels, upstream_node, flow_id, deadline, rtt_delay, REQUEST)
-                        if self.debug:
-                            print ("Request is scheduled to run at: " + str(upstream_node))
-                    else: #request is to be executed in the cloud and returned to receiver
-                        services = self.view.services()
-                        serviceTime = services[service['content']].service_time
-                        self.controller.add_event(time+rtt_delay+serviceTime, receiver, service, labels, receiver, flow_id, deadline, rtt_delay, RESPONSE)
-                        if self.debug:
-                            print ("Request is scheduled to run at the CLOUD")
-                    for n in path[1:]:
-                        cs = self.view.compSpot(n)
-                        if cs.is_cloud:
-                            continue
-                        self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[service['content']].service_time
-                    return
-                else:
-                    return
-            else:
-                self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
-                path = self.view.shortest_path(node, source)
-                upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline,
-                                                                rtt_delay)
-                delay = self.view.path_delay(node, upstream_node)
-                rtt_delay += delay * 2
-                if upstream_node != source:
-                    self.controller.add_event(time + delay, receiver, service, labels, upstream_node, flow_id,
-                                              deadline, rtt_delay, REQUEST)
-                    if self.debug:
-                        print("Request is scheduled to run at: " + str(upstream_node))
-                else:  # request is to be executed in the cloud and returned to receiver
-                    services = self.view.services()
-                    serviceTime = services[service['content']].service_time
-                    self.controller.add_event(time + rtt_delay + serviceTime, receiver, service, labels, receiver,
-                                              flow_id, deadline, rtt_delay, RESPONSE)
-                    if self.debug:
-                        print("Request is scheduled to run at the CLOUD")
-                for n in path[1:]:
-                    cs = self.view.compSpot(n)
-                    if cs.is_cloud:
-                        continue
-                    self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[service['content']].service_time
-                return
+            self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
+            path = self.view.shortest_path(node, source)
+            upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline,
+                                                            rtt_delay)
+            delay = self.view.path_delay(node, upstream_node)
+            rtt_delay += delay * 2
+            self.controller.add_request_labels_to_node(node, service)
+            if upstream_node != source:
+                self.controller.add_event(time + delay, receiver, service, labels, upstream_node, flow_id,
+                                          deadline, rtt_delay, REQUEST)
+                if self.debug:
+                    print("Request is scheduled to run at: " + str(upstream_node))
+            else:  # request is to be executed in the cloud and returned to receiver
+                services = self.view.services()
+                serviceTime = services[service['content']].service_time
+                self.controller.add_event(time + rtt_delay + serviceTime, receiver, service, labels, receiver,
+                                          flow_id, deadline, rtt_delay, RESPONSE)
+                if self.debug:
+                    print("Request is scheduled to run at the CLOUD")
+            for n in path[1:]:
+                cs = self.view.compSpot(n)
+                if cs.is_cloud:
+                    continue
+                self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[service['content']].service_time
+            return
         elif status == REQUEST and node != source:
             compSpot = self.view.compSpot(node)
             #check if the request is in the upcomingTaskQueue
@@ -558,6 +533,58 @@ class Hybrid(Strategy):
                         if cs.numberOfVMInstances[service] > 0:
                             print ("Node: " + str(node) + " has " + str(cs.numberOfVMInstances[service]) + " instance of " + str(service))
 
+    def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
+        """
+        finds fathest comp. spot to schedule a request using current
+        congestion information at each upstream comp. spot.
+        The goal is to carry out computations at the farthest node to create space for
+        tasks that require closer comp. spots.
+        """
+
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
+        # start from the upper-most node in the path and check feasibility
+        upstream_node = source
+        aTask = None
+        for n in reversed(path[1:-1]):
+            cs = self.compSpots[n]
+            if cs.is_cloud:
+                continue
+            if cs.numberOfVMInstances[service['content']] == 0:
+                continue
+            if len(cs.scheduler.busyVMs[service['content']]) + len(cs.scheduler.idleVMs[service['content']]) <= 0:
+                continue
+            delay = self.view.path_delay(receiver, n)
+            rtt_to_cs = rtt_delay + 2*delay
+            serviceTime = cs.services[service['content']].service_time
+            if deadline - time - rtt_to_cs < serviceTime:
+                continue
+            aTask = Task(time, Task.TASK_TYPE_SERVICE, deadline, rtt_to_cs, n, service['content'], service['labels'], serviceTime, flow_id, receiver, time+delay)
+            cs.scheduler.upcomingTaskQueue.append(aTask)
+            cs.scheduler.upcomingTaskQueue = sorted(cs.scheduler.upcomingTaskQueue, key=lambda x: x.arrivalTime)
+            cs.compute_completion_times(time, False, self.debug)
+            for task in cs.scheduler._taskQueue + cs.scheduler.upcomingTaskQueue:
+                if self.debug:
+                    print("After compute_completion_times:")
+                    task.print_task()
+                if task.taskType == Task.TASK_TYPE_VM_START:
+                    continue
+                if ( (task.expiry - delay) < task.completionTime ) or ( task.completionTime == float('inf') ):
+                    cs.scheduler.upcomingTaskQueue.remove(aTask)
+                    if self.debug:
+                        print ("Task with flow_id " + str(aTask.flow_id) + " is violating its expiration time at node: " + str(n))
+                    break
+            else:
+                source = n
+                #if self.debug:
+                #if aTask.flow_id == 1964:
+                #    print ("Task is scheduled at node 5:")
+                #    aTask.print_task()
+                if self.debug:
+                    print ("Flow_id: " + str(aTask.flow_id) + " is scheduled to run at " + str(source))
+                return source
+        return source
+
+
     #HYBRID
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, labels, log, node, flow_id, deadline, rtt_delay, status, task=None):
@@ -577,7 +604,7 @@ class Hybrid(Strategy):
 
 
         service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
-        source = self.view.closest_source(service)
+        source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
@@ -595,8 +622,38 @@ class Hybrid(Strategy):
         if source == node and status == REQUEST:
             ret, reason = compSpot.admit_task(service['content'], service['labels'], time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
             if ret == False:
-                print("This should not happen in Hybrid.")
-                raise ValueError("Task should not be rejected at the cloud.")
+                if node == 'src_0':
+                    print("This should not happen in Hybrid.")
+                    raise ValueError("Task should not be rejected at the cloud.")
+                else:
+                    # Processing a request
+                    source = self.view.content_source(service, labels)[
+                        len(self.view.content_source(service, labels)) - 1]
+                    self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
+                    path = self.view.shortest_path(node, source)
+                    upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline,
+                                                                    rtt_delay)
+                    delay = self.view.path_delay(node, upstream_node)
+                    rtt_delay += delay * 2
+                    if upstream_node != source:
+                        self.controller.add_event(time + delay, receiver, service, labels, upstream_node, flow_id,
+                                                  deadline, rtt_delay, REQUEST)
+                        if self.debug:
+                            print("Request is scheduled to run at: " + str(upstream_node))
+                    else:  # request is to be executed in the cloud and returned to receiver
+                        services = self.view.services()
+                        serviceTime = services[service['content']].service_time
+                        self.controller.add_event(time + rtt_delay + serviceTime, receiver, service, labels, receiver,
+                                                  flow_id, deadline, rtt_delay, RESPONSE)
+                        if self.debug:
+                            print("Request is scheduled to run at the CLOUD")
+                    for n in path[1:]:
+                        cs = self.view.compSpot(n)
+                        if cs.is_cloud:
+                            continue
+                        self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
+                            service['content']].service_time
+                    return
             return
 
         # Request at the receiver
@@ -645,10 +702,17 @@ class Hybrid(Strategy):
             next_node = path[1]
             delay = self.view.link_delay(node, next_node)
             if self.view.hasStorageCapability(node):
+                if type(service) is not dict:
+                    service = dict()
+                    service['content'] = service
+                    service['labels'] = labels
                 service['service_type'] = None
                 service['receiveTime'] = time
                 service['service_type'] = "processed"
-                self.controller.add_message_to_storage(node, service)
+                if self.controller.has_message(node, service['labels'], service['content']):
+                    service['msg_size'] = self.view.storage_nodes()[node].hasMessage(service['content'], service['labels'])['msg_size']/2
+                    # TODO: Delete original message after adding the new, hald-sized message!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    self.controller.add_message_to_storage(node, service)
             self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, RESPONSE)
             if (node != source and time + path_delay > deadline):
                 print ("Error in HYBRID strategy: Request missed its deadline\nResponse at receiver at time: " + str(time+path_delay) + " deadline: " + str(deadline))
@@ -657,7 +721,7 @@ class Hybrid(Strategy):
 
         elif status == REQUEST:
             # Processing a request
-            source = self.view.closest_source(service)
+            source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
@@ -765,12 +829,12 @@ class MostFrequentlyUsed(Strategy):
                     if self.debug:
                         print ("No running instances of service: " + repr(service))
                     continue
-                if cs.running_requests[service['content']] == 0:
+                if cs.running_requests[service] == 0:
                     usage_metric = 0.0
                     if self.debug:
                         print ("No scheduled requests for service: " + repr(service))
                 else:
-                    usage_metric = cs.running_requests[service['content']] * cs.services[service['content']].service_time
+                    usage_metric = cs.running_requests[service] * cs.services[service].service_time
                     if self.debug:
                         print ("Usage metric for service: " + repr(service) + " is " + repr(usage_metric))
 
@@ -779,10 +843,10 @@ class MostFrequentlyUsed(Strategy):
             for service in range(0, self.num_services):
                 #if cs.numberOfVMInstances[service['content']] > 0:
                 #    continue
-                if cs.missed_requests[service['content']] == 0:
+                if cs.missed_requests[service] == 0:
                     usage_metric = 0.0
                 else:
-                    usage_metric = cs.missed_requests[service['content']] * cs.services[service['content']].service_time
+                    usage_metric = cs.missed_requests[service] * cs.services[service].service_time
                     if self.debug:
                         print ("Usage metric for Upstream Service: " + repr(service) + " is " + repr(usage_metric))
                     cand_services.append([service, usage_metric])
@@ -811,6 +875,57 @@ class MostFrequentlyUsed(Strategy):
                     break
                 indx += 1
 
+    def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
+        """
+        finds fathest comp. spot to schedule a request using current
+        congestion information at each upstream comp. spot.
+        The goal is to carry out computations at the farthest node to create space for
+        tasks that require closer comp. spots.
+        """
+
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
+        # start from the upper-most node in the path and check feasibility
+        upstream_node = source
+        aTask = None
+        for n in reversed(path[1:-1]):
+            cs = self.compSpots[n]
+            if cs.is_cloud:
+                continue
+            if cs.numberOfVMInstances[service['content']] == 0:
+                continue
+            if len(cs.scheduler.busyVMs[service['content']]) + len(cs.scheduler.idleVMs[service['content']]) <= 0:
+                continue
+            delay = self.view.path_delay(receiver, n)
+            rtt_to_cs = rtt_delay + 2*delay
+            serviceTime = cs.services[service['content']].service_time
+            if deadline - time - rtt_to_cs < serviceTime:
+                continue
+            aTask = Task(time, Task.TASK_TYPE_SERVICE, deadline, rtt_to_cs, n, service['content'], service['labels'], serviceTime, flow_id, receiver, time+delay)
+            cs.scheduler.upcomingTaskQueue.append(aTask)
+            cs.scheduler.upcomingTaskQueue = sorted(cs.scheduler.upcomingTaskQueue, key=lambda x: x.arrivalTime)
+            cs.compute_completion_times(time, False, self.debug)
+            for task in cs.scheduler._taskQueue + cs.scheduler.upcomingTaskQueue:
+                if self.debug:
+                    print("After compute_completion_times:")
+                    task.print_task()
+                if task.taskType == Task.TASK_TYPE_VM_START:
+                    continue
+                if ( (task.expiry - delay) < task.completionTime ) or ( task.completionTime == float('inf') ):
+                    cs.scheduler.upcomingTaskQueue.remove(aTask)
+                    if self.debug:
+                        print ("Task with flow_id " + str(aTask.flow_id) + " is violating its expiration time at node: " + str(n))
+                    break
+            else:
+                source = n
+                #if self.debug:
+                #if aTask.flow_id == 1964:
+                #    print ("Task is scheduled at node 5:")
+                #    aTask.print_task()
+                if self.debug:
+                    print ("Flow_id: " + str(aTask.flow_id) + " is scheduled to run at " + str(source))
+                return source
+        return source
+
     # MFU
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, labels, log, node, flow_id, deadline, rtt_delay, status, task=None):
@@ -822,7 +937,7 @@ class MostFrequentlyUsed(Strategy):
         """
 
         service = content
-        source = self.view.closest_source(service)
+        source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
@@ -839,14 +954,43 @@ class MostFrequentlyUsed(Strategy):
         if source == node and status == REQUEST:
             ret, reason = compSpot.admit_task(service['content'], labels, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
             if ret == False:
-                print("This should not happen in Hybrid.")
-                raise ValueError("Task should not be rejected at the cloud.")
+                if node == 'src_0':
+                    print("This should not happen in Hybrid.")
+                    raise ValueError("Task should not be rejected at the cloud.")
+                else:
+                    # Processing a request
+                    source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels)) - 1]
+                    self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
+                    path = self.view.shortest_path(node, source)
+                    upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline,
+                                                                    rtt_delay)
+                    delay = self.view.path_delay(node, upstream_node)
+                    rtt_delay += delay * 2
+                    if upstream_node != source:
+                        self.controller.add_event(time + delay, receiver, service, labels, upstream_node, flow_id,
+                                                  deadline, rtt_delay, REQUEST)
+                        if self.debug:
+                            print("Request is scheduled to run at: " + str(upstream_node))
+                    else:  # request is to be executed in the cloud and returned to receiver
+                        services = self.view.services()
+                        serviceTime = services[service['content']].service_time
+                        self.controller.add_event(time + rtt_delay + serviceTime, receiver, service, labels, receiver,
+                                                  flow_id, deadline, rtt_delay, RESPONSE)
+                        if self.debug:
+                            print("Request is scheduled to run at the CLOUD")
+                    for n in path[1:]:
+                        cs = self.view.compSpot(n)
+                        if cs.is_cloud:
+                            continue
+                        self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
+                            service['content']].service_time
+                    return
             return
 
         # Request at the receiver
         if receiver == node and status == REQUEST:
             self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
-            source = self.view.closest_source(service)
+            source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
@@ -893,7 +1037,7 @@ class MostFrequentlyUsed(Strategy):
         # MFU
         elif status == REQUEST:
             # Processing a request
-            source = self.view.closest_source(service)
+            source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
@@ -1035,15 +1179,66 @@ class StrictestDeadlineFirst(Strategy):
                     break
                 if vm[1] < cand_services[indx][1]:
                     break
-                else:
-                    if vm[0] != cand_services[indx][0]:
-                        self.controller.reassign_vm(time, cs, vm[0], cand_services[indx][0], self.debug)
-                        #cs.reassign_vm(self.controller, time, vm[0], cand_services[indx][0], self.debug)
-                        n_replacements -= 1
+                elif vm[0] != cand_services[indx][0]:
+                    self.controller.reassign_vm(time, cs, vm[0], cand_services[indx][0], self.debug)
+                    #cs.reassign_vm(self.controller, time, vm[0], cand_services[indx][0], self.debug)
+                    n_replacements -= 1
 
                 if n_replacements == 0 or indx == len(cand_services):
                     break
                 indx += 1
+
+    def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
+        """
+        finds fathest comp. spot to schedule a request using current
+        congestion information at each upstream comp. spot.
+        The goal is to carry out computations at the farthest node to create space for
+        tasks that require closer comp. spots.
+        """
+
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
+        # start from the upper-most node in the path and check feasibility
+        upstream_node = source
+        aTask = None
+        for n in reversed(path[1:-1]):
+            cs = self.compSpots[n]
+            if cs.is_cloud:
+                continue
+            if cs.numberOfVMInstances[service['content']] == 0:
+                continue
+            if len(cs.scheduler.busyVMs[service['content']]) + len(cs.scheduler.idleVMs[service['content']]) <= 0:
+                continue
+            delay = self.view.path_delay(receiver, n)
+            rtt_to_cs = rtt_delay + 2*delay
+            serviceTime = cs.services[service['content']].service_time
+            if deadline - time - rtt_to_cs < serviceTime:
+                continue
+            aTask = Task(time, Task.TASK_TYPE_SERVICE, deadline, rtt_to_cs, n, service['content'], service['labels'], serviceTime, flow_id, receiver, time+delay)
+            cs.scheduler.upcomingTaskQueue.append(aTask)
+            cs.scheduler.upcomingTaskQueue = sorted(cs.scheduler.upcomingTaskQueue, key=lambda x: x.arrivalTime)
+            cs.compute_completion_times(time, False, self.debug)
+            for task in cs.scheduler._taskQueue + cs.scheduler.upcomingTaskQueue:
+                if self.debug:
+                    print("After compute_completion_times:")
+                    task.print_task()
+                if task.taskType == Task.TASK_TYPE_VM_START:
+                    continue
+                if ( (task.expiry - delay) < task.completionTime ) or ( task.completionTime == float('inf') ):
+                    cs.scheduler.upcomingTaskQueue.remove(aTask)
+                    if self.debug:
+                        print ("Task with flow_id " + str(aTask.flow_id) + " is violating its expiration time at node: " + str(n))
+                    break
+            else:
+                source = n
+                #if self.debug:
+                #if aTask.flow_id == 1964:
+                #    print ("Task is scheduled at node 5:")
+                #    aTask.print_task()
+                if self.debug:
+                    print ("Flow_id: " + str(aTask.flow_id) + " is scheduled to run at " + str(source))
+                return source
+        return source
+
     # SDF
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, labels, log, node, flow_id, deadline, rtt_delay, status, task=None):
@@ -1055,7 +1250,7 @@ class StrictestDeadlineFirst(Strategy):
         """
 
         service = content
-        source = self.view.closest_source(service)
+        source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
 
         if time - self.last_replacement > self.replacement_interval:
             #self.print_stats()
@@ -1072,14 +1267,44 @@ class StrictestDeadlineFirst(Strategy):
         if source == node and status == REQUEST:
             ret, reason = compSpot.admit_task(service['content'], labels, time, flow_id, deadline, receiver, rtt_delay, self.controller, self.debug)
             if ret == False:
-                print("This should not happen in Hybrid.")
-                raise ValueError("Task should not be rejected at the cloud.")
+                if node == 'src_0':
+                    print("This should not happen in Hybrid.")
+                    raise ValueError("Task should not be rejected at the cloud.")
+                else:
+                    # Processing a request
+                    source = self.view.content_source(service, labels)[
+                        len(self.view.content_source(service, labels)) - 1]
+                    self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
+                    path = self.view.shortest_path(node, source)
+                    upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, time, service, deadline,
+                                                                    rtt_delay)
+                    delay = self.view.path_delay(node, upstream_node)
+                    rtt_delay += delay * 2
+                    if upstream_node != source:
+                        self.controller.add_event(time + delay, receiver, service, labels, upstream_node, flow_id,
+                                                  deadline, rtt_delay, REQUEST)
+                        if self.debug:
+                            print("Request is scheduled to run at: " + str(upstream_node))
+                    else:  # request is to be executed in the cloud and returned to receiver
+                        services = self.view.services()
+                        serviceTime = services[service['content']].service_time
+                        self.controller.add_event(time + rtt_delay + serviceTime, receiver, service, labels, receiver,
+                                                  flow_id, deadline, rtt_delay, RESPONSE)
+                        if self.debug:
+                            print("Request is scheduled to run at the CLOUD")
+                    for n in path[1:]:
+                        cs = self.view.compSpot(n)
+                        if cs.is_cloud:
+                            continue
+                        self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
+                            service['content']].service_time
+                    return
             return
 
         # Request at the receiver
         if receiver == node and status == REQUEST:
             self.controller.start_session(time, receiver, service, labels, log, flow_id, deadline)
-            source = self.view.closest_source(service['content'])
+            source = self.view.content_source(service['content'], service['labels'])[len(self.view.content_source(service['content'], service['labels']))-1]
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
@@ -1126,7 +1351,7 @@ class StrictestDeadlineFirst(Strategy):
         # SDF  
         elif status == REQUEST:
             # Processing a request
-            source = self.view.closest_source(service)
+            source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)

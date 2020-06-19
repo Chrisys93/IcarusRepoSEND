@@ -268,7 +268,7 @@ def run_scenario(settings, params, curr_exp, n_exp):
         if "UNIFORM_REPO" in contpl_name:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
         elif "REPO" in contpl_name:
-            CONTENT_PLACEMENT[contpl_name](topology, workload.contents, workload.freshness_pers,
+            CONTENT_PLACEMENT[contpl_name](topology, workload.data, workload.freshness_pers,
                                            workload.shelf_lives, workload.sizes, **contpl_spec)
         else:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)

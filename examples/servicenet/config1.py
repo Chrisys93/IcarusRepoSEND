@@ -61,7 +61,7 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-#N_CONTENTS = 1000
+#N_CONTENTS = 500
 N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
@@ -97,7 +97,7 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['COORDINATED', 'SDF', 'HYBRID', 'MFU'] #, 'OPTIMAL_PLACEMENT_SCHED'] 
+STRATEGIES = ['COORDINATED', 'HYBRID','HYBRIDS_REPO_APP']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -108,33 +108,65 @@ CACHE_POLICY = 'LRU'
 # Repo replacement policy used by the network repositories.
 # Supported policy is the normal, demonstrated REPO_STORAGE and NULL_REPO data storage policy
 # Cache policy implmentations are located in ./icarus/models/repo.py
-REPO_POLICY = 'NULL_REPO'
+REPO_POLICY = 'REPO_STORAGE'
 
 # Task scheduling policy used by the cloudlets.
 # Supported policies are: 'EDF' (Earliest Deadline First), 'FIFO'
 SCHED_POLICY = 'EDF'
 
+FRESHNESS_PER = 0.15
+SHELF_LIFE = 1
+MSG_SIZE = 1000000
+SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
+SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
+TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
+TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
+MAX_REQUESTED_LABELS = 3
+ALPHA_LABELS = 0.5
+DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
+DATA_TYPES = ["value", "video", "control", "photo", "audio"]
+
+
 # Queue of experiments
 EXPERIMENT_QUEUE = deque()
 default = Tree()
 
-default['workload'] = {'name':       'STATIONARY',
+default['workload'] = {'name':       'STATIONARY_MORE_LABEL_REQS',
                        'n_contents': N_CONTENTS,
                        'n_warmup':   N_WARMUP_REQUESTS,
                        'n_measured': N_MEASURED_REQUESTS,
                        'rate':       NETWORK_REQUEST_RATE,
                        'seed':  0,
                        'n_services': N_SERVICES,
-                       'alpha' : ALPHA
+                       'alpha' : ALPHA,
+                       'alpha_labels' : ALPHA_LABELS,
+                       'topics' : DATA_TOPICS,
+                       'types' : DATA_TYPES,
+                       'max_labels' : MAX_REQUESTED_LABELS,
+                       'freshness_pers' : FRESHNESS_PER,
+                       'shelf_lives' : SHELF_LIFE,
+                       'msg_sizes' : MSG_SIZE
                       }
-default['cache_placement']['name'] = 'UNIFORM'
+
+default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'
+default['cache_placement']['storage_budget'] = 10000000000
 #default['computation_placement']['name'] = 'CENTRALITY'
-default['computation_placement']['name'] = 'UNIFORM'
+default['computation_placement']['name'] = 'UNIFORM_REPO'
 #default['computation_placement']['name'] = 'CENTRALITY'
-default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2 
+default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
+default['computation_placement']['storage_budget'] = 10000000000
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
-default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node 
-default['content_placement']['name'] = 'UNIFORM_REPO'
+default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
+#default['content_placement']['name'] = 'WEIGHTED_REPO'
+
+default['content_placement'] = {"name":             'WEIGHTED_REPO',
+                                "source_weights" :  SOURCE_WEIGHTS,
+                                "service_weights":  SERVICE_WEIGHTS,
+                                "types_weights" :   TYPES_WEIGHTS,
+                                "topics_weights" :  TOPICS_WEIGHTS,
+                                "max_label_nos" :   MAX_REQUESTED_LABELS
+                                }
+
 default['cache_policy']['name'] = CACHE_POLICY
 default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
