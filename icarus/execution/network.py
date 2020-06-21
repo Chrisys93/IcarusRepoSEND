@@ -323,32 +323,31 @@ class NetworkView(object):
                     res = n
 
             if self.has_cache(res):
-                if self.cache_lookup(res, k) or self.local_cache_lookup(res, k):
+                if self.cache_lookup(res, k['content']) or self.local_cache_lookup(res, k['content']):
                     cache = True
                 else:
                     cache = False
             else:
                 cache = False
         else:
+            content = dict()
             for n in range(0, len(self.content_source(k, []))):
                 if k in self.model.contents[n]:
-                    k = self.model.contents[node][k]
-            else:
-                content = k
-                k = dict()
-                k['content'] = content
-                k['labels'] = []
+                    content = self.model.contents[node][k]
+            if not content:
+                content['content'] = k
+                content['labels'] = []
             if self.has_cache(node):
-                if self.cache_lookup(node, k['content']) or self.local_cache_lookup(node, k['content']):
+                if self.cache_lookup(node, content['content']) or self.local_cache_lookup(node, content['content']):
                     cache = True
                 else:
                     cache = False
             else:
                 cache = False
             hops = 100
-            if node in self.content_source(k, k['labels']):
+            if node in self.content_source(content, content['labels']):
                 return node, cache
-            for n in self.content_source(k, k['labels']):
+            for n in self.content_source(content, content['labels']):
                 if len(self.shortest_path(node, n)) < hops:
                     hops = len(self.shortest_path(node, n))
                     res = n
@@ -1586,8 +1585,8 @@ class NetworkController(object):
         for c in self.model.content_source:
             if content['content'] == c:
                 self.model.content_source[content['content']].append(s)
-        else:
-            self.model.content_source[content['content']] = [s]
+            else:
+                self.model.content_source[content['content']] = [s]
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1659,7 +1658,7 @@ class NetworkController(object):
         else:
             return False
 
-    def has_message(self, node, labels=[], message_ID=''):
+    def has_message(self, node, labels=None, message_ID=''):
         """Get a content from a server or a cache.
 
         Parameters

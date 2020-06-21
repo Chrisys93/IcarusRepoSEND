@@ -610,7 +610,7 @@ class Hybrid(Strategy):
             #self.print_stats()
             print("Replacement time: " + repr(time))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
-            self.replace_services1(time)
+            self.replace_services(time)
             self.last_replacement = time
             self.initialise_metrics()
 
@@ -702,17 +702,20 @@ class Hybrid(Strategy):
             next_node = path[1]
             delay = self.view.link_delay(node, next_node)
             if self.view.hasStorageCapability(node):
-                if type(service) is not dict:
+                if type(service) is not dict and self.controller.has_message(node, labels, content):
+                    service = self.view.storage_nodes()[node].hasMessage(content, labels)
+                else:
                     service = dict()
-                    service['content'] = service
+                    service['content'] = content
                     service['labels'] = labels
-                service['service_type'] = None
                 service['receiveTime'] = time
                 service['service_type'] = "processed"
                 if self.controller.has_message(node, service['labels'], service['content']):
                     service['msg_size'] = self.view.storage_nodes()[node].hasMessage(service['content'], service['labels'])['msg_size']/2
                     # TODO: Delete original message after adding the new, hald-sized message!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                     self.controller.add_message_to_storage(node, service)
+
             self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, RESPONSE)
             if (node != source and time + path_delay > deadline):
                 print ("Error in HYBRID strategy: Request missed its deadline\nResponse at receiver at time: " + str(time+path_delay) + " deadline: " + str(deadline))

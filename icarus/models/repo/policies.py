@@ -326,7 +326,7 @@ class RepoStorage(object):
 
     def hasMessage(self, MessageId, labels):
         answer = None
-        for j in range(0, len(self.processedMessages)-1):
+        for i in range(0, len(self.processedMessages)):
             if MessageId is not None and self.processedMessages[i]['content'] == MessageId:
                 answer = self.processedMessages[i]
             else:
@@ -336,7 +336,7 @@ class RepoStorage(object):
                         j_labels.append(label)
                 if (j_labels == labels):
                     answer = self.processedMessages[i]
-        for i in range(0, len(self.Messages)-1):
+        for i in range(0, len(self.Messages)):
             if MessageId is not None and self.Messages[i]['content'] == MessageId:
                 answer = self.Messages[i]
             else:
@@ -346,7 +346,7 @@ class RepoStorage(object):
                         j_labels.append(label)
                 if (j_labels == labels):
                     answer = self.Messages[i]
-        for i in range(0, len(self.processMessages)-1):
+        for i in range(0, len(self.processMessages)):
             if MessageId is not None and self.processMessages[i]['content'] == MessageId:
                 answer = self.processMessages[i]
             else:
@@ -360,21 +360,21 @@ class RepoStorage(object):
 
     def getProcessedMessages(self, labels):
         answer = None
-        for j in range(0, len(self.processedMessages)):
+        for i in range(0, len(self.processedMessages)):
             j_labels = []
             for label in self.processedMessages[i]['labels']:
                 if label in labels:
                     j_labels.append(label)
             if (j_labels == labels):
                 answer = self.processedMessages[i]
-        for i in range(0, len(self.Messages)-1):
+        for i in range(0, len(self.Messages)):
             j_labels = []
             for label in self.Messages[i]['labels']:
                 if label in labels:
                     j_labels.append(label)
             if (j_labels == labels):
                 answer = self.Messages[i]
-        for i in range(0, len(self.processMessages)-1):
+        for i in range(0, len(self.processMessages)):
             j_labels = []
             for label in self.processMessages[i]['labels']:
                 if label in labels:
@@ -420,8 +420,8 @@ class RepoStorage(object):
 	status
 	"""
 
-    def deleteMessage(self, MessageId):
-        m = self.hasMessage(MessageId)
+    def deleteAnyMessage(self, MessageId):
+        m = self.hasMessage(MessageId, [])
         if m is not None:
             if m["service_type"].lower() == "proc" and self.deleteProcMessage(MessageId):
                 return True
@@ -432,7 +432,7 @@ class RepoStorage(object):
             elif m["service_type"].lower() == "unprocessed" and self.deleteMessage(MessageId):
                 return True
 
-            if not self.getself.model.repoStorage[self.node]:
+            if not self.model.repoStorage[self.node]:
                 self.nrofDeletedMessages += 1
                 self.deletedMessagesSize += m['msg_size']
 

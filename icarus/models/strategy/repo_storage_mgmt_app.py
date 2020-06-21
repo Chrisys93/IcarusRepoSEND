@@ -109,7 +109,7 @@ class GenRepoStorApp(Strategy):
         elif not self.view.hasStorageCapability(node) and node.hasProcessingCapability and (
         msg['type']).equalsIgnoreCase("nonproc"):
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -325,7 +325,7 @@ class GenRepoStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
             else:
                 self.upEmptyLoop = False
 
@@ -351,7 +351,7 @@ class GenRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -365,7 +365,7 @@ class GenRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -431,7 +431,7 @@ class GenRepoStorApp(Strategy):
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -457,11 +457,11 @@ class GenRepoStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -487,7 +487,7 @@ class GenRepoStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -825,7 +825,7 @@ class HServRepoStorApp(Strategy):
             curTime = time.time()
 
             if node in self.view.model.repoStorage:
-                self.view.model.repoStorage[node].deleteMessage(msg.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -899,9 +899,10 @@ class HServRepoStorApp(Strategy):
         service = None
         if content["service_type"].lower() == "proc":
             service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
-        self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay)
-        
-        source = self.view.closest_source(content, labels)
+        if type(content) == dict and "msg_size" in content:
+            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay)
+
+        source, in_cache = self.view.closest_source(node, content)
 
 
 
@@ -962,7 +963,7 @@ class HServRepoStorApp(Strategy):
 
             #  Request at the receiver
             if receiver == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if node in self.view.storage_nodes() and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -1020,23 +1021,23 @@ class HServRepoStorApp(Strategy):
                 next_node = path[1]
                 delay = self.view.link_delay(node, next_node)
                 if self.view.hasStorageCapability(node):
-                    if type(service) is not dict:
+                    if type(service) is not dict and self.controller.has_message(node, labels, content):
+                        service = self.view.storage_nodes()[node].hasMessage(content, labels)
+                    else:
                         service = dict()
-                        service['content'] = service
+                        service['content'] = content
                         service['labels'] = labels
-                    service['service_type'] = None
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
-                        service['msg_size'] = self.view.storage_nodes()[node].hasMessage(
-                            service(node, service['labels'], service['content']))['msg_size'] / 2
-                        self.controller.add_message_to_storage(node, service)
-                    if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_request_labels_to_storage(node, service)
-                    else:
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_storage_labels_to_node(node, service)
+                        service['msg_size'] = service['msg_size'] / 2
+                        self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service)
+                        else:
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_storage_labels_to_node(node, service)
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                               deadline, rtt_delay, STORE)
@@ -1272,7 +1273,7 @@ class HServRepoStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
             else:
                 self.upEmptyLoop = False
 
@@ -1298,7 +1299,7 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -1312,7 +1313,7 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -1378,7 +1379,7 @@ class HServRepoStorApp(Strategy):
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -1404,11 +1405,11 @@ class HServRepoStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -1434,7 +1435,7 @@ class HServRepoStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -1762,10 +1763,6 @@ class HServProStorApp(Strategy):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg, False)
-            elif node in self.view.labels_sources(msg["labels"]):
-                self.controller.add_message_to_storage(node, msg)
-                self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
             else:
                 edr = self.view.all_labels_main_source(msg["labels"])
                 self.controller.add_request_labels_to_node(node, msg)
@@ -1781,7 +1778,7 @@ class HServProStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -1849,7 +1846,7 @@ class HServProStorApp(Strategy):
         service = None
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-        if node in self.view.model.repoStorage:
+        if node in self.view.model.repoStorage and type(content) == dict:
             self.handle(content, node, log, flow_id, rtt_delay)
         source = self.view.closest_source(content, labels)
 
@@ -1969,23 +1966,23 @@ class HServProStorApp(Strategy):
                 next_node = path[1]
                 delay = self.view.link_delay(node, next_node)
                 if self.view.hasStorageCapability(node):
-                    if type(service) is not dict:
+                    if type(service) is not dict and self.controller.has_message(node, labels, content):
+                        service = self.view.storage_nodes()[node].hasMessage(content, labels)
+                    else:
                         service = dict()
-                        service['content'] = service
+                        service['content'] = content
                         service['labels'] = labels
-                    service['service_type'] = None
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
-                        service['msg_size'] = self.view.storage_nodes()[node].hasMessage(
-                            service(node, service['labels'], service['content']))['msg_size'] / 2
-                        self.controller.add_message_to_storage(node, service)
-                    if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_request_labels_to_storage(node, service)
-                    else:
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_storage_labels_to_node(node, service)
+                        service['msg_size'] = service['msg_size'] / 2
+                        self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service)
+                        else:
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_storage_labels_to_node(node, service)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
@@ -2220,7 +2217,7 @@ class HServProStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
             else:
                 self.upEmptyLoop = False
 
@@ -2246,7 +2243,7 @@ class HServProStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -2260,7 +2257,7 @@ class HServProStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -2326,7 +2323,7 @@ class HServProStorApp(Strategy):
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -2352,11 +2349,11 @@ class HServProStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -2382,7 +2379,7 @@ class HServProStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -2758,7 +2755,7 @@ class HServReStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if msg['storTime'] < msg['shelfLife']:
@@ -2828,7 +2825,7 @@ class HServReStorApp(Strategy):
         service = None
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-        if node in self.view.model.repoStorage:
+        if node in self.view.model.repoStorage and type(content) == dict:
             self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay)
         source = self.view.closest_source(content, labels)
 
@@ -2949,22 +2946,23 @@ class HServReStorApp(Strategy):
                 next_node = path[1]
                 delay = self.view.link_delay(node, next_node)
                 if self.view.hasStorageCapability(node):
-                    if type(service) is not dict:
+                    if type(service) is not dict and self.controller.has_message(node, labels, content):
+                        service = self.view.storage_nodes()[node].hasMessage(content, labels)
+                    else:
                         service = dict()
-                        service['content'] = service
+                        service['content'] = content
                         service['labels'] = labels
-                    service['service_type'] = None
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
-                        service['msg_size'] = self.view.storage_nodes()[node].hasMessage(
-                            service(node, service['labels'], service['content']))['msg_size'] / 2
-                    if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_request_labels_to_storage(node, service)
-                    else:
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_storage_labels_to_node(node, service)
+                        service['msg_size'] = service['msg_size'] / 2
+                        self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service)
+                        else:
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_storage_labels_to_node(node, service)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
@@ -3199,7 +3197,7 @@ class HServReStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
             else:
                 self.upEmptyLoop = False
 
@@ -3225,7 +3223,7 @@ class HServReStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -3239,7 +3237,7 @@ class HServReStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -3305,7 +3303,7 @@ class HServReStorApp(Strategy):
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -3331,11 +3329,11 @@ class HServReStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -3361,7 +3359,7 @@ class HServReStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -3749,7 +3747,7 @@ class HServSpecStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if msg['storTime'] < msg['shelfLife']:
@@ -3819,7 +3817,8 @@ class HServSpecStorApp(Strategy):
         service = None
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-        self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay)
+        if type(content) == dict:
+            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay)
         source = self.view.closest_source(content, labels)
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -3938,23 +3937,23 @@ class HServSpecStorApp(Strategy):
                 next_node = path[1]
                 delay = self.view.link_delay(node, next_node)
                 if self.view.hasStorageCapability(node):
-                    if type(service) is not dict:
+                    if type(service) is not dict and self.controller.has_message(node, labels, content):
+                        service = self.view.storage_nodes()[node].hasMessage(content, labels)
+                    else:
                         service = dict()
-                        service['content'] = service
+                        service['content'] = content
                         service['labels'] = labels
-                    service['service_type'] = None
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
-                        service['msg_size'] = self.view.storage_nodes()[node].hasMessage(
-                            service(node, service['labels'], service['content']))['msg_size'] / 2
-                        self.controller.add_message_to_storage(node, service)
-                    if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_request_labels_to_storage(node, service)
-                    else:
-                        self.controller.add_message_to_storage(node, service)
-                        self.controller.add_storage_labels_to_node(node, service)
+                        service['msg_size'] = service['msg_size'] / 2
+                        self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service)
+                        else:
+                            self.controller.add_message_to_storage(node, service)
+                            self.controller.add_storage_labels_to_node(node, service)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
@@ -4189,7 +4188,7 @@ class HServSpecStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
             else:
                 self.upEmptyLoop = False
 
@@ -4215,7 +4214,7 @@ class HServSpecStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -4229,7 +4228,7 @@ class HServSpecStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -4295,7 +4294,7 @@ class HServSpecStorApp(Strategy):
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -4321,11 +4320,11 @@ class HServSpecStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -4351,7 +4350,7 @@ class HServSpecStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
