@@ -610,7 +610,7 @@ class Hybrid(Strategy):
             #self.print_stats()
             print("Replacement time: " + repr(time))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
-            self.replace_services(time)
+            self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
 

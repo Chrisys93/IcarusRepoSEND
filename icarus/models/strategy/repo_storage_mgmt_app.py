@@ -926,7 +926,7 @@ class HServRepoStorApp(Strategy):
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if "src" in node:
+                    if type(node) == str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
@@ -1072,7 +1072,7 @@ class HServRepoStorApp(Strategy):
                         if self.controller.put_content(source, content['content']):
                             pass
                         else:
-                            self.controller.put_content_local_cache(source, content['content'])
+                            self.controller.put_content_local_cache(source)
                 deadline_metric = (
                             deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
                 if self.debug:
@@ -1080,7 +1080,7 @@ class HServRepoStorApp(Strategy):
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
@@ -2007,14 +2007,14 @@ class HServProStorApp(Strategy):
                         if self.controller.put_content(source, content):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
                         if self.controller.put_content(source, content):
                             pass
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                 deadline_metric = (
                             deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
                 if self.debug:
@@ -2022,7 +2022,7 @@ class HServProStorApp(Strategy):
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
@@ -2987,14 +2987,14 @@ class HServReStorApp(Strategy):
                         if self.controller.put_content(source, content):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
                         if self.controller.put_content(source, content):
                             pass
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                 deadline_metric = (
                             deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
                 if self.debug:
@@ -3002,7 +3002,7 @@ class HServReStorApp(Strategy):
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
@@ -3978,14 +3978,14 @@ class HServSpecStorApp(Strategy):
                         if self.controller.put_content(source, content):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
                         if self.controller.put_content(source, content):
                             pass
                         else:
-                            self.controller.put_content_local_cache(source, content)
+                            self.controller.put_content_local_cache(source)
                 deadline_metric = (
                             deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
                 if self.debug:
@@ -3993,7 +3993,7 @@ class HServSpecStorApp(Strategy):
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
