@@ -274,19 +274,19 @@ class NetworkView(object):
         if type(k) is dict:
             if k['content'] == '':
                 for node in self.labels_sources(labels):
-                    if "src" in node:
+                    if type(node) == int and "src" in node:
                         return node
                 else:
                     return None
             for node in self.model.content_source[k['content']]:
-                if "src" in node:
+                if type(node) == int and "src" in node:
                     return node
             else:
                 return None
 
         else:
             for node in self.model.content_source[k]:
-                if "src" in node:
+                if type(node) == int and "src" in node:
                     return node
             else:
                 return None
@@ -382,7 +382,7 @@ class NetworkView(object):
             nodes.update(self.model.labels_sources.get(label, None))
         valid_nodes = list(nodes)
         for n in valid_nodes:
-            if "src" in n:
+            if type(n) == int and "src" in n:
                 continue
             elif not self.model.repoStorage[n].hasMessage(None, labels):
                 del nodes[n]
@@ -436,7 +436,7 @@ class NetworkView(object):
         for n in self.labels_sources(labels):
             count = self.labels_sources(labels)[n]
             if count >= current_count:
-                if "src" in n:
+                if type(n) == int and "src" in n:
                     auth_node = n
                     continue
                 auth_node = self.storage_nodes()[n]
