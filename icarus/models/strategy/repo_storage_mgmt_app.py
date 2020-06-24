@@ -16,7 +16,7 @@ import networkx as nx
 import random
 import sys
 
-from math import ceil
+import math
 from icarus.registry import register_strategy
 from icarus.util import inheritdoc, path_links
 from .base import Strategy
@@ -109,7 +109,7 @@ class GenRepoStorApp(Strategy):
         elif not self.view.hasStorageCapability(node) and node.hasProcessingCapability and (
         msg['type']).equalsIgnoreCase("nonproc"):
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -177,7 +177,7 @@ class GenRepoStorApp(Strategy):
                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
 
-    def deplCloud(self, node):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -203,13 +203,58 @@ class GenRepoStorApp(Strategy):
                 """
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
-                elif not self.storMode and self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -228,8 +273,9 @@ class GenRepoStorApp(Strategy):
                       (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor) +
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
             # System.out.prln("Depleted  messages: " + sdepleted)
-        elif (self.view.model.repoStorage[node].getProcessedMessagesSize() + self.view.model.repoStorage[node].getStaleMessagesSize())\
-                > (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
+        elif (self.view.model.repoStorage[node].getProcessedMessagesSize() +
+              self.view.model.repoStorage[node].getStaleMessagesSize()) > \
+                (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
             for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
 
@@ -237,7 +283,23 @@ class GenRepoStorApp(Strategy):
 
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(self, node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                     * Oldest unprocessed messages should be given priority for depletion
@@ -245,14 +307,46 @@ class GenRepoStorApp(Strategy):
                     """
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -271,7 +365,7 @@ class GenRepoStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -288,17 +382,62 @@ class GenRepoStorApp(Strategy):
                 """
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #   elif (not self.storMod e and self.view.model.repoStorage[node].getOldestStaleMessage() is not None)
-                #	    oldestSatisfiedDepletion(node)
-                #
-                #   elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #	    self.storMode = False
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                 #
                 else:
                     self.cloudEmptyLoop = False
@@ -325,13 +464,14 @@ class GenRepoStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(
+                    self.view.model.repoStorage[node].getOldestProcessMessage['content'])
             else:
                 self.upEmptyLoop = False
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -340,18 +480,60 @@ class GenRepoStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     self.oldestInvalidProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -359,27 +541,83 @@ class GenRepoStorApp(Strategy):
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
                     if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     else:
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     self.view.model.repoStorage[node].addToDeplProcMessages(ctemp)
-                if (storTime <= ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = False
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+                    if (storTime <= ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = False
 
-                elif (storTime > ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = True
+                    elif (storTime > ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = True
 
-                if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
-                    self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                        self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
+                    else:
+                        self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
             else:
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
@@ -395,14 +633,14 @@ class GenRepoStorApp(Strategy):
             if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
                 temp = self.view.model.repoStorage[node].getOldestFreshMessage()
                 report = False
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
                 * Make sure here that the added message to the cloud depletion 
                 * tracking is also tracked by whether it 's Fresh or Stale.
                 """
                 report = True
                 self.view.model.repoStorage[node].addToStoredMessages(temp)
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
 
 
@@ -410,7 +648,7 @@ class GenRepoStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
                     temp = self.view.model.repoStorage[node].getOldestShelfMessage()
                     report = False
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
                     * Make sure here that the added message to the cloud depletion
                     * tracking is also tracked by whether it's Fresh or Stale.
@@ -426,12 +664,12 @@ class GenRepoStorApp(Strategy):
                      """
                     report = True
                     self.view.model.repoStorage[node].addToStoredMessages(temp)
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -457,11 +695,11 @@ class GenRepoStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -487,7 +725,7 @@ class GenRepoStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -825,7 +1063,7 @@ class HServRepoStorApp(Strategy):
             curTime = time.time()
 
             if node in self.view.model.repoStorage:
-                self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -1095,12 +1333,12 @@ class HServRepoStorApp(Strategy):
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        # compSpot.missed_requests[service] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1 # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
                 else:  # Not running the service
-                    # compSpot.missed_requests[service] += 1
+                    compSpot.missed_requests[service['content']] += 1
                     if self.debug:
                         print("Not running the service: Pass upstream to node: " + repr(next_node))
                     rtt_delay += delay * 2
@@ -1124,7 +1362,7 @@ class HServRepoStorApp(Strategy):
     def updateDeplBW(self, node):
         self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedMessagesBW(False)
 
-    def deplCloud(self, node):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -1150,13 +1388,58 @@ class HServRepoStorApp(Strategy):
                 """
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
-                elif not self.storMode and self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -1176,7 +1459,7 @@ class HServRepoStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
             # System.out.prln("Depleted  messages: " + sdepleted)
         elif (self.view.model.repoStorage[node].getProcessedMessagesSize() +
-                self.view.model.repoStorage[node].getStaleMessagesSize()) > \
+              self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
             for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
@@ -1185,7 +1468,23 @@ class HServRepoStorApp(Strategy):
 
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(self, node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                     * Oldest unprocessed messages should be given priority for depletion
@@ -1193,14 +1492,46 @@ class HServRepoStorApp(Strategy):
                     """
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -1219,7 +1550,7 @@ class HServRepoStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -1236,17 +1567,62 @@ class HServRepoStorApp(Strategy):
                 """
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #				elif (not self.storMod e and self.view.model.repoStorage[node].getOldestStaleMessage() is not None)
-                #					oldestSatisfiedDepletion(node)
-                #
-                #				elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #					self.storMode = False
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                 #
                 else:
                     self.cloudEmptyLoop = False
@@ -1273,13 +1649,14 @@ class HServRepoStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(
+                    self.view.model.repoStorage[node].getOldestProcessMessage['content'])
             else:
                 self.upEmptyLoop = False
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -1287,19 +1664,61 @@ class HServRepoStorApp(Strategy):
             self.deplEmptyLoop = True
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
                     self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     self.oldestInvalidProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -1307,27 +1726,83 @@ class HServRepoStorApp(Strategy):
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
                     if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     else:
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     self.view.model.repoStorage[node].addToDeplProcMessages(ctemp)
-                if (storTime <= ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = False
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+                    if (storTime <= ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = False
 
-                elif (storTime > ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = True
+                    elif (storTime > ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = True
 
-                if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
-                    self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                        self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
+                    else:
+                        self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
             else:
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
@@ -1343,14 +1818,14 @@ class HServRepoStorApp(Strategy):
             if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
                 temp = self.view.model.repoStorage[node].getOldestFreshMessage()
                 report = False
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
                 * Make sure here that the added message to the cloud depletion 
                 * tracking is also tracked by whether it 's Fresh or Stale.
                 """
                 report = True
                 self.view.model.repoStorage[node].addToStoredMessages(temp)
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
 
 
@@ -1358,7 +1833,7 @@ class HServRepoStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
                     temp = self.view.model.repoStorage[node].getOldestShelfMessage()
                     report = False
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
                     * Make sure here that the added message to the cloud depletion
                     * tracking is also tracked by whether it's Fresh or Stale.
@@ -1374,12 +1849,12 @@ class HServRepoStorApp(Strategy):
                      """
                     report = True
                     self.view.model.repoStorage[node].addToStoredMessages(temp)
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -1405,11 +1880,11 @@ class HServRepoStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -1435,8 +1910,9 @@ class HServRepoStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
+        return temp
 
     """
     * @
@@ -1771,14 +2247,13 @@ class HServProStorApp(Strategy):
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
 
-                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, REQUEST)
+                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id, STORE)
 
 
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if (msg['storTime'] < msg['shelfLife']):
@@ -1822,7 +2297,7 @@ class HServProStorApp(Strategy):
         if self.view.hasStorageCapability(node):
 
             self.updateCloudBW(node)
-            self.deplCloud(node)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
             self.updateDeplBW(node)
             self.deplStorage(node)
 
@@ -1877,8 +2352,15 @@ class HServProStorApp(Strategy):
                     else:
                         # Processing a request
                         source = self.view.content_source_cloud(service, labels)
-                        self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
-                        path = self.view.shortest_path(node, source)
+                        if source:
+                            self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
+                            path = self.view.shortest_path(node, source)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
+                            path = self.view.shortest_path(node, source)
                         upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, curTime, service,
                                                                         deadline,
                                                                         rtt_delay)
@@ -2048,6 +2530,8 @@ class HServProStorApp(Strategy):
                                               flow_id, deadline, rtt_delay, REQUEST)
                     if deadline_metric > 0:
                         self.cand_deadline_metric[node][service['content']] += deadline_metric
+            elif status == STORE:
+                pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
 
@@ -2068,7 +2552,7 @@ class HServProStorApp(Strategy):
                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
 
-    def deplCloud(self, node):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -2094,13 +2578,58 @@ class HServProStorApp(Strategy):
                 """
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
-                elif not self.storMode and self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -2129,7 +2658,23 @@ class HServProStorApp(Strategy):
 
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                     * Oldest unprocessed messages should be given priority for depletion
@@ -2137,14 +2682,46 @@ class HServProStorApp(Strategy):
                     """
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -2163,7 +2740,7 @@ class HServProStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -2180,17 +2757,62 @@ class HServProStorApp(Strategy):
                 """
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #				elif (not self.storMod e and self.view.model.repoStorage[node].getOldestStaleMessage() is not None)
-                #					oldestSatisfiedDepletion(node)
-                #
-                #				elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #					self.storMode = False
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                 #
                 else:
                     self.cloudEmptyLoop = False
@@ -2217,13 +2839,13 @@ class HServProStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage['content'])
             else:
                 self.upEmptyLoop = False
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -2232,18 +2854,60 @@ class HServProStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     self.oldestInvalidProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -2251,27 +2915,83 @@ class HServProStorApp(Strategy):
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
                     if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     else:
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     self.view.model.repoStorage[node].addToDeplProcMessages(ctemp)
-                if (storTime <= ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = False
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+                    if (storTime <= ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = False
 
-                elif (storTime > ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = True
+                    elif (storTime > ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = True
 
-                if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
-                    self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                        self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
+                    else:
+                        self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
             else:
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
@@ -2287,14 +3007,15 @@ class HServProStorApp(Strategy):
             if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
                 temp = self.view.model.repoStorage[node].getOldestFreshMessage()
                 report = False
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
                 * Make sure here that the added message to the cloud depletion 
                 * tracking is also tracked by whether it 's Fresh or Stale.
                 """
                 report = True
                 self.view.model.repoStorage[node].addToStoredMessages(temp)
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
+                return temp
 
 
 
@@ -2302,7 +3023,7 @@ class HServProStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
                     temp = self.view.model.repoStorage[node].getOldestShelfMessage()
                     report = False
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
                     * Make sure here that the added message to the cloud depletion
                     * tracking is also tracked by whether it's Fresh or Stale.
@@ -2318,12 +3039,12 @@ class HServProStorApp(Strategy):
                      """
                     report = True
                     self.view.model.repoStorage[node].addToStoredMessages(temp)
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -2345,15 +3066,16 @@ class HServProStorApp(Strategy):
         self.view.model.repoStorage[node].addToCloudDeplMessages(ctemp)
 
         self.lastCloudUpload = curTime
+        return ctemp
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -2376,11 +3098,14 @@ class HServProStorApp(Strategy):
 
                 self.view.model.repoStorage[node].addToDeplProcMessages(temp)
 
+            return temp
+
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
+        return temp
 
     """
     * @
@@ -2755,7 +3480,7 @@ class HServReStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if msg['storTime'] < msg['shelfLife']:
@@ -3015,12 +3740,12 @@ class HServReStorApp(Strategy):
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        # compSpot.missed_requests[service] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1 # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
                 else:  # Not running the service
-                    # compSpot.missed_requests[service] += 1
+                    compSpot.missed_requests[service['content']] += 1
                     if self.debug:
                         print("Not running the service: Pass upstream to node: " + repr(next_node))
                     rtt_delay += delay * 2
@@ -3028,6 +3753,8 @@ class HServReStorApp(Strategy):
                                               flow_id, deadline, rtt_delay, REQUEST)
                     if deadline_metric > 0:
                         self.cand_deadline_metric[node][service['content']] += deadline_metric
+            elif status == STORE:
+                pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
 
@@ -3048,7 +3775,7 @@ class HServReStorApp(Strategy):
                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
 
-    def deplCloud(self, node):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -3074,13 +3801,58 @@ class HServReStorApp(Strategy):
                 """
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
-                elif not self.storMode and self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -3100,7 +3872,7 @@ class HServReStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
             # System.out.prln("Depleted  messages: " + sdepleted)
         elif (self.view.model.repoStorage[node].getProcessedMessagesSize() +
-                self.view.model.repoStorage[node].getStaleMessagesSize()) > \
+              self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
             for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
@@ -3109,7 +3881,23 @@ class HServReStorApp(Strategy):
 
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                     * Oldest unprocessed messages should be given priority for depletion
@@ -3117,14 +3905,46 @@ class HServReStorApp(Strategy):
                     """
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -3143,7 +3963,7 @@ class HServReStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -3160,17 +3980,62 @@ class HServReStorApp(Strategy):
                 """
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #				elif (not self.storMod e and self.view.model.repoStorage[node].getOldestStaleMessage() is not None)
-                #					oldestSatisfiedDepletion(node)
-                #
-                #				elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #					self.storMode = False
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                 #
                 else:
                     self.cloudEmptyLoop = False
@@ -3197,13 +4062,14 @@ class HServReStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(
+                    self.view.model.repoStorage[node].getOldestProcessMessage['content'])
             else:
                 self.upEmptyLoop = False
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -3212,18 +4078,60 @@ class HServReStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     self.oldestInvalidProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -3231,27 +4139,83 @@ class HServReStorApp(Strategy):
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
                     if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     else:
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     self.view.model.repoStorage[node].addToDeplProcMessages(ctemp)
-                if (storTime <= ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = False
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+                    if (storTime <= ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = False
 
-                elif (storTime > ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = True
+                    elif (storTime > ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = True
 
-                if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
-                    self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                        self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
+                    else:
+                        self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
             else:
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
@@ -3267,14 +4231,14 @@ class HServReStorApp(Strategy):
             if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
                 temp = self.view.model.repoStorage[node].getOldestFreshMessage()
                 report = False
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
                 * Make sure here that the added message to the cloud depletion 
                 * tracking is also tracked by whether it 's Fresh or Stale.
                 """
                 report = True
                 self.view.model.repoStorage[node].addToStoredMessages(temp)
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
 
 
@@ -3282,7 +4246,7 @@ class HServReStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
                     temp = self.view.model.repoStorage[node].getOldestShelfMessage()
                     report = False
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
                     * Make sure here that the added message to the cloud depletion
                     * tracking is also tracked by whether it's Fresh or Stale.
@@ -3298,12 +4262,12 @@ class HServReStorApp(Strategy):
                      """
                     report = True
                     self.view.model.repoStorage[node].addToStoredMessages(temp)
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -3325,15 +4289,16 @@ class HServReStorApp(Strategy):
         self.view.model.repoStorage[node].addToCloudDeplMessages(ctemp)
 
         self.lastCloudUpload = curTime
+        return ctemp
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -3359,7 +4324,7 @@ class HServReStorApp(Strategy):
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """
@@ -3747,7 +4712,7 @@ class HServSpecStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg.getId)
+            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
             msg['storTime'] = storTime
             if msg['storTime'] < msg['shelfLife']:
@@ -4006,12 +4971,12 @@ class HServSpecStorApp(Strategy):
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        # compSpot.missed_requests[service] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1 # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
                 else:  # Not running the service
-                    # compSpot.missed_requests[service] += 1
+                    compSpot.missed_requests[service['content']] += 1
                     if self.debug:
                         print("Not running the service: Pass upstream to node: " + repr(next_node))
                     rtt_delay += delay * 2
@@ -4019,6 +4984,8 @@ class HServSpecStorApp(Strategy):
                                               flow_id, deadline, rtt_delay, REQUEST)
                     if deadline_metric > 0:
                         self.cand_deadline_metric[node][service['content']] += deadline_metric
+            elif status == STORE:
+                pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
 
@@ -4039,7 +5006,7 @@ class HServSpecStorApp(Strategy):
                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
 
-    def deplCloud(self, node):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -4065,13 +5032,58 @@ class HServSpecStorApp(Strategy):
                 """
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
-                elif not self.storMode and self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
-                    self.oldestSatisfiedDepletion(node)
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -4091,7 +5103,7 @@ class HServSpecStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
             # System.out.prln("Depleted  messages: " + sdepleted)
         elif (self.view.model.repoStorage[node].getProcessedMessagesSize() +
-                self.view.model.repoStorage[node].getStaleMessagesSize()) > \
+              self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
             for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
@@ -4100,7 +5112,23 @@ class HServSpecStorApp(Strategy):
 
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
-                    self.oldestSatisfiedDepletion(node)
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                     * Oldest unprocessed messages should be given priority for depletion
@@ -4108,14 +5136,46 @@ class HServSpecStorApp(Strategy):
                     """
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
-                    self.oldestUnProcDepletion(node)
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 else:
                     self.cloudEmptyLoop = False
@@ -4134,7 +5194,7 @@ class HServSpecStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -4151,17 +5211,62 @@ class HServSpecStorApp(Strategy):
                 """
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
-                    self.processedDepletion(node)
+                    msg = self.processedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                # elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None)
-                # oldestUnProcDepletion(node)
-                #
-                #				elif (not self.storMod e and self.view.model.repoStorage[node].getOldestStaleMessage() is not None)
-                #					oldestSatisfiedDepletion(node)
-                #
-                #				elif (self.storMod e and curTime - self.lastCloudUpload >= self.maxStorTime)
-                #					self.storMode = False
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                    msg = self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                    msg = self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                 #
                 else:
                     self.cloudEmptyLoop = False
@@ -4188,13 +5293,14 @@ class HServSpecStorApp(Strategy):
                 self.processedDepletion(node)
 
             elif (not self.view.model.repoStorage[node].isProcessingEmpty):
-                self.view.model.repoStorage[node].deleteAnyMessage(self.view.model.repoStorage[node].getOldestProcessMessage.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(
+                    self.view.model.repoStorage[node].getOldestProcessMessage['content'])
             else:
                 self.upEmptyLoop = False
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -4203,18 +5309,60 @@ class HServSpecStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     self.oldestUnProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
                     self.oldestSatisfiedDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
-                    self.oldestInvalidProcDepletion(node)
+                    msg = self.oldestInvalidProcDepletion(node)
+                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
 
                 elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getOldestMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
@@ -4222,27 +5370,83 @@ class HServSpecStorApp(Strategy):
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
                     if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
                     else:
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
                 elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
                     ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
-                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                    self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     self.view.model.repoStorage[node].addToDeplProcMessages(ctemp)
-                if (storTime <= ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = False
+                    source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                    if source:
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    else:
+                        for n in self.view.model.comp_size:
+                            if self.view.model.comp_size[node].isinf():
+                                source = n
+                        self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                    delay = self.view.path_delay(node, source)
+                    rtt_delay += delay * 2
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                              STORE)
+                    if self.debug:
+                        print("Message is scheduled to be stored in the CLOUD")
+                    if (storTime <= ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = False
 
-                elif (storTime > ctemp['shelfLife'] + 1):
-                    ctemp['overtime'] = True
+                    elif (storTime > ctemp['shelfLife'] + 1):
+                        ctemp['overtime'] = True
 
-                if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
-                    self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
-                else:
-                    self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                        self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
+                    else:
+                        self.view.model.repoStorage[node].addToDeplMessages(ctemp)
+                        source = self.view.content_source_cloud(ctemp, ctemp['labels'])
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node].isinf():
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id,
+                                                  STORE)
+                        if self.debug:
+                            print("Message is scheduled to be stored in the CLOUD")
             else:
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
@@ -4258,14 +5462,14 @@ class HServSpecStorApp(Strategy):
             if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
                 temp = self.view.model.repoStorage[node].getOldestFreshMessage()
                 report = False
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
                 * Make sure here that the added message to the cloud depletion 
                 * tracking is also tracked by whether it 's Fresh or Stale.
                 """
                 report = True
                 self.view.model.repoStorage[node].addToStoredMessages(temp)
-                self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
 
 
@@ -4273,7 +5477,7 @@ class HServSpecStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
                     temp = self.view.model.repoStorage[node].getOldestShelfMessage()
                     report = False
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
                     * Make sure here that the added message to the cloud depletion
                     * tracking is also tracked by whether it's Fresh or Stale.
@@ -4289,12 +5493,12 @@ class HServSpecStorApp(Strategy):
                      """
                     report = True
                     self.view.model.repoStorage[node].addToStoredMessages(temp)
-                    self.view.model.repoStorage[node].deleteProcessedMessage(temp.getId, report)
+                    self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
         ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
@@ -4320,11 +5524,11 @@ class HServSpecStorApp(Strategy):
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
                 ctemp = self.compressMessage(node, temp)
-                self.view.model.repoStorage[node].deleteAnyMessage(ctemp.getId)
+                self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                 storTime = curTime - ctemp['receiveTime']
                 ctemp['storTime'] = storTime
                 if (storTime <= ctemp['shelfLife'] + 1):
@@ -4346,11 +5550,12 @@ class HServSpecStorApp(Strategy):
                     temp['overtime'] = True
 
                 self.view.model.repoStorage[node].addToDeplProcMessages(temp)
+            return temp
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
         temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
-        self.view.model.repoStorage[node].deleteAnyMessage(temp.getId)
+        self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
 
     """

@@ -230,6 +230,7 @@ class RepoStorage(object):
                 self.mStorTime += sm['storTime']
             if (self.mStorTimeMax < sm['storTime']):
                 self.mStorTimeMax = sm['storTime']
+            self.deleteAnyMessage(sm['content'])
 
     def addToDeplUnProcMessages(self, sm):
         sm.update("type", "unprocessed")

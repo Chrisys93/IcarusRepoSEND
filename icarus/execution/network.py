@@ -274,20 +274,22 @@ class NetworkView(object):
         if type(k) is dict:
             if k['content'] == '':
                 for node in self.labels_sources(labels):
-                    if type(node) == int and "src" in node:
-                        return node
+                    if type(node) != int:
+                        if "src" in node:
+                            return node
+            else:
+                for node in self.model.content_source[k['content']]:
+                    if type(node) != int:
+                        if "src" in node:
+                            return node
                 else:
                     return None
-            for node in self.model.content_source[k['content']]:
-                if type(node) == int and "src" in node:
-                    return node
-            else:
-                return None
 
         else:
             for node in self.model.content_source[k]:
-                if type(node) == int and "src" in node:
-                    return node
+                if type(node) != int:
+                    if "src" in node:
+                        return node
             else:
                 return None
 
@@ -1092,6 +1094,7 @@ class NetworkModel(object):
                                 else:
                                     self.content_source[content] = [node]
             elif stack_name == 'source' and 'router' not in extra_types:
+                self.storageSize[node] = float('inf')
                 self.comp_size[node] = float('inf')
                 self.service_size[node] = float('inf')
                 if stack_props and stack_props.has_key('contents'):

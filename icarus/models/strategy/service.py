@@ -684,7 +684,7 @@ class Hybrid(Strategy):
                 path_del = self.view.path_delay(node, receiver)
                 self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, RESPONSE)
                 if path_del + time > deadline:
-                    compSpot.missed_requests[service] += 1
+                    compSpot.missed_requests[service['content']] += 1
 
         elif status == TASK_COMPLETE:
             self.controller.complete_task(task, time)
