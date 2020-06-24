@@ -97,7 +97,7 @@ NUM_REPLACEMENTS = 10000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['COORDINATED', 'HYBRID','HYBRIDS_REPO_APP']
+STRATEGIES = ['HYBRIDS_REPO_APP'] #'COORDINATED', 'HYBRID',
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
