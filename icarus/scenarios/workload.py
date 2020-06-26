@@ -659,6 +659,8 @@ class StationaryRepoWorkload(object):
             datum.update(service_type="proc")
             datum.update(labels=[])
             datum.update(msg_size=msg_sizes)
+            datum.update(shelf_life=[])
+            datum.update(freshness_per=msg_sizes)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,

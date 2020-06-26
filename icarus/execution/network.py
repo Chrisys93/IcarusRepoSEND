@@ -334,7 +334,7 @@ class NetworkView(object):
         else:
             content = dict()
             if self.content_source(k, []):
-                for n in self.content_source(k, []):
+                for n in range(0, self.content_source(k, [])):
                     if k in self.model.contents[n]:
                         content = self.model.contents[node][k]
             if not content:
@@ -1566,7 +1566,7 @@ class NetworkController(object):
             The path to use. If not provided, shortest path is used
 
         """
-        if all(label in labels for label in self.model.node_labels[s]["request_labels"]):
+        if all(label in self.model.node_labels[s]["request_labels"] for label in labels):
             for label in labels:
                 self.model.node_labels[s]["request_labels"].remove(label)
                 if add:
