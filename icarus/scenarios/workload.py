@@ -627,7 +627,7 @@ class StationaryRepoWorkload(object):
                  label_ex=False, alpha_labels=0, rate=1.0,
                  n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
                  n_services=10, topics=None, types=None, max_labels=1,
-                 freshness_pers=0, shelf_lives=0, msg_sizes=0, **kwargs):
+                 freshness_pers=0, shelf_lives=0, msg_sizes=1000000, **kwargs):
         if types is None:
             types = []
         if alpha < 0:
@@ -658,6 +658,7 @@ class StationaryRepoWorkload(object):
                 datum = content
             datum.update(service_type="proc")
             datum.update(labels=[])
+            datum.update(msg_size=msg_sizes)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,

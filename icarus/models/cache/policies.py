@@ -915,7 +915,13 @@ class LruCache(Cache):
             The evicted object or *None* if no contents were evicted.
         """
         # if content in cache, push it on top, no eviction
-        if k in self._cache:
+        if type(k) is dict:
+            if k['content'] in self._cache:
+                self._cache.move_to_top(k)
+                return None
+            self._cache.append_top(k['content'])
+            return self._cache.pop_bottom if len(self._cache) > self._maxlen else None
+        elif k in self._cache:
             self._cache.move_to_top(k)
             return None
         # if content not in cache append it on top

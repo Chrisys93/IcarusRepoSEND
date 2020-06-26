@@ -333,9 +333,10 @@ class NetworkView(object):
                 cache = False
         else:
             content = dict()
-            for n in range(0, len(self.content_source(k, []))):
-                if k in self.model.contents[n]:
-                    content = self.model.contents[node][k]
+            if self.content_source(k, []):
+                for n in self.content_source(k, []):
+                    if k in self.model.contents[n]:
+                        content = self.model.contents[node][k]
             if not content:
                 content['content'] = k
                 content['labels'] = []
@@ -409,12 +410,18 @@ class NetworkView(object):
         nodes = Counter()
 
         for label in r_labels:
+
             nodes.update(self.model.request_labels_nodes.get(label, None))
+
+        del_nodes = []
 
         for n in nodes:
             for l in r_labels:
                 if l not in self.model.node_labels[n]["request_labels"]:
-                    del nodes[n]
+                    del_nodes.append(n)
+
+        for n in del_nodes:
+            del nodes[n]
 
         return nodes
 
@@ -462,10 +469,11 @@ class NetworkView(object):
 
         current_count = 0
         auth_node = None
-        for n, count in self.labels_requests(request_labels):
-            if count >= current_count:
-                auth_node = self.storage_nodes()[n]
-                current_count = count
+        nodes = self.labels_requests(request_labels)
+        for n in nodes:
+            if nodes[n] >= current_count and self.hasStorageCapability(n):
+                auth_node = self.model.repoStorage[n]
+                current_count = nodes[n]
         return auth_node
 
     def storage_labels_closest_service(self, labels, path):
@@ -1525,16 +1533,18 @@ class NetworkController(object):
         """
         self.model.node_labels[s] = dict()
         if self.model.node_labels[s].has_key("request_labels"):
-            self.model.node_labels[s]["request_labels"].update(service_request["labels"])
+            for label in service_request['labels']:
+                self.model.node_labels[s]["request_labels"].update(label)
         else:
             self.model.node_labels[s]["request_labels"] = Counter()
-            self.model.node_labels[s].update(request_labels=service_request["labels"])
+            for label in service_request['labels']:
+                self.model.node_labels[s]["request_labels"].update(label)
         for label in service_request["labels"]:
             if not self.model.request_labels_nodes.has_key(label):
                 self.model.request_labels_nodes[label] = Counter()
             self.model.request_labels_nodes[label].update([s])
 
-    def add_request_labels_to_storage(self, s, labels, add):
+    def add_request_labels_to_storage(self, s, labels, add=False):
         """Forward a request from node *s* to node *t* over the provided path.
 
         TODO: This (and all called methods, defined within this class) should be
@@ -1608,7 +1618,10 @@ class NetworkController(object):
         content: hashable object
             Message with content hash (name), labels and properties
         """
+        if s not in self.model.node_labels:
+            self.model.node_labels[s] = Counter()
         self.model.node_labels[s].update(content["labels"])
+
 
     def put_content(self, node, content=0):
         """Store content in the specified node.

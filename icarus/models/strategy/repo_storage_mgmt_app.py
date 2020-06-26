@@ -120,12 +120,13 @@ class GenRepoStorApp(Strategy):
         else:
             msg['satisfied'] = True
             msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
+            if self.view.hasStorageCapability(node):
+                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
     @inheritdoc(Strategy)
-    def process_event(self, node):
+    def process_event(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay):
 
         # System.out.prln("processor update is accessed")
 
@@ -154,13 +155,13 @@ class GenRepoStorApp(Strategy):
         if self.view.hasStorageCapability(node):
 
             self.updateCloudBW(node)
-            self.deplCloud(node)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
             self.updateDeplBW(node)
-            self.deplStorage(node)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
             self.updateUpBW(node)
-            self.deplUp(node)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
     def updateCloudBW(self, node):
         self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
@@ -208,9 +209,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -225,9 +224,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -244,9 +241,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -289,9 +284,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -313,9 +306,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -336,9 +327,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -388,9 +377,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -408,9 +395,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -427,9 +412,7 @@ class GenRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -484,9 +467,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -502,9 +483,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -520,9 +499,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -545,9 +522,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -570,9 +545,7 @@ class GenRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -593,7 +566,7 @@ class GenRepoStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -609,7 +582,7 @@ class GenRepoStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -1047,27 +1020,35 @@ class HServRepoStorApp(Strategy):
     def replicate(self, ProcApplication):
         return ProcApplication(self)
 
-    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay):
+    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'shelf_life' in msg.keys():
             if node in self.view.labels_sources(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             else:
                 edr = self.view.all_labels_main_source(msg["labels"])
-                self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['shelf_life'])
-                path = self.view.shortest_path(node, edr)
-                next_node = path[1]
-                delay = self.view.path_delay(node, next_node)
+                if edr:
+                    self.controller.add_request_labels_to_node(node, msg)
+                    if 'shelf_life' in msg:
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    elif edr and edr.hasMessage(msg['content']):
+                        msg = edr.hasMessage(msg['content'])
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    else:
+                        msg['shelf_life'] = deadline - curTime
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    path = self.view.shortest_path(node, edr)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
 
-                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, STORE)
+                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
+                                              msg['freshness_per'], rtt_delay, STORE)
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
@@ -1129,7 +1110,7 @@ class HServRepoStorApp(Strategy):
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
             self.updateUpBW(node)
-            self.deplUp(node)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -1148,7 +1129,7 @@ class HServRepoStorApp(Strategy):
         if content["service_type"].lower() == "proc":
             service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
         if type(content) == dict and "msg_size" in content:
-            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay)
+            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
 
         source, in_cache = self.view.closest_source(node, content)
 
@@ -1167,7 +1148,7 @@ class HServRepoStorApp(Strategy):
             compSpot = self.view.compSpot(node)
         if service is not None:
             if source == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
@@ -1295,7 +1276,7 @@ class HServRepoStorApp(Strategy):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
                             self.controller.add_message_to_storage(node, service)
-                            self.controller.add_request_labels_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service, True)
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
@@ -1312,7 +1293,7 @@ class HServRepoStorApp(Strategy):
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
@@ -1467,9 +1448,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1484,9 +1463,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1503,9 +1480,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1548,9 +1523,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1572,9 +1545,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1595,9 +1566,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1647,9 +1616,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1667,9 +1634,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1686,9 +1651,7 @@ class HServRepoStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -1743,9 +1706,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1761,9 +1722,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1779,9 +1738,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1804,9 +1761,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1829,9 +1784,7 @@ class HServRepoStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -1852,7 +1805,7 @@ class HServRepoStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -1868,7 +1821,7 @@ class HServRepoStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -2313,25 +2266,33 @@ class HServProStorApp(Strategy):
 
     # TODO: ADAPT FOR POPULARITY PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay):
+    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node):
             if node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, True)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             else:
                 edr = self.view.all_labels_main_source(msg["labels"])
-                self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['shelf_life'])
-                path = self.view.shortest_path(node, edr)
-                next_node = path[1]
-                delay = self.view.path_delay(node, next_node)
+                if edr:
+                    self.controller.add_request_labels_to_node(node, msg)
+                    if 'shelf_life' in msg:
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    elif edr and edr.hasMessage(msg['content']):
+                        msg = edr.hasMessage(msg['content'])
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    else:
+                        msg['shelf_life'] = deadline - curTime
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    path = self.view.shortest_path(node, edr)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
 
-                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id, STORE)
+                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id, STORE)
 
 
 
@@ -2348,7 +2309,8 @@ class HServProStorApp(Strategy):
         else:
             msg['satisfied'] = True
             msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
+            if self.view.hasStorageCapability(node):
+                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -2383,11 +2345,11 @@ class HServProStorApp(Strategy):
             self.updateCloudBW(node)
             self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
             self.updateDeplBW(node)
-            self.deplStorage(node)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
             self.updateUpBW(node)
-            self.deplUp(node)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -2403,11 +2365,18 @@ class HServProStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
+        if type(content) is not dict:
+            datum = {}
+            datum['content'] = int(content)
+            datum.update(service_type="proc")
+            datum.update(labels=[])
+            datum.update(msg_size=1000000)
+            content = datum
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
         if node in self.view.model.repoStorage and type(content) == dict:
-            self.handle(content, node, log, flow_id, rtt_delay)
-        source = self.view.closest_source(content, labels)
+            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+        source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
@@ -2423,28 +2392,23 @@ class HServProStorApp(Strategy):
         if service is not None:
             #  Request reached the cloud
             if source == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if "src" in node:
+                    if type(node) is str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
                         # Processing a request
                         source = self.view.content_source_cloud(service, labels)
-                        if source:
-                            self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
-                            path = self.view.shortest_path(node, source)
-                        else:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                            self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
-                            path = self.view.shortest_path(node, source)
+                        if not source:
+                            source, in_cache = self.view.closest_source(node, content)
+                        self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
+                        path = self.view.shortest_path(node, source)
                         upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, curTime, service,
                                                                         deadline,
                                                                         rtt_delay)
@@ -2474,7 +2438,7 @@ class HServProStorApp(Strategy):
 
                 #  Request at the receiver
             if receiver == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -2545,7 +2509,7 @@ class HServProStorApp(Strategy):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
                             self.controller.add_message_to_storage(node, service)
-                            self.controller.add_request_labels_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service, True)
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
@@ -2559,7 +2523,7 @@ class HServProStorApp(Strategy):
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
@@ -2718,9 +2682,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -2735,9 +2697,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -2754,9 +2714,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2799,9 +2757,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2823,9 +2779,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2846,9 +2800,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2898,9 +2850,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2918,9 +2868,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2937,9 +2885,7 @@ class HServProStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -2993,9 +2939,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -3011,9 +2955,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -3029,9 +2971,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -3054,9 +2994,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -3079,9 +3017,7 @@ class HServProStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -3102,7 +3038,7 @@ class HServProStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -3118,7 +3054,7 @@ class HServProStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -3554,7 +3490,7 @@ class HServReStorApp(Strategy):
 
     # TODO: ADAPT FOR SERVICE-PROXIMATE PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay):
+    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
         """
 
         curTime:
@@ -3583,14 +3519,14 @@ class HServReStorApp(Strategy):
             if node == node_c and in_path is True:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, True)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
@@ -3614,14 +3550,22 @@ class HServReStorApp(Strategy):
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
-                self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['shelf_life'])
-                path = self.view.shortest_path(node, edr)
-                next_node = path[1]
-                delay = self.view.path_delay(node, next_node)
+                if edr:
+                    self.controller.add_request_labels_to_node(node, msg)
+                    if 'shelf_life' in msg:
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    elif edr and edr.hasMessage(msg['content']):
+                        msg = edr.hasMessage(msg['content'])
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    else:
+                        msg['shelf_life'] = deadline - curTime
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    path = self.view.shortest_path(node, edr)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
 
-                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['shelf_life'], rtt_delay, REQUEST)
+                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
+                                              curTime + msg['shelf_life'], rtt_delay, REQUEST)
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
@@ -3636,7 +3580,8 @@ class HServReStorApp(Strategy):
         else:
             msg['satisfied'] = False
             msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
+            if self.view.hasStorageCapability(node):
+                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -3669,13 +3614,13 @@ class HServReStorApp(Strategy):
         if self.view.hasStorageCapability(node):
 
             self.updateCloudBW(node)
-            self.deplCloud(node)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
             self.updateDeplBW(node)
-            self.deplStorage(node)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
             self.updateUpBW(node)
-            self.deplUp(node)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -3695,8 +3640,8 @@ class HServReStorApp(Strategy):
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
         if node in self.view.model.repoStorage and type(content) == dict:
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay)
-        source = self.view.closest_source(content, labels)
+            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+        source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
@@ -3712,14 +3657,14 @@ class HServReStorApp(Strategy):
         if service is not None:
             #  Request reached the cloud
             if source == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if "src" in node:
+                    if type(node) is str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
@@ -3729,7 +3674,7 @@ class HServReStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -3770,7 +3715,7 @@ class HServReStorApp(Strategy):
                 #  Request at the receiver
             if receiver == node and status == REQUEST:
                 service['receiveTime'] = curTime
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -3841,7 +3786,7 @@ class HServReStorApp(Strategy):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
                             self.controller.add_message_to_storage(node, service)
-                            self.controller.add_request_labels_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service, True)
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
@@ -3856,7 +3801,7 @@ class HServReStorApp(Strategy):
 
             elif status == REQUEST:
                 service['receiveTime'] = curTime
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(service, node)
@@ -4014,9 +3959,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4031,9 +3974,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4050,9 +3991,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4095,9 +4034,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4119,9 +4056,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4142,9 +4077,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4194,9 +4127,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4214,9 +4145,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4233,9 +4162,7 @@ class HServReStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -4290,9 +4217,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4308,9 +4233,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4326,9 +4249,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4351,9 +4272,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4376,9 +4295,7 @@ class HServReStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -4399,7 +4316,7 @@ class HServReStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -4415,7 +4332,7 @@ class HServReStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -4858,7 +4775,7 @@ class HServSpecStorApp(Strategy):
 
     # TODO: ADAPT FOR MOST-USED/SPECIFIC-SERVICE-PROXIMATE PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay):
+    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
         """
 
         curTime:
@@ -4887,15 +4804,15 @@ class HServSpecStorApp(Strategy):
             if node == node_c and in_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, True)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg, False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
@@ -4919,14 +4836,22 @@ class HServSpecStorApp(Strategy):
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
-                self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['shelf_life'])
-                path = self.view.shortest_path(node, edr)
-                next_node = path[1]
-                delay = self.view.path_delay(node, next_node)
+                if edr:
+                    self.controller.add_request_labels_to_node(node, msg)
+                    if 'shelf_life' in msg:
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    elif edr.hasMessage(msg['content']):
+                        msg = edr.hasMessage(msg['content'])
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    else:
+                        msg['shelf_life'] = deadline - curTime
+                        self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
+                    path = self.view.shortest_path(node, edr)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
 
-                self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['shelf_life'], rtt_delay, REQUEST)
+                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
+                                              curTime + msg['shelf_life'], rtt_delay, REQUEST)
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
@@ -4941,7 +4866,8 @@ class HServSpecStorApp(Strategy):
         else:
             msg['satisfied'] = False
             msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
+            if self.view.hasStorageCapability(node):
+                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -4975,13 +4901,13 @@ class HServSpecStorApp(Strategy):
         if self.view.hasStorageCapability(node):
 
             self.updateCloudBW(node)
-            self.deplCloud(node)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
             self.updateDeplBW(node)
-            self.deplStorage(node)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
             self.updateUpBW(node)
-            self.deplUp(node)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -5000,9 +4926,9 @@ class HServSpecStorApp(Strategy):
         service = None
         if content["service_type"].lower() == "proc":
             service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-        if type(content) == dict:
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay)
-        source = self.view.closest_source(content, labels)
+        if type(content) is dict:
+            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+        source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
@@ -5018,14 +4944,14 @@ class HServSpecStorApp(Strategy):
         if service is not None:
             #  Request reached the cloud
             if source == node and status == REQUEST:
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if "src" in node:
+                    if type(node) is str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
@@ -5034,9 +4960,7 @@ class HServSpecStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                            source, in_cache = self.view.closest_source(node, content)
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
@@ -5075,7 +4999,7 @@ class HServSpecStorApp(Strategy):
                 #  Request at the receiver
             if receiver == node and status == REQUEST:
                 service['receiveTime'] = curTime
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -5146,7 +5070,7 @@ class HServSpecStorApp(Strategy):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         if all(elem in labels for elem in self.view.model.node_labels(node)["request_labels"]):
                             self.controller.add_message_to_storage(node, service)
-                            self.controller.add_request_labels_to_storage(node, service)
+                            self.controller.add_request_labels_to_storage(node, service, True)
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
@@ -5161,7 +5085,7 @@ class HServSpecStorApp(Strategy):
 
             elif status == REQUEST:
                 service['receiveTime'] = curTime
-                if not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
@@ -5319,9 +5243,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5336,9 +5258,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5355,9 +5275,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5400,9 +5318,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5424,9 +5340,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5447,9 +5361,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5499,9 +5411,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5519,9 +5429,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5538,9 +5446,7 @@ class HServSpecStorApp(Strategy):
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                     delay = self.view.path_delay(node, source)
@@ -5595,9 +5501,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5613,9 +5517,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5631,9 +5533,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5656,9 +5556,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5681,9 +5579,7 @@ class HServSpecStorApp(Strategy):
                     if source:
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     else:
-                        for n in self.view.model.comp_size:
-                            if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
-                                source = n
+                        source, in_cache = self.view.closest_source(node, content)
                         self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
@@ -5704,7 +5600,7 @@ class HServSpecStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
@@ -5720,7 +5616,7 @@ class HServSpecStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) != int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
