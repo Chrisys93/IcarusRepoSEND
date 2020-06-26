@@ -13,7 +13,7 @@ ICARUS_DIR=${CURR_DIR}/../..
 PLOTS_DIR=${CURR_DIR}/plots
 
 # Config file
-CONFIG_FILE=${CURR_DIR}/config1.py
+CONFIG_FILE=${CURR_DIR}/config2.py
 
 # FIle where results will be saved
 RESULTS_FILE=${CURR_DIR}/results.pickle
