@@ -61,8 +61,8 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-#N_CONTENTS = 500
-N_CONTENTS = 1000
+N_CONTENTS = 500
+#N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
@@ -81,7 +81,7 @@ N_WARMUP_REQUESTS = 0 #30000
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 10.0 #5.5
+MINS = 5.0 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
@@ -93,7 +93,7 @@ NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30.0
-NUM_REPLACEMENTS = 10000
+NUM_REPLACEMENTS = 5000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
