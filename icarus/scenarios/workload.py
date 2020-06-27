@@ -106,17 +106,6 @@ class StationaryWorkload(object):
         self.n_contents = n_contents
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         self.contents = range(0, n_contents)
-
-        for c in self.contents:
-            if type(c) is not dict:
-                content = dict()
-                content.update(content=c)
-            else:
-                content = c
-            content.update(labels=[])
-            content.update(service_type="proc")
-            self.contents[c] = content
-
         self.n_services = n_services
         self.alpha = alpha
         self.rate = rate
