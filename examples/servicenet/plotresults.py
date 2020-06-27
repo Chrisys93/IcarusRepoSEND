@@ -692,11 +692,17 @@ def run(config, results, plotdir):
     resultset = RESULTS_READER['PICKLE'](results)
     #Onur: added this BEGIN
     lst = resultset.dump()
+    f = open("raw_results.txt", "w")
     for l in lst:
         print 'PARAMETERS:\n'
         printTree(l[0])
         print 'RESULTS:\n'
         printTree(l[1])
+
+        f.write('PARAMETERS:\n')
+        f.write(l[0])
+        f.write('RESULTS:\n')
+        f.write(l[0])
 
     #print_lru_probability_results(lst) 
 
