@@ -708,10 +708,10 @@ def writeTree(tree, f, d=0):
     else:
         for key, val in tree.items():
             if (isinstance(val, dict)):
-                f.write("\t" * d, key)
-                printTree(val, d + 1)
+                f.write("\t" * d + key)
+                writeTree(val, d + 1)
             else:
-                f.write("\t" * d, key, str(val))
+                f.write("\t" * d + key + str(val))
 
 
 def run(config, results, plotdir):
