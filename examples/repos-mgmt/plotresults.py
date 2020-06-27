@@ -702,6 +702,18 @@ def printTree(tree, d=0):
                 print "\t" * d, key, str(val)
 
 
+def writeTree(tree, f, d=0):
+    if (tree == None or len(tree) == 0):
+        print "\t" * d, "-"
+    else:
+        for key, val in tree.items():
+            if (isinstance(val, dict)):
+                f.write("\t" * d, key)
+                printTree(val, d + 1)
+            else:
+                f.write("\t" * d, key, str(val))
+
+
 def run(config, results, plotdir):
     """Run the plot script
 
@@ -725,9 +737,9 @@ def run(config, results, plotdir):
         printTree(l[1])
 
         f.write('PARAMETERS:\n')
-        f.write(l[0])
+        writeTree(l[0], f)
         f.write('RESULTS:\n')
-        f.write(l[0])
+        writeTree(l[1], f)
 
     # print_lru_probability_results(lst)
 
