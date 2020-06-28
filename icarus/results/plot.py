@@ -5,6 +5,7 @@ from __future__ import division
 import os
 import collections
 
+import matplotlib
 import numpy as np
 #import matplotlib
 import matplotlib as mpl
@@ -41,7 +42,7 @@ PLOT_EMPTY_GRAPHS = False
 BW_COLOR_CATALOGUE = ['k', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9']
 
 # Catalogue of possible hatch styles (for bar charts)
-HATCH_CATALOGUE = [None, '/', '\\', '\\\\', '//', '+', 'x', '*', 'o', '.', '|', '-', 'O']
+HATCH_CATALOGUE = [None, '/', '\\', '\\\\', '//', '+', 'x', '*', 'o', '.', '|', '-', 'O', '||']
 
 
 def plot_lines(resultset, desc, filename, plotdir):

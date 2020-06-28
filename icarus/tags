@@ -933,6 +933,7 @@ random_cache_placement	scenarios/cacheplacement.py	/^def random_cache_placement(
 random_from_pdf	scenarios/contentplacement.py	/^from fnss.util import random_from_pdf$/;"	i
 read_from	util.py	/^    def read_from(self, path, freeze=False):$/;"	m	class:Settings
 read_results_pickle	results/readwrite.py	/^def read_results_pickle(path):$/;"	f
+read_results_txt	results/readwrite.py	/^def read_results_txt(path):$/;"	f
 reassign_vm	execution/collectors.py	/^    def reassign_vm(self, node, serviceToReplace, serviceToAdd): $/;"	m	class:LatencyCollector
 reassign_vm	execution/collectors.py	/^    def reassign_vm(self, node, serviceToReplace, serviceToAdd):$/;"	m	class:CollectorProxy
 reassign_vm	execution/collectors.py	/^    def reassign_vm(self, node, serviceToReplace, serviceToAdd):$/;"	m	class:DataCollector
@@ -1404,4 +1405,5 @@ verify_random_assignment	scenarios/test/test_cacheplacement.py	/^    def verify_
 weighted_content_placement	scenarios/contentplacement.py	/^def weighted_content_placement(topology, contents, source_weights, seed=None):$/;"	f
 workload	scenarios/test/test_workload.py	/^import icarus.scenarios as workload$/;"	i
 write_results_pickle	results/readwrite.py	/^def write_results_pickle(results, path):$/;"	f
+write_results_txt	results/readwrite.py	/^def write_results_txt(results, path):$/;"	f
 zipf_fit	tools/traces.py	/^def zipf_fit(obs_freqs, need_sorting=False):$/;"	f

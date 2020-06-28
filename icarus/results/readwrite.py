@@ -9,12 +9,16 @@ except ImportError:
     import pickle
 from icarus.util import Tree
 from icarus.registry import register_results_reader, register_results_writer
+import pprint
+
 
 
 __all__ = [
     'ResultSet',
     'write_results_pickle',
-    'read_results_pickle'
+    'read_results_pickle',
+    'write_results_txt',
+    'read_results_txt'
            ]
 
 class ResultSet(object):
@@ -176,7 +180,7 @@ class ResultSet(object):
                 filtered_resultset.add(parameters, results)
         return filtered_resultset
 
-
+# TODO: THIS is where results are written to pickle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 @register_results_writer('PICKLE')
 def write_results_pickle(results, path):
     """Write a resultset to a pickle file
@@ -192,6 +196,7 @@ def write_results_pickle(results, path):
         pickle.dump(results, pickle_file)
 
 
+# TODO: THIS is where results are READ from pickle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 @register_results_reader('PICKLE')
 def read_results_pickle(path):
     """Reads a resultset from a pickle file.
@@ -208,3 +213,40 @@ def read_results_pickle(path):
     """
     with open(path, 'rb') as pickle_file:
         return pickle.load(pickle_file)
+
+# TODO: THIS is where results are written to pickle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+@register_results_writer('TXT')
+def write_results_txt(results, path):
+    """Write a resultset to a pickle file
+
+    Parameters
+    ----------
+    results : ResultSet
+        The set of results
+    path : str
+        The path of the file to which write
+    """
+    with open(path, 'w') as txt_file:
+        pprint.pprint(results.json(3), txt_file)
+        txt_file.close()
+
+
+# TODO: THIS is where results are READ from pickle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+@register_results_reader('TXT')
+def read_results_txt(path):
+    """Reads a resultset from a pickle file.
+
+    Parameters
+    ----------
+    path : str
+        The file path from which results are read
+
+    Returns
+    -------
+    results : ResultSet
+        The read result set
+    """
+    with open(path, 'r') as txt_file:
+        lines = txt_file.read()
+        txt_file.close()
+        return eval(lines)

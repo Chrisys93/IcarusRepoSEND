@@ -372,7 +372,7 @@ __all__	icarus/tools/cacheperf.py	/^__all__ = [$/;"	v
 __all__	icarus/tools/stats.py	/^__all__ = [$/;"	v
 __all__	icarus/tools/traces.py	/^__all__ = [$/;"	v
 __all__	icarus/util.py	/^__all__ = [$/;"	v
-__all__	scripts/mergeresults.py	/^__all__ = ['merge_results']$/;"	v
+__all__	scripts/mergeresults_txt.py	/^__all__ = ['merge_results_txt']$/;"	v
 __all__	scripts/printresults.py	/^__all__ = ['print_results']$/;"	v
 __author__	icarus/__init__.py	/^__author__ = 'Lorenzo Saino, Ioannis Psaras'$/;"	v
 __cmp__	icarus/execution/network.py	/^    def __cmp__(self, other):$/;"	m	class:Event	file:
@@ -887,6 +887,7 @@ means_confidence_interval	examples/servicenet/plotresults.py	/^from icarus.tools
 means_confidence_interval	icarus/results/plot.py	/^from icarus.tools import means_confidence_interval$/;"	i
 means_confidence_interval	icarus/tools/stats.py	/^def means_confidence_interval(data, confidence=0.95):$/;"	f
 merge_results	scripts/mergeresults.py	/^def merge_results(inputs, output):$/;"	f
+merge_results_txt	scripts/mergeresults.py	/^def merge_results_txt(inputs, output):$/;"	f
 minimize_scalar	icarus/tools/traces.py	/^        from scipy.optimize import minimize_scalar$/;"	i
 minimize_scalar	icarus/tools/traces.py	/^        raise ImportError("Cannot import scipy.optimize minimize_scalar. "$/;"	i
 move_down	icarus/models/cache/policies.py	/^    def move_down(self, k):$/;"	m	class:LinkedSet
@@ -1080,6 +1081,7 @@ read	scripts/mergeresults.py	/^read = RESULTS_READER['PICKLE']$/;"	v
 read	scripts/printresults.py	/^read = RESULTS_READER['PICKLE']$/;"	v
 read_from	icarus/util.py	/^    def read_from(self, path, freeze=False):$/;"	m	class:Settings
 read_results_pickle	icarus/results/readwrite.py	/^def read_results_pickle(path):$/;"	f
+read_results_txt	icarus/results/readwrite.py	/^def read_results_txt(path):$/;"	f
 reassign_vm	icarus/models/service/compSpot.py	/^    def reassign_vm(self, vm, service, debug):$/;"	m	class:ComputationalSpot
 receivers	icarus/scenarios/topology.py	/^    def receivers(self):$/;"	m	class:IcnTopology
 register_cache_placement	icarus/registry.py	/^register_cache_placement = register_decorator(CACHE_PLACEMENT)$/;"	v
@@ -1544,5 +1546,5 @@ version	doc/source/conf.py	/^version = icarus.__version__$/;"	v
 weighted_content_placement	icarus/scenarios/contentplacement.py	/^def weighted_content_placement(topology, contents, source_weights, seed=None):$/;"	f
 workload	icarus/scenarios/test/test_workload.py	/^import icarus.scenarios as workload$/;"	i
 write	scripts/mergeresults.py	/^write = RESULTS_WRITER['PICKLE']$/;"	v
-write_results_pickle	icarus/results/readwrite.py	/^def write_results_pickle(results, path):$/;"	f
+write_results_txt	icarus/results/readwrite.py	/^def write_results_txt(results, path):$/;"	f
 zipf_fit	icarus/tools/traces.py	/^def zipf_fit(obs_freqs, need_sorting=False):$/;"	f

@@ -2,6 +2,7 @@
 from __future__ import division
 
 import time
+from memory_profiler import profile
 from collections import deque, defaultdict
 import random
 import abc
@@ -124,6 +125,7 @@ class GenRepoStorApp(Strategy):
                 self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
+
 
     @inheritdoc(Strategy)
     def process_event(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay):
@@ -1029,6 +1031,7 @@ class HServRepoStorApp(Strategy):
     def replicate(self, ProcApplication):
         return ProcApplication(self)
 
+    @profile
     def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'shelf_life' in msg.keys():
@@ -1082,6 +1085,7 @@ class HServRepoStorApp(Strategy):
         return msg
 
     @inheritdoc(Strategy)
+    @profile
     def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status, task=None):
         # System.out.prln("processor update is accessed")
 
@@ -2281,7 +2285,7 @@ class HServProStorApp(Strategy):
         return ProcApplication(self)
 
     # TODO: ADAPT FOR POPULARITY PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    #@profile
     def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node):
@@ -2331,7 +2335,8 @@ class HServProStorApp(Strategy):
         return msg
 
     @inheritdoc(Strategy)
-    def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status, task=None):
+    def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status,
+                      task=None):
         # System.out.prln("processor update is accessed")
 
         """
@@ -2349,6 +2354,9 @@ class HServProStorApp(Strategy):
     *  tags
     * The other tags should be deleted AS THE MESSAGES ARE PROCESSED / COMPRESSED / DELETEDnot
     *
+
+    TODO: HAVE TO IMPLEMENT STORAGE LOOKUP STAGE, AFTER CACHE LOOKUP, AND INCLUDE IT IN THE PROCESS, BEFORE
+        CONSIDERING THAT THE DATA IS NOT AVAILABLE IN CURRENT NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
 
         if self.view.hasStorageCapability(node):
@@ -2381,10 +2389,11 @@ class HServProStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if node in self.view.model.repoStorage and type(content) == dict:
-            if type(content) is dict and content["service_type"].lower() == "proc":
-                service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
+        if content["service_type"].lower() == "proc":
+            service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
+        if type(content) == dict and "msg_size" in content:
             self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+
         source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -2399,27 +2408,36 @@ class HServProStorApp(Strategy):
         if self.view.has_computationalSpot(node):
             compSpot = self.view.compSpot(node)
         if service is not None:
-            #  Request reached the cloud
             if source == node and status == REQUEST:
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
-                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                  rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if type(node) is str and "src" in node:
+                    if type(node) == str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
                         # Processing a request
                         source = self.view.content_source_cloud(service, labels)
-                        if not source:
-                            source, in_cache = self.view.closest_source(node, content)
-                            if not source:
-                                for n in self.view.model.comp_size:
-                                    if type(self.view.model.comp_size[node])!= int and self.view.model.comp_size[node] is not None:
-                                        source = n
+                        if source:
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        else:
+                            for n in self.view.model.comp_size:
+                                if self.view.model.comp_size[node]:
+                                    source = n
+                            self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
+                        delay = self.view.path_delay(node, source)
+                        rtt_delay += delay * 2
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline,
+                                                  rtt_delay,
+                                                  REQUEST)
+                        if self.debug:
+                            print("Message is scheduled to be processed in the CLOUD")
                         self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, curTime, service,
@@ -2428,7 +2446,8 @@ class HServProStorApp(Strategy):
                         delay = self.view.path_delay(node, upstream_node)
                         rtt_delay += delay * 2
                         if upstream_node != source:
-                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node,
+                                                      flow_id,
                                                       deadline, rtt_delay, REQUEST)
                             if self.debug:
                                 print("Request is scheduled to run at: " + str(upstream_node))
@@ -2449,9 +2468,10 @@ class HServProStorApp(Strategy):
                         return
                 return
 
-                #  Request at the receiver
+            #  Request at the receiver
             if receiver == node and status == REQUEST:
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if node in self.view.storage_nodes() and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -2489,8 +2509,8 @@ class HServProStorApp(Strategy):
                     # schedule the next queued task at this node
                     if newTask is not None:
                         self.controller.add_event(newTask.completionTime, newTask.receiver, newTask.service,
-                                                  node, newTask.flow_id, newTask.expiry, newTask.rtt_delay,
-                                                  TASK_COMPLETE, newTask)
+                                                  newTask.labels, node, newTask.flow_id,
+                                                  newTask.expiry, newTask.rtt_delay, TASK_COMPLETE, newTask)
 
                 # forward the completed task
                 if task.taskType == Task.TASK_TYPE_VM_START:
@@ -2506,15 +2526,15 @@ class HServProStorApp(Strategy):
                         service = dict()
                         service['content'] = content
                         service['labels'] = labels
-                if service['freshness_per'] > curTime - service['receiveTime']:
-                    service['Fresh'] = True
-                    service['Shelf'] = True
-                elif service['shelf_life'] > curTime - service['receiveTime']:
-                    service['Fresh'] = False
-                    service['Shelf'] = True
-                else:
-                    service['Fresh'] = False
-                    service['Shelf'] = False
+                    if service['freshness_per'] > curTime - service['receiveTime']:
+                        service['Fresh'] = True
+                        service['Shelf'] = True
+                    elif service['shelf_life'] > curTime - service['receiveTime']:
+                        service['Fresh'] = False
+                        service['Shelf'] = True
+                    else:
+                        service['Fresh'] = False
+                        service['Shelf'] = False
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
@@ -2526,6 +2546,9 @@ class HServProStorApp(Strategy):
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
+                else:
+                    self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
+                                              deadline, rtt_delay, STORE)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
@@ -2536,7 +2559,8 @@ class HServProStorApp(Strategy):
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
@@ -2547,43 +2571,47 @@ class HServProStorApp(Strategy):
                 cache_delay = 0
                 if node == source:
                     if not cache_ret and self.view.has_cache(node):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source)
+                            self.controller.put_content_local_cache(source, content['content'])
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             pass
                         else:
                             self.controller.put_content_local_cache(source)
                 deadline_metric = (
-                            deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
+                        deadline - curTime - rtt_delay - cache_delay - compSpot.services[
+                    service['content']].service_time)  # /deadline
                 if self.debug:
                     print("Deadline metric: " + repr(deadline_metric))
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                      rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
                     if ret is False:
                         # Pass the Request upstream
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, service,labels,  next_node,
+                        # delay += 0.01 # delay associated with content fetch from storage
+                        # WE DON'T INCLUDE THIS BECAUSE THE CONTENT MAY BE PRE-FETCHED INTO THE CACHE FROM STORAGE
+                        self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                   flow_id, deadline, rtt_delay, REQUEST)
                         if deadline_metric > 0:
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        # compSpot.missed_requests[service['content']] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1  # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
                 else:  # Not running the service
-                    # compSpot.missed_requests[service['content']] += 1
+                    compSpot.missed_requests[service['content']] += 1
                     if self.debug:
                         print("Not running the service: Pass upstream to node: " + repr(next_node))
                     rtt_delay += delay * 2
@@ -2595,6 +2623,7 @@ class HServProStorApp(Strategy):
                 pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
+
 
     def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
         """
@@ -3634,7 +3663,8 @@ class HServReStorApp(Strategy):
         return msg
 
     @inheritdoc(Strategy)
-    def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status, task=None):
+    def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status,
+                      task=None):
         # System.out.prln("processor update is accessed")
 
         """
@@ -3652,6 +3682,9 @@ class HServReStorApp(Strategy):
     *  tags
     * The other tags should be deleted AS THE MESSAGES ARE PROCESSED / COMPRESSED / DELETEDnot
     *
+
+    TODO: HAVE TO IMPLEMENT STORAGE LOOKUP STAGE, AFTER CACHE LOOKUP, AND INCLUDE IT IN THE PROCESS, BEFORE
+        CONSIDERING THAT THE DATA IS NOT AVAILABLE IN CURRENT NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
 
         if self.view.hasStorageCapability(node):
@@ -3683,12 +3716,12 @@ class HServReStorApp(Strategy):
         # self.debug = False
         # if node == 12:
         #    self.debug = True
-        path = self.view.shortest_path(receiver, node)
         service = None
-        if node in self.view.model.repoStorage and type(content) == dict:
-            if content["service_type"].lower() == "proc":
-                service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+        if content["service_type"].lower() == "proc":
+            service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
+        if type(content) == dict and "msg_size" in content:
+            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+
         source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -3703,16 +3736,17 @@ class HServReStorApp(Strategy):
         if self.view.has_computationalSpot(node):
             compSpot = self.view.compSpot(node)
         if service is not None:
-            #  Request reached the cloud
             if source == node and status == REQUEST:
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
-                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                  rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if type(node) is str and "src" in node:
+                    if type(node) == str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
@@ -3722,13 +3756,14 @@ class HServReStorApp(Strategy):
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node]) is not int and self.view.model.comp_size[node] is not None:
+                                if self.view.model.comp_size[node]:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
-                                                  STORE)
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline,
+                                                  rtt_delay,
+                                                  REQUEST)
                         if self.debug:
                             print("Message is scheduled to be processed in the CLOUD")
                         self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
@@ -3739,7 +3774,8 @@ class HServReStorApp(Strategy):
                         delay = self.view.path_delay(node, upstream_node)
                         rtt_delay += delay * 2
                         if upstream_node != source:
-                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node,
+                                                      flow_id,
                                                       deadline, rtt_delay, REQUEST)
                             if self.debug:
                                 print("Request is scheduled to run at: " + str(upstream_node))
@@ -3747,21 +3783,23 @@ class HServReStorApp(Strategy):
                             services = self.view.services()
                             serviceTime = services[service['content']].service_time
                             self.controller.add_event(curTime + rtt_delay + serviceTime, receiver, service, labels,
-                                                      receiver, flow_id, deadline, rtt_delay, RESPONSE)
+                                                      receiver,
+                                                      flow_id, deadline, rtt_delay, RESPONSE)
                             if self.debug:
                                 print("Request is scheduled to run at the CLOUD")
                         for n in path[1:]:
                             cs = self.view.compSpot(n)
                             if cs.is_cloud:
                                 continue
-                            self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[service['content']].service_time
+                            self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
+                                service['content']].service_time
                         return
-                    return
+                return
 
-                #  Request at the receiver
+            #  Request at the receiver
             if receiver == node and status == REQUEST:
-                service['receiveTime'] = curTime
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if node in self.view.storage_nodes() and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -3816,15 +3854,15 @@ class HServReStorApp(Strategy):
                         service = dict()
                         service['content'] = content
                         service['labels'] = labels
-                if service['freshness_per'] > curTime - service['receiveTime']:
-                    service['Fresh'] = True
-                    service['Shelf'] = True
-                elif service['shelf_life'] > curTime - service['receiveTime']:
-                    service['Fresh'] = False
-                    service['Shelf'] = True
-                else:
-                    service['Fresh'] = False
-                    service['Shelf'] = False
+                    if service['freshness_per'] > curTime - service['receiveTime']:
+                        service['Fresh'] = True
+                        service['Shelf'] = True
+                    elif service['shelf_life'] > curTime - service['receiveTime']:
+                        service['Fresh'] = False
+                        service['Shelf'] = True
+                    else:
+                        service['Fresh'] = False
+                        service['Shelf'] = False
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
@@ -3836,59 +3874,67 @@ class HServReStorApp(Strategy):
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
+                else:
+                    self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
+                                              deadline, rtt_delay, STORE)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
-                if node != source and curTime + path_delay > deadline:
+                if (node != source and curTime + path_delay > deadline):
                     print("Error in HYBRID strategy: Request missed its deadline\nResponse at receiver at time: " + str(
                         curTime + path_delay) + " deadline: " + str(deadline))
                     task.print_task()
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                service['receiveTime'] = curTime
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
-                source, cache_ret = self.view.closest_source(service, node)
+                source, cache_ret = self.view.closest_source(node, service)
+
                 path = self.view.shortest_path(node, source)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
                 cache_delay = 0
                 if node == source:
                     if not cache_ret and self.view.has_cache(node):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source)
+                            self.controller.put_content_local_cache(source, content['content'])
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             pass
                         else:
                             self.controller.put_content_local_cache(source)
                 deadline_metric = (
-                            deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
+                        deadline - curTime - rtt_delay - cache_delay - compSpot.services[
+                    service['content']].service_time)  # /deadline
                 if self.debug:
                     print("Deadline metric: " + repr(deadline_metric))
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                      rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
                     if ret is False:
                         # Pass the Request upstream
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, service,labels,  next_node,
+                        # delay += 0.01 # delay associated with content fetch from storage
+                        # WE DON'T INCLUDE THIS BECAUSE THE CONTENT MAY BE PRE-FETCHED INTO THE CACHE FROM STORAGE
+                        self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                   flow_id, deadline, rtt_delay, REQUEST)
                         if deadline_metric > 0:
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        compSpot.missed_requests[service['content']] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1  # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
@@ -3905,6 +3951,7 @@ class HServReStorApp(Strategy):
                 pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
+
 
     def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
         """
@@ -4953,8 +5000,8 @@ class HServSpecStorApp(Strategy):
         return msg
 
     @inheritdoc(Strategy)
-    def process_event(self, curTime, receiver, content, log, labels,
-                      node, flow_id, deadline, rtt_delay, status, task=None):
+    def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status,
+                      task=None):
         # System.out.prln("processor update is accessed")
 
         """
@@ -4972,6 +5019,9 @@ class HServSpecStorApp(Strategy):
     *  tags
     * The other tags should be deleted AS THE MESSAGES ARE PROCESSED / COMPRESSED / DELETEDnot
     *
+
+    TODO: HAVE TO IMPLEMENT STORAGE LOOKUP STAGE, AFTER CACHE LOOKUP, AND INCLUDE IT IN THE PROCESS, BEFORE
+        CONSIDERING THAT THE DATA IS NOT AVAILABLE IN CURRENT NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
 
         if self.view.hasStorageCapability(node):
@@ -5003,12 +5053,12 @@ class HServSpecStorApp(Strategy):
         # self.debug = False
         # if node == 12:
         #    self.debug = True
-        path = self.view.shortest_path(receiver, node)
         service = None
-        if type(content) is dict:
-            if content["service_type"].lower() == "proc":
-                service = content if content['content'] is not '' else self.view.all_labels_main_source(labels)['content']
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+        if content["service_type"].lower() == "proc":
+            service = content if content is not '' else self.view.all_labels_main_source(labels)['content']
+        if type(content) == dict and "msg_size" in content:
+            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+
         source, in_cache = self.view.closest_source(node, content)
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -5023,16 +5073,17 @@ class HServSpecStorApp(Strategy):
         if self.view.has_computationalSpot(node):
             compSpot = self.view.compSpot(node)
         if service is not None:
-            #  Request reached the cloud
             if source == node and status == REQUEST:
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 service['receiveTime'] = curTime
-                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                  rtt_delay,
                                                   self.controller, self.debug)
 
                 if ret == False:
-                    if type(node) is str and "src" in node:
+                    if type(node) == str and "src" in node:
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
@@ -5041,26 +5092,27 @@ class HServSpecStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, content)
-                        if not source:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[node])!= int and self.view.model.comp_size[node] is not None:
+                                if self.view.model.comp_size[node]:
                                     source = n
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
-                                                  STORE)
+                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline,
+                                                  rtt_delay,
+                                                  REQUEST)
                         if self.debug:
                             print("Message is scheduled to be processed in the CLOUD")
                         self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_topmost_feasible_node(receiver, flow_id, path, curTime, service,
-                                                                        deadline, rtt_delay)
+                                                                        deadline,
+                                                                        rtt_delay)
                         delay = self.view.path_delay(node, upstream_node)
                         rtt_delay += delay * 2
                         if upstream_node != source:
-                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                            self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node,
+                                                      flow_id,
                                                       deadline, rtt_delay, REQUEST)
                             if self.debug:
                                 print("Request is scheduled to run at: " + str(upstream_node))
@@ -5081,10 +5133,10 @@ class HServSpecStorApp(Strategy):
                         return
                 return
 
-                #  Request at the receiver
+            #  Request at the receiver
             if receiver == node and status == REQUEST:
-                service['receiveTime'] = curTime
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if node in self.view.storage_nodes() and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 self.controller.start_session(curTime, receiver, service, log, flow_id, deadline)
                 path = self.view.shortest_path(node, source)
@@ -5139,15 +5191,15 @@ class HServSpecStorApp(Strategy):
                         service = dict()
                         service['content'] = content
                         service['labels'] = labels
-                if service['freshness_per'] > curTime - service['receiveTime']:
-                    service['Fresh'] = True
-                    service['Shelf'] = True
-                elif service['shelf_life'] > curTime - service['receiveTime']:
-                    service['Fresh'] = False
-                    service['Shelf'] = True
-                else:
-                    service['Fresh'] = False
-                    service['Shelf'] = False
+                    if service['freshness_per'] > curTime - service['receiveTime']:
+                        service['Fresh'] = True
+                        service['Shelf'] = True
+                    elif service['shelf_life'] > curTime - service['receiveTime']:
+                        service['Fresh'] = False
+                        service['Shelf'] = True
+                    else:
+                        service['Fresh'] = False
+                        service['Shelf'] = False
                     service['receiveTime'] = time
                     service['service_type'] = "processed"
                     if self.view.has_message(node, service['labels'], service['content']):
@@ -5159,59 +5211,67 @@ class HServSpecStorApp(Strategy):
                         else:
                             self.controller.add_message_to_storage(node, service)
                             self.controller.add_storage_labels_to_node(node, service)
+                else:
+                    self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
+                                              deadline, rtt_delay, STORE)
 
                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                           deadline, rtt_delay, RESPONSE)
-                if node != source and curTime + path_delay > deadline:
+                if (node != source and curTime + path_delay > deadline):
                     print("Error in HYBRID strategy: Request missed its deadline\nResponse at receiver at time: " + str(
                         curTime + path_delay) + " deadline: " + str(deadline))
                     task.print_task()
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                service['receiveTime'] = curTime
-                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(service['content'], service['labels']):
+                if self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                        service['content'], service['labels']):
                     self.controller.add_request_labels_to_node(receiver, service)
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
+
                 path = self.view.shortest_path(node, source)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
                 cache_delay = 0
                 if node == source:
                     if not cache_ret and self.view.has_cache(node):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             cache_delay = 0.01
                         else:
-                            self.controller.put_content_local_cache(source)
+                            self.controller.put_content_local_cache(source, content['content'])
                             cache_delay = 0.01
                 else:
                     if not cache_ret and self.view.has_cache(source):
-                        if self.controller.put_content(source, content):
+                        if self.controller.put_content(source, content['content']):
                             pass
                         else:
                             self.controller.put_content_local_cache(source)
                 deadline_metric = (
-                            deadline - curTime - rtt_delay - cache_delay - compSpot.services[service['content']].service_time)  # /deadline
+                        deadline - curTime - rtt_delay - cache_delay - compSpot.services[
+                    service['content']].service_time)  # /deadline
                 if self.debug:
                     print("Deadline metric: " + repr(deadline_metric))
                 if self.view.has_service(node, service) and service["service_type"] is "proc":
                     if self.debug:
                         print("Calling admit_task")
-                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver, rtt_delay,
+                    ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
+                                                      rtt_delay,
                                                       self.controller, self.debug)
                     if self.debug:
                         print("Done Calling admit_task")
                     if ret is False:
                         # Pass the Request upstream
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, service,labels,  next_node,
+                        # delay += 0.01 # delay associated with content fetch from storage
+                        # WE DON'T INCLUDE THIS BECAUSE THE CONTENT MAY BE PRE-FETCHED INTO THE CACHE FROM STORAGE
+                        self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                   flow_id, deadline, rtt_delay, REQUEST)
                         if deadline_metric > 0:
                             self.cand_deadline_metric[node][service['content']] += deadline_metric
                         if self.debug:
                             print("Pass upstream to node: " + repr(next_node))
-                        compSpot.missed_requests[service['content']] += 1 # Added here
+                        compSpot.missed_requests[service['content']] += 1  # Added here
                     else:
                         if deadline_metric > 0:
                             self.deadline_metric[node][service['content']] += deadline_metric
@@ -5228,6 +5288,7 @@ class HServSpecStorApp(Strategy):
                 pass
             else:
                 print("Error: unrecognised status value : " + repr(status))
+
 
     def find_topmost_feasible_node(self, receiver, flow_id, path, time, service, deadline, rtt_delay):
         """
