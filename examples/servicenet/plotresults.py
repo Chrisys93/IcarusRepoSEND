@@ -613,7 +613,7 @@ def print_zipf_experiment(lst):
 
 def print_budget_experiment(lst):
     
-    strategies = ['COORDINATED', 'HYBRID', 'HYBRIDS_REPO_APP']
+    strategies = ['HYBRID', 'HYBRIDS_REPO_APP']
     TREE_DEPTH = 3
     BRANCH_FACTOR = 2
     NUM_CORES = 50

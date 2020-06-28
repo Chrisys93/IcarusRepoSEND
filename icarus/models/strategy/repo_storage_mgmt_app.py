@@ -1031,7 +1031,7 @@ class HServRepoStorApp(Strategy):
     def replicate(self, ProcApplication):
         return ProcApplication(self)
 
-    @profile
+    # @profile
     def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'shelf_life' in msg.keys():
@@ -1085,7 +1085,7 @@ class HServRepoStorApp(Strategy):
         return msg
 
     @inheritdoc(Strategy)
-    @profile
+    # @profile
     def process_event(self, curTime, receiver, content, log, labels, node, flow_id, deadline, rtt_delay, status, task=None):
         # System.out.prln("processor update is accessed")
 

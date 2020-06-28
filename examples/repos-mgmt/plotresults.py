@@ -726,20 +726,20 @@ def run(config, results, plotdir):
     plotdir : str
         The directory into which graphs will be saved
     """
-    resultset = RESULTS_READER['PICKLE'](results)
+    resultset = RESULTS_READER['TXT'](results)
     # Onur: added this BEGIN
-    lst = resultset.dump()
-    f = open("raw_results.txt", "w")
-    for l in lst:
-        print 'PARAMETERS:\n'
-        printTree(l[0])
-        print 'RESULTS:\n'
-        printTree(l[1])
+#    lst = resultset.dump()
+#    f = open("raw_results.txt", "w")
+#    for l in lst:
+#        print 'PARAMETERS:\n'
+#        printTree(l[0])
+#        print 'RESULTS:\n'
+#        printTree(l[1])
 
-        f.write('PARAMETERS:\n')
-        writeTree(l[0], f)
-        f.write('RESULTS:\n')
-        writeTree(l[1], f)
+#        f.write('PARAMETERS:\n')
+#        writeTree(l[0], f)
+#        f.write('RESULTS:\n')
+#        writeTree(l[1], f)
 
     # print_lru_probability_results(lst)
 

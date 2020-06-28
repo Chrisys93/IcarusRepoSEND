@@ -519,6 +519,7 @@ class LatencyCollector(DataCollector):
             if self.flow_cloud[flow_id]:
                 self.n_sat_cloud_interval += 1
             self.n_satisfied += 1
+            print "Request satisfied."
             self.n_satisfied_interval += 1
             sat = True 
             self.latency_interval += timestamp - self.flow_start[flow_id]
@@ -561,14 +562,14 @@ class LatencyCollector(DataCollector):
         results['CLOUD_SAT_TIMES'] = self.cloud_sat_times
         results['INSTANTIATION_OVERHEAD'] = self.instantiations_times
 
-        #print "Printing Sat. rate times:"
-        #for key in sorted(self.satrate_times):
-        #    print (repr(key) + " " + repr(self.satrate_times[key]))
+        print "Printing Sat. rate times:"
+        for key in sorted(self.satrate_times):
+            print (repr(key) + " " + repr(self.satrate_times[key]))
         
-        #print "Printing Idle times:"
-        #for key in sorted(self.idle_times):
-        #    print (repr(key) + " " + repr(self.idle_times[key]))
-        #results['VMS_PER_SERVICE'] = self.vms_per_service       
+        print "Printing Idle times:"
+        for key in sorted(self.idle_times):
+            print (repr(key) + " " + repr(self.idle_times[key]))
+        #results['VMS_PER_SERVICE'] = self.vms_per_service
         
         return results
 
