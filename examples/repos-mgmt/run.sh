@@ -23,7 +23,7 @@ export PYTHONPATH=${ICARUS_DIR}:$PYTHONPATH
 
 # Run experiments
 echo "Run experiments"
-mprof run python ${ICARUS_DIR}/icarus.py --results ${RESULTS_FILE} ${CONFIG_FILE}
+python ${ICARUS_DIR}/icarus.py --results ${RESULTS_FILE} ${CONFIG_FILE}
 
 # Plot results
 echo "Plot results"
