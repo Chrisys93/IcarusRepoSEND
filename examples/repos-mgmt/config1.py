@@ -32,7 +32,7 @@ WARMUP_STRATEGY = 'HYBRID' #'HYBRID'
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
 # Currently only PICKLE is supported 
-RESULTS_FORMAT = 'PICKLE'
+RESULTS_FORMAT = 'TXT'
 
 # Number of times each experiment is replicated
 # This is necessary for extracting confidence interval of selected metrics
