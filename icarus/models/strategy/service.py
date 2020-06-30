@@ -712,7 +712,7 @@ class Hybrid(Strategy):
                 service['receiveTime'] = time
                 service['service_type'] = "processed"
                 if self.controller.has_message(node, service['labels'], service['content']):
-                    service['msg_size'] = self.view.storage_nodes()[node].hasMessage(service['content'], service['labels'])['msg_size']/2
+                    service['msg_size'] = service['msg_size']/2
                     # TODO: Delete original message after adding the new, hald-sized message!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                     self.controller.add_message_to_storage(node, service)
@@ -746,12 +746,12 @@ class Hybrid(Strategy):
                         self.cand_deadline_metric[node][service['content']] += deadline_metric
                     if self.debug:
                         print ("Pass upstream to node: " + repr(next_node))
-                    #compSpot.missed_requests[service['content']] += 1 # Added here
+                    compSpot.missed_requests[service['content']] += 1 # Added here
                 else:
                     if deadline_metric > 0:
                         self.deadline_metric[node][service['content']] += deadline_metric
             else: #Not running the service
-                #compSpot.missed_requests[service['content']] += 1
+                compSpot.missed_requests[service['content']] += 1
                 if self.debug:
                     print ("Not running the service: Pass upstream to node: " + repr(next_node))
                 rtt_delay += delay*2

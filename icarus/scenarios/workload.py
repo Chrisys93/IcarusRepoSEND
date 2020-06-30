@@ -649,7 +649,7 @@ class StationaryRepoWorkload(object):
             datum.update(labels=[])
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
-            datum.update(freshness_per=msg_sizes)
+            datum.update(freshness_per=freshness_pers)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,
@@ -724,10 +724,10 @@ class StationaryRepoWorkload(object):
                 #  label\/\/\/\/\/\/\/\/
                 for i in range(0, self.max_labels):
                     labels_zipf = int(self.labels_zipf.rv())
-                    if labels_zipf <= len(self.labels['topics']):
+                    if labels_zipf < len(self.labels['topics']):
                         labels.append(self.labels['topics'][labels_zipf])
-                    elif labels_zipf > len(self.labels['topics']):
-                        labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])])
+                    elif labels_zipf >= len(self.labels['topics']):
+                        labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])-1])
 
             else:
                 if self.alpha_labels == 0 or self.alter is True:

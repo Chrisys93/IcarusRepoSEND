@@ -252,13 +252,6 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
     # NOTE: All label names will come as a list of strings
     for c in contents:
         alter = False
-        for i in range(0, max_label_nos):
-            if types_weights is not None and not alter:
-                labels_association[random_from_pdf(types_labels_pdf)].add(c)
-                alter = True
-            elif topics_weights is not None and alter:
-                labels_association[random_from_pdf(topics_labels_pdf)].add(c)
-                alter = False
         if freshness_per is not None:
             if placed_data.has_key(contents[c]['content']):
                 placed_data[contents[c]['content']].update(freshness_per=freshness_per)
@@ -272,10 +265,18 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
         placed_data[contents[c]['content']].update(msg_size=msg_size)
         placed_data[contents[c]['content']]["receiveTime"] = 0
         placed_data[contents[c]['content']]['labels'] = contents[c]['labels']
-        placed_data[contents[c]['content']]['service_type'] = contents[c]['service_type']
+        placed_data[contents[c]['content']]['service_type'] = "non-proc"
+        if not placed_data[contents[c]['content']]['labels']:
+            for i in range(0, max_label_nos):
+                if types_weights is not None and not alter:
+                    labels_association[random_from_pdf(types_labels_pdf)].add(c)
+                    alter = True
+                elif topics_weights is not None and alter:
+                    labels_association[random_from_pdf(topics_labels_pdf)].add(c)
+                    alter = False
 
     placed_data = apply_labels_association(labels_association, placed_data)
-    placed_data = apply_service_association(service_association, placed_data)
+    #placed_data = apply_service_association(service_association, placed_data)
     for d in placed_data:
         rand = random_from_pdf(source_pdf)
         if not content_placement[rand]:

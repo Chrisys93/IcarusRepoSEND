@@ -97,7 +97,7 @@ NUM_REPLACEMENTS = 5000
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['HYBRIDS_REPO_APP']
+STRATEGIES = ['HYBRID', 'HYBRIDS_REPO_APP']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -115,7 +115,7 @@ REPO_POLICY = 'REPO_STORAGE'
 SCHED_POLICY = 'EDF'
 
 FRESHNESS_PER = 0.15
-SHELF_LIFE = 1
+SHELF_LIFE = 10
 MSG_SIZE = 1000000
 SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
@@ -125,6 +125,7 @@ MAX_REQUESTED_LABELS = 3
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
+LABEL_EXCL = True
 
 
 # Queue of experiments
@@ -141,6 +142,7 @@ default['workload'] = {'name':       'STATIONARY_MORE_LABEL_REQS',
                        'alpha' : ALPHA,
                        'alpha_labels' : ALPHA_LABELS,
                        'topics' : DATA_TOPICS,
+                       'label_ex' : LABEL_EXCL,
                        'types' : DATA_TYPES,
                        'max_labels' : MAX_REQUESTED_LABELS,
                        'freshness_pers' : FRESHNESS_PER,

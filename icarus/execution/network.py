@@ -309,23 +309,23 @@ class NetworkView(object):
             source is unavailable
         """
         if type(k) is dict:
-            if self.has_cache(node):
-                if self.cache_lookup(node, k['content']) or self.local_cache_lookup(node, k['content']):
-                    cache = True
-                else:
-                    cache = False
-            else:
-                cache = False
             hops = 100
             if node in self.content_source(k, k['labels']):
+                if self.has_cache(node):
+                    if self.cache_lookup(node, k['content']) or self.local_cache_lookup(node, k['content']):
+                        cache = True
+                    else:
+                        cache = False
+                else:
+                    cache = False
                 return node, cache
             for n in self.content_source(k, k['labels']):
+                content = self.model.repoStorage[n].hasMessage(k['content'], k['labels'])
                 if len(self.shortest_path(node, n)) < hops:
                     hops = len(self.shortest_path(node, n))
                     res = n
-
             if self.has_cache(res):
-                if self.cache_lookup(res, k['content']) or self.local_cache_lookup(res, k['content']):
+                if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
                     cache = True
                 else:
                     cache = False
@@ -333,30 +333,25 @@ class NetworkView(object):
                 cache = False
         else:
             content = dict()
-            if self.content_source(k, []):
-                for n in range(0, len(self.content_source(k, []))):
-                    if k in self.model.contents[n]:
-                        content = self.model.contents[node][k]
-            if not content:
-                content['content'] = k
-                content['labels'] = []
-            if self.has_cache(node):
-                if self.cache_lookup(node, content['content']) or self.local_cache_lookup(node, content['content']):
-                    cache = True
-                else:
-                    cache = False
-            else:
-                cache = False
+            content['content'] = k
+            content['labels'] = []
             hops = 100
             if node in self.content_source(content, content['labels']):
+                if self.has_cache(node):
+                    if self.cache_lookup(node, content['content']) or self.local_cache_lookup(node, content['content']):
+                        cache = True
+                    else:
+                        cache = False
+                else:
+                    cache = False
                 return node, cache
             for n in self.content_source(content, content['labels']):
+                content = self.model.contents[n][k]
                 if len(self.shortest_path(node, n)) < hops:
                     hops = len(self.shortest_path(node, n))
                     res = n
-
             if self.has_cache(res):
-                if self.cache_lookup(res, k) or self.local_cache_lookup(res, k):
+                if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
                     cache = True
                 else:
                     cache = False
@@ -417,7 +412,7 @@ class NetworkView(object):
 
         for n in nodes:
             for l in r_labels:
-                if l not in self.model.node_labels[n]["request_labels"]:
+                if l not in self.model.node_labels[n]["request_labels"].keys():
                     del_nodes.append(n)
 
         for n in del_nodes:
@@ -1534,11 +1529,11 @@ class NetworkController(object):
         self.model.node_labels[s] = dict()
         if self.model.node_labels[s].has_key("request_labels"):
             for label in service_request['labels']:
-                self.model.node_labels[s]["request_labels"].update(label)
+                self.model.node_labels[s]["request_labels"].update([label])
         else:
             self.model.node_labels[s]["request_labels"] = Counter()
             for label in service_request['labels']:
-                self.model.node_labels[s]["request_labels"].update(label)
+                self.model.node_labels[s]["request_labels"].update([label])
         for label in service_request["labels"]:
             if not self.model.request_labels_nodes.has_key(label):
                 self.model.request_labels_nodes[label] = Counter()
@@ -1567,7 +1562,8 @@ class NetworkController(object):
 
         """
         for label in labels:
-            if label in self.model.node_labels[s]["request_labels"]:
+            if 'request_labels' in self.model.node_labels[s] and \
+                    label in self.model.node_labels[s]["request_labels"].keys():
                 self.model.node_labels[s]["request_labels"].remove(label)
                 if add:
                     self.model.node_labels[s].update(label)
@@ -1598,8 +1594,18 @@ class NetworkController(object):
         for c in self.model.content_source:
             if content['content'] == c:
                 self.model.content_source[content['content']].append(s)
-            else:
-                self.model.content_source[content['content']] = [s]
+                if s in self.model.contents:
+                    if content['content'] in self.model.contents[s]:
+                        self.model.contents[s][content['content']].update(content)
+                    else:
+                        self.model.contents[s] = content['content']
+                        self.model.contents[s][content['content']] = content
+                else:
+                    self.model.contents[s] = content['content']
+                    self.model.contents[s][content['content']] = content
+
+        else:
+            self.model.content_source[content['content']] = [s]
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.

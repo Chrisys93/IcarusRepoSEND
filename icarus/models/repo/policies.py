@@ -163,15 +163,15 @@ class RepoStorage(object):
             self.mSatisfied += 1
         else:
             self.mUnSatisfied += 1
-        if sm['storTime'] is not None:
+        if 'storTime' in sm:
             self.mStorTimeNo += 1
             self.mStorTime += sm['storTime']
-        if self.mStorTimeMax < sm['storTime']:
-            self.mStorTimeMax = sm['storTime']
+            if self.mStorTimeMax < sm['storTime']:
+                self.mStorTimeMax = sm['storTime']
 
         else:
             curTime = time.time()
-            sm['storTime'] = curTime - sm['receiveTime'](sm)
+            sm['storTime'] = curTime - sm['receiveTime']
             self.mStorTimeNo += 1
             self.mStorTime += sm['storTime']
         if self.mStorTimeMax < sm['storTime']:
@@ -197,7 +197,7 @@ class RepoStorage(object):
 
             else:
                 curTime = time.time()
-                sm['storTime'] = curTime - sm['receiveTime'](sm)
+                sm['storTime'] = curTime - sm['receiveTime']
                 self.mStorTimeNo += 1
                 self.mStorTime += sm['storTime']
                 if (self.mStorTimeMax < sm['storTime']):
@@ -226,7 +226,7 @@ class RepoStorage(object):
 
             else:
                 curTime = time.time()
-                sm['storTime'] = curTime - sm['receiveTime'](sm)
+                sm['storTime'] = curTime - sm['receiveTime']
                 self.mStorTimeNo += 1
                 self.mStorTime += sm['storTime']
             if (self.mStorTimeMax < sm['storTime']):
@@ -295,7 +295,8 @@ class RepoStorage(object):
         curTime = time.time()
         size = 0
         for m in self.Messages:
-            if m['shelf_life'] is not None and (m['shelf_life']) <= curTime - m['receiveTime']:
+            retrieval = m['receiveTime']
+            if m['shelf_life'] is not None and m['shelf_life'] <= curTime - retrieval:
                 size += m['msg_size']
         return size
 
@@ -331,7 +332,7 @@ class RepoStorage(object):
         for i in range(0, len(self.processedMessages)):
             if MessageId is not None and self.processedMessages[i]['content'] == MessageId:
                 answer = self.processedMessages[i]
-            else:
+            elif labels:
                 j_labels = []
                 for label in self.processedMessages[i]['labels']:
                     if label in labels:
@@ -341,7 +342,7 @@ class RepoStorage(object):
         for i in range(0, len(self.Messages)):
             if MessageId is not None and self.Messages[i]['content'] == MessageId:
                 answer = self.Messages[i]
-            else:
+            elif labels:
                 j_labels = []
                 for label in self.Messages[i]['labels']:
                     if label in labels:
@@ -351,7 +352,7 @@ class RepoStorage(object):
         for i in range(0, len(self.processMessages)):
             if MessageId is not None and self.processMessages[i]['content'] == MessageId:
                 answer = self.processMessages[i]
-            else:
+            elif labels:
                 j_labels = []
                 for label in self.processMessages[i]['labels']:
                     if label in labels:
