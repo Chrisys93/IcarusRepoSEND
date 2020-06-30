@@ -412,8 +412,9 @@ class NetworkView(object):
 
         for n in nodes:
             for l in r_labels:
-                if [l] not in self.model.node_labels[n]["request_labels"]:
-                    del_nodes.append(n)
+                for label in self.model.node_labels[n]["request_labels"]:
+                    if l != label[1]:
+                        del_nodes.append(n)
 
         for n in del_nodes:
             del nodes[n]
