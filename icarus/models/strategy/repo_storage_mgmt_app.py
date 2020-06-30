@@ -2321,11 +2321,10 @@ class HServProStorApp(Strategy):
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
-                self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             else:
                 edr = self.view.all_labels_main_source(msg["labels"])
-                if edr:
+                if edr and node != edr.node:
                     self.controller.add_request_labels_to_node(node, msg)
                     if 'shelf_life' in msg:
                         self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
@@ -2336,11 +2335,15 @@ class HServProStorApp(Strategy):
                         msg['shelf_life'] = deadline - curTime
                         self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['shelf_life'])
                     path = self.view.shortest_path(node, edr.node)
-                    next_node = path[1]
-                    delay = self.view.path_delay(node, next_node)
+                    if len(path) <= 1 or not path:
+                        self.controller.add_message_to_storage(edr, msg)
+                        self.controller.add_request_labels_to_storage(edr, msg['labels'], True)
+                    else:
+                        next_node = path[1]
+                        delay = self.view.path_delay(node, next_node)
 
-                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                              curTime + msg['shelf_life'], rtt_delay, STORE)
+                        self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
+                                                curTime + msg['shelf_life'], rtt_delay, STORE)
 
 
 
