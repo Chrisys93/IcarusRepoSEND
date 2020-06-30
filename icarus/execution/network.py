@@ -1598,10 +1598,8 @@ class NetworkController(object):
                     if content['content'] in self.model.contents[s]:
                         self.model.contents[s][content['content']].update(content)
                     else:
-                        self.model.contents[s] = content['content']
                         self.model.contents[s][content['content']] = content
                 else:
-                    self.model.contents[s] = content['content']
                     self.model.contents[s][content['content']] = content
 
         else:
