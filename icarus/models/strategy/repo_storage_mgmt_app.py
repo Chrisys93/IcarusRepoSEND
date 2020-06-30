@@ -1056,7 +1056,7 @@ class HServRepoStorApp(Strategy):
                     delay = self.view.path_delay(node, next_node)
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                              msg['freshness_per'], rtt_delay, STORE)
+                                              curTime + msg['freshness_per'], rtt_delay, STORE)
 
         elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
             curTime = time.time()
@@ -2339,7 +2339,8 @@ class HServProStorApp(Strategy):
                     next_node = path[1]
                     delay = self.view.path_delay(node, next_node)
 
-                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id, STORE)
+                    self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
+                                              curTime + msg['shelf_life'], rtt_delay, STORE)
 
 
 
@@ -3648,23 +3649,23 @@ class HServReStorApp(Strategy):
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, feedback, flow_id, msg['freshness_per'])
+                self.controller.start_session(curTime, node, msg, log, feedback, feedback, flow_id, curTime + curTime + msg['freshness_per'])
                 path = self.view.shortest_path(node, edr)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['freshness_per'], rtt_delay, STORE)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['freshness_per'])
+                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['freshness_per'])
                 path = self.view.shortest_path(node, edr)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['freshness_per'], rtt_delay, STORE)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
@@ -3766,7 +3767,7 @@ class HServReStorApp(Strategy):
 
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         else:
             service = content
 
@@ -5002,23 +5003,23 @@ class HServSpecStorApp(Strategy):
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['freshness_per'])
+                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['freshness_per'])
                 path = self.view.shortest_path(node, edr)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['freshness_per'], rtt_delay, STORE)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
-                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, msg['freshness_per'])
+                self.controller.start_session(curTime, node, msg, log, feedback, flow_id, curTime + msg['freshness_per'])
                 path = self.view.shortest_path(node, edr)
                 next_node = path[1]
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['freshness_per'], rtt_delay, STORE)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
@@ -5120,7 +5121,7 @@ class HServSpecStorApp(Strategy):
 
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         else:
             service = content
 
