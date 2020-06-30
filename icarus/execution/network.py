@@ -412,7 +412,7 @@ class NetworkView(object):
 
         for n in nodes:
             for l in r_labels:
-                if l not in self.model.node_labels[n]["request_labels"].keys():
+                if [l] not in self.model.node_labels[n]["request_labels"]:
                     del_nodes.append(n)
 
         for n in del_nodes:
@@ -1528,6 +1528,8 @@ class NetworkController(object):
         """
         self.model.node_labels[s] = dict()
         if self.model.node_labels[s].has_key("request_labels"):
+            if type(self.model.node_labels[s]["request_labels"]) is not Counter():
+                self.model.node_labels[s]["request_labels"] = Counter()
             for label in service_request['labels']:
                 self.model.node_labels[s]["request_labels"].update([label])
         else:
