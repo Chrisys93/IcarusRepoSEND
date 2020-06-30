@@ -1867,7 +1867,7 @@ class HServRepoStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
@@ -2583,9 +2583,9 @@ class HServProStorApp(Strategy):
                         all_in = 0
                         if labels:
                             for l in labels:
-                                for label in self.view.model.node_labels[node]["request_labels"]:
-                                    if label == l:
-                                        all_in += 1
+                                if "request_labels" in self.view.model.node_labels[node] and l in \
+                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                    all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
@@ -3174,7 +3174,7 @@ class HServProStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
@@ -3925,9 +3925,9 @@ class HServReStorApp(Strategy):
                         all_in = 0
                         if labels:
                             for l in labels:
-                                for label in self.view.model.node_labels[node]["request_labels"]:
-                                    if label == l:
-                                        all_in += 1
+                                if "request_labels" in self.view.model.node_labels[node] and l in \
+                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                    all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
@@ -4504,7 +4504,7 @@ class HServReStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
@@ -4517,7 +4517,7 @@ class HServReStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
@@ -5279,9 +5279,9 @@ class HServSpecStorApp(Strategy):
                         all_in = 0
                         if labels:
                             for l in labels:
-                                for label in self.view.model.node_labels[node]["request_labels"]:
-                                    if label == l:
-                                        all_in += 1
+                                if "request_labels" in self.view.model.node_labels[node] and l in \
+                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                    all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
@@ -5858,7 +5858,7 @@ class HServSpecStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
@@ -5871,7 +5871,7 @@ class HServSpecStorApp(Strategy):
                         if source:
                             self.controller.start_session(curTime, receiver, content, labels, log, flow_id, deadline)
                         else:
-                            source, in_cache = self.view.closest_source(node, service)
+                            source, in_cache = self.view.closest_source(node, content)
                         delay = self.view.path_delay(node, source)
                         rtt_delay += delay * 2
                         self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
