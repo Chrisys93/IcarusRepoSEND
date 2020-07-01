@@ -546,15 +546,15 @@ class LatencyCollector(DataCollector):
     @inheritdoc(DataCollector)
     def results(self):
         if self.view.model.strategy == 'HYBRID':
-            res = open("/home/chrisys1993/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IIcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
-            res = open("/home/chrisys1993/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IIcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
-            res = open("/home/chrisys1993/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IIcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/home/chrisys1993/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IIcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/home/chrisys1993/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
