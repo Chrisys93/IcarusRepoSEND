@@ -1120,7 +1120,7 @@ class HServRepoStorApp(Strategy):
         if curTime - self.last_replacement > self.replacement_interval:
             #self.print_stats()
             print("Replacement time: " + repr(time))
-            self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
+            self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
             self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
@@ -2427,7 +2427,7 @@ class HServProStorApp(Strategy):
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
             print("Replacement time: " + repr(time))
-            self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
+            self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
             self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
@@ -3786,7 +3786,7 @@ class HServReStorApp(Strategy):
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
             print("Replacement time: " + repr(time))
-            self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
+            self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
             self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
@@ -5158,7 +5158,7 @@ class HServSpecStorApp(Strategy):
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
             print("Replacement time: " + repr(time))
-            self.controller.replacement_interval_over(flow_id, self.replacement_interval, time)
+            self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
             self.replace_services1(time)
             self.last_replacement = time
             self.initialise_metrics()
