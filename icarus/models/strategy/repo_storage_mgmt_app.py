@@ -1119,10 +1119,10 @@ class HServRepoStorApp(Strategy):
 
         if curTime - self.last_replacement > self.replacement_interval:
             #self.print_stats()
-            print("Replacement time: " + repr(time))
+            print("Replacement time: " + repr(curTime))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
-            self.replace_services1(time)
-            self.last_replacement = time
+            self.replace_services1(curTime)
+            self.last_replacement = curTime
             self.initialise_metrics()
 
         compSpot = None
@@ -2426,10 +2426,10 @@ class HServProStorApp(Strategy):
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
-            print("Replacement time: " + repr(time))
+            print("Replacement time: " + repr(curTime))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
-            self.replace_services1(time)
-            self.last_replacement = time
+            self.replace_services1(curTime)
+            self.last_replacement = curTime
             self.initialise_metrics()
 
         compSpot = None
@@ -3785,10 +3785,10 @@ class HServReStorApp(Strategy):
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
-            print("Replacement time: " + repr(time))
+            print("Replacement time: " + repr(curTime))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
-            self.replace_services1(time)
-            self.last_replacement = time
+            self.replace_services1(curTime)
+            self.last_replacement = curTime
             self.initialise_metrics()
 
         compSpot = None
@@ -5157,10 +5157,10 @@ class HServSpecStorApp(Strategy):
 
         if curTime - self.last_replacement > self.replacement_interval:
             # self.print_stats()
-            print("Replacement time: " + repr(time))
+            print("Replacement time: " + repr(curTime))
             self.controller.replacement_interval_over(flow_id, self.replacement_interval, curTime)
-            self.replace_services1(time)
-            self.last_replacement = time
+            self.replace_services1(curTime)
+            self.last_replacement = curTime
             self.initialise_metrics()
 
         compSpot = None

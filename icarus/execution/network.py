@@ -1786,7 +1786,7 @@ class NetworkController(object):
             if task.taskType == Task.TASK_TYPE_SERVICE:
                 self.execute_service(task.flow_id, task.service, task.node, timestamp, False)
 
-    def reassign_vm(self, time, compSpot, serviceToReplace, serviceToAdd, debugFlag=False):
+    def reassign_vm(self, curTime, compSpot, serviceToReplace, serviceToAdd, debugFlag=False):
         """ Instantiate a VM with a given service
         NOTE: this method should ideally call reassign_vm of ComputationSpot as well. 
         However, some strategies rebuild VMs from scratch every time and they do not 
@@ -1796,7 +1796,7 @@ class NetworkController(object):
             print("Error in reassign_vm(): serviceToAdd equals serviceToReplace")
             raise ValueError("Error in reassign_vm(): service replaced and added are same")
 
-        compSpot.reassign_vm(self, time, serviceToReplace, serviceToAdd, debugFlag)
+        compSpot.reassign_vm(self, curTime, serviceToReplace, serviceToAdd, debugFlag)
         self.collector.reassign_vm(compSpot.node, serviceToReplace, serviceToAdd)
 
     def end_session(self, success=True, timestamp=0, flow_id=0):
