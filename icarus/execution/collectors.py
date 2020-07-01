@@ -519,7 +519,7 @@ class LatencyCollector(DataCollector):
             if self.flow_cloud[flow_id]:
                 self.n_sat_cloud_interval += 1
             self.n_satisfied += 1
-            print "Request satisfied."
+            print "Request satisfied"
             self.n_satisfied_interval += 1
             sat = True 
             self.latency_interval += timestamp - self.flow_start[flow_id]
@@ -545,12 +545,26 @@ class LatencyCollector(DataCollector):
 
     @inheritdoc(DataCollector)
     def results(self):
+        if self.view.model.strategy == 'HYBRID':
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+        elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+        elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+        elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
+        elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
+
         per_service_sats = {}
+        res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():
             per_service_sats[service] = 1.0*self.service_satisfied[service]/self.service_requests[service]
+            res.write(str(100*self.service_satisfied[service]/self.service_requests[service]) + ", ")
+        res.write("\n")
         results['PER_SERVICE_SATISFACTION'] = per_service_sats
         results['PER_SERVICE_REQUESTS'] = self.service_requests
         results['PER_SERVICE_SAT_REQUESTS'] = self.service_satisfied
@@ -570,6 +584,7 @@ class LatencyCollector(DataCollector):
         for key in sorted(self.idle_times):
             print (repr(key) + " " + repr(self.idle_times[key]))
         #results['VMS_PER_SERVICE'] = self.vms_per_service
+        res.close()
         
         return results
 

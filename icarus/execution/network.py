@@ -490,10 +490,10 @@ class NetworkView(object):
 
         current_count = 0
         auth_node = None
-        for n, count in self.labels_sources(labels):
-            if count >= current_count:
+        for n in self.labels_sources(labels):
+            if self.labels_sources(labels)[n] >= current_count:
                 auth_node = self.storage_nodes()[n]
-                current_count = count
+                current_count = self.labels_sources(labels)[n]
         return auth_node
 
     def service_labels_closest_repo(self, labels, node, path, on_path):
@@ -516,15 +516,15 @@ class NetworkView(object):
         nodes = Counter()
         auth_node = None
         in_path = False
-        for n, count in self.labels_sources(labels):
+        for n in self.labels_sources(labels):
             if self.model.repoStorage[n].hasMessage(None, labels):
                 msg = self.model.repoStorage[n].hasMessage(None, labels)
                 hops = len(self.shortest_path(node, n))
                 if msg['service_type'] is "processed":
-                    nodes.update({self.storage_nodes()[n]: hops})
+                    nodes.update({self.storage_nodes()[n].node: hops})
 
-        for n, hops in nodes:
-            if hops < current_hops:
+        for n in nodes:
+            if nodes[n] < current_hops:
                 if on_path and n in path:
                     in_path = True
                     auth_node = n
@@ -553,16 +553,31 @@ class NetworkView(object):
         current_proc = 0
         nodes = Counter()
         auth_node = None
+        del_nodes = []
         in_path = False
-        for n, count in self.labels_sources(labels):
+        for n in self.labels_sources(labels):
             no_proc = 0
             for msg in self.model.repoStorage[n].getProcessedMessages(labels):
-                if msg['service_type'] is "processed":
-                    no_proc += 1
-            nodes.update({self.storage_nodes()[n]: no_proc})
+                no_proc += 1
+            nodes.update({self.storage_nodes()[n].node: no_proc})
 
-        for n, no_proc in nodes:
-            if no_proc > current_proc:
+        for n in nodes:
+            if nodes[n] > current_proc:
+                if on_path and n in path:
+                    in_path = True
+                    auth_node = n
+                else:
+                    in_path = False
+                    auth_node = n
+            else:
+                del_nodes.append(n)
+
+        for n in del_nodes:
+            del nodes[n]
+
+        current_hops = float('inf')
+        for n in nodes:
+            if nodes[n] < current_hops:
                 if on_path and n in path:
                     in_path = True
                     auth_node = n
@@ -972,6 +987,9 @@ class NetworkModel(object):
         self.shortest_path = shortest_path if shortest_path is not None \
             else symmetrify_paths(nx.all_pairs_dijkstra_path(topology))
 
+        # Network Strategy set when strategy initialised
+        self.strategy = None
+
         # Network topology
         self.topology = topology
         self.topology_depth = 0
@@ -1078,11 +1096,10 @@ class NetworkModel(object):
                                 else:
                                     self.content_source[content] = [node]
 
-                            if self.node_labels.has_key(node):
-                                self.node_labels[node].update(self.all_node_labels[node])
-                            else:
+                            if not self.node_labels.has_key(node):
                                 self.node_labels[node] = Counter()
-                                self.node_labels[node] = self.all_node_labels[node]
+                            for label in self.all_node_labels[node]:
+                                self.node_labels[node].update({label:self.all_node_labels[node][label]})
 
                             for k in self.all_node_labels[node]:
                                 self.labels_sources[k] = Counter()
@@ -1564,12 +1581,16 @@ class NetworkController(object):
             The path to use. If not provided, shortest path is used
 
         """
+
+        Deletion = []
         for label in labels:
-            if 'request_labels' in self.model.node_labels[s] and \
-                    label in self.model.node_labels[s]["request_labels"].keys():
-                self.model.node_labels[s]["request_labels"].remove(label)
+            if 'request_labels' in self.model.node_labels[s] and label in self.model.node_labels[s]["request_labels"].keys():
+                Deletion.append(label)
                 if add:
                     self.model.node_labels[s].update(label)
+        for label in Deletion:
+            if label in self.model.node_labels[s]["request_labels"]:
+                del self.model.node_labels[s]["request_labels"][label]
 
     def add_message_to_storage(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1603,6 +1624,7 @@ class NetworkController(object):
                     else:
                         self.model.contents[s][content['content']] = content
                 else:
+                    self.model.contents[s] = dict()
                     self.model.contents[s][content['content']] = content
 
         else:
@@ -1627,7 +1649,9 @@ class NetworkController(object):
         """
         if s not in self.model.node_labels:
             self.model.node_labels[s] = Counter()
-        self.model.node_labels[s].update(content["labels"])
+        for l in content["labels"]:
+            if l in self.model.node_labels[s]:
+                self.model.node_labels[s].update([l])
 
 
     def put_content(self, node, content=0):
@@ -1696,7 +1720,7 @@ class NetworkController(object):
         storage_hit : bool
             True if the content is available, False otherwise
         """
-        if (node in self.model.repoStorage) and (message_ID or labels):
+        if (node in self.model.storageSize) and (message_ID or labels):
             storage_hit = self.model.repoStorage[node].hasMessage(message_ID, labels)
             if storage_hit:
                 # if self.session['log']:

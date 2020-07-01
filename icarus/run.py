@@ -39,6 +39,7 @@ def handler(settings, orch, output, signum=None, frame=None):
     """
     logger.error('Received signal %d. Terminating' % signum)
     RESULTS_WRITER[settings.RESULTS_FORMAT](orch.results, output)
+
     logger.info('Saved intermediate results to file %s' % os.path.abspath(output))
     orch.stop()
     sys.exit(-signum)

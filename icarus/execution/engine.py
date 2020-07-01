@@ -61,9 +61,13 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, repo_po
     strategy_inst = STRATEGY[strategy_name](view, controller, **strategy_args)
     warmup_strategy_inst = STRATEGY[warmup_strategy_name](view, controller, **warmup_strategy_args)
 
+    n = 0
     for time, event in workload:
         #continue
         strategy_inst.process_event(time, **event)
+        if n % 100000 == 0:
+            collector.results()
+        n += 1
 
     return collector.results()
 
