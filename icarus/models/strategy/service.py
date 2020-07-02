@@ -6,7 +6,6 @@ from __future__ import print_function
 import networkx as nx
 import random
 import sys
-from memory_profiler import profile
 
 from math import ceil
 from icarus.registry import register_strategy
