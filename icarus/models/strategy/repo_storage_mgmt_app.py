@@ -2,7 +2,6 @@
 from __future__ import division
 
 import time
-from memory_profiler import profile
 from collections import deque, defaultdict
 import random
 import abc
