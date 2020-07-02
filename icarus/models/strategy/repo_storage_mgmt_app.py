@@ -3662,7 +3662,7 @@ class HServReStorApp(Strategy):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], False)
-            elif node is self.view.all_labels_most_requests(msg["labels"]).node:
+            elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]).node:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node == node_s and not off_path:
@@ -5033,7 +5033,7 @@ class HServSpecStorApp(Strategy):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], False)
-            elif node is self.view.all_labels_most_requests(msg["labels"]):
+            elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
