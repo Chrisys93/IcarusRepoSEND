@@ -3166,7 +3166,7 @@ class HServProStorApp(Strategy):
                                     source = n
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, ctemp, labels, source, flow_id, deadline, rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
@@ -4438,14 +4438,14 @@ class HServReStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     content = self.oldestUnProcDepletion(node)
-                    source = self.view.content_source_cloud(msg, msg['labels'])
+                    source = self.view.content_source_cloud(content, content['labels'])
                     if not source:
                          for n in self.view.model.comp_size:
                                 if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
                     delay = self.view.path_delay(node, source)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
