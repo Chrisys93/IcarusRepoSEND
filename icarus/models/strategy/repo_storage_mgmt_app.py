@@ -2739,7 +2739,8 @@ class HServProStorApp(Strategy):
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
-        aTask = None
+
+
         for n in reversed(path[1:-1]):
             cs = self.compSpots[n]
             if cs.is_cloud:
@@ -3871,7 +3872,7 @@ class HServReStorApp(Strategy):
                                         node] is not None:
                                         source = n
                         path = self.view.shortest_path(node, source)
-                        upstream_node = self.find_closest_feasible_node(receiver, flow_id, node, path, curTime, service, deadline, rtt_delay)
+                        upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
                         self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
                                                   deadline, rtt_delay, STORE)
@@ -4084,21 +4085,17 @@ class HServReStorApp(Strategy):
             else:
                 print("Error: unrecognised status value : " + repr(status))
 
-    def find_closest_feasible_node(self, receiver, flow_id, node, path, curTime, service, deadline, rtt_delay):
+    def find_closest_feasible_node(self, receiver, flow_id, path, curTime, service, deadline, rtt_delay):
         """
         finds fathest comp. spot to schedule a request using current
         congestion information at each upstream comp. spot.
         The goal is to carry out computations at the farthest node to create space for
         tasks that require closer comp. spots.
         """
-        source, in_cache = self.view.closest_source(node, service)
-        if source == node:
-            for n in self.view.model.comp_size:
-                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                    source = n
-        # start from the closest node in the path and check feasibility
 
-        upstream_node = source
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        # start from the upper-most node in the path and check feasibility
+        upstream_node = sourcee
         aTask = None
         for n in reversed(path[1:-1]):
             cs = self.compSpots[n]
@@ -5243,7 +5240,7 @@ class HServSpecStorApp(Strategy):
                                         node] is not None:
                                         source = n
                         path = self.view.shortest_path(node, source)
-                        upstream_node = self.find_closest_feasible_node(receiver, flow_id, node, path, curTime, service, deadline, rtt_delay)
+                        upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
                         self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
                                                   deadline, rtt_delay, STORE)
@@ -5456,20 +5453,16 @@ class HServSpecStorApp(Strategy):
             else:
                 print("Error: unrecognised status value : " + repr(status))
 
-    def find_closest_feasible_node(self, receiver, flow_id, node, path, curTime, service, deadline, rtt_delay):
+    def find_closest_feasible_node(self, receiver, flow_id, path, curTime, service, deadline, rtt_delay):
         """
         finds fathest comp. spot to schedule a request using current
         congestion information at each upstream comp. spot.
         The goal is to carry out computations at the farthest node to create space for
         tasks that require closer comp. spots.
         """
-        source, in_cache = self.view.closest_source(node, service)
-        if source == node:
-            for n in self.view.model.comp_size:
-                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                    source = n
-        # start from the closest node in the path and check feasibility
 
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        # start from the upper-most node in the path and check feasibility
         upstream_node = source
         aTask = None
         for n in reversed(path[1:-1]):
