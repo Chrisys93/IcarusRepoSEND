@@ -559,6 +559,8 @@ class LatencyCollector(DataCollector):
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
 
+        # TODO: Possibly create another file, specifically for tracking repo/service-specific performance!!!!!!!!!!!!!!!
+
         per_service_sats = {}
         res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():

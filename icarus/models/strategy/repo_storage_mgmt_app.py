@@ -118,10 +118,7 @@ class GenRepoStorApp(Strategy):
             self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         else:
-            msg['satisfied'] = True
             msg['overtime'] = False
-            if self.view.hasStorageCapability(node):
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -153,33 +150,39 @@ class GenRepoStorApp(Strategy):
         else:
             feedback = False
 
+        if time.time() - self.last_period >= 1:
+            self.last_period = time.time()
+            period = True
+        else:
+            period = False
+
         if self.view.hasStorageCapability(node):
 
-            self.updateCloudBW(node)
-            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
-            self.updateDeplBW(node)
-            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(False)
+    def updateCloudBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(period)
 
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateUpBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateDeplBW(self, node, period):
+        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -255,7 +258,7 @@ class GenRepoStorApp(Strategy):
                 # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                 # Revise:
-                self.updateCloudBW(node)
+                self.updateCloudBW(node, period)
 
                 # System.out.prln("Depletion is at: " + deplBW)
                 self.lastDepl = curTime
@@ -341,7 +344,7 @@ class GenRepoStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateCloudBW(node)
+                    self.updateCloudBW(node, period)
                     # System.out.prln("Depletion is at: " + deplBW)
                     self.lastDepl = curTime
                     """System.out.prln("self.cloudBW is at " +
@@ -353,7 +356,7 @@ class GenRepoStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -426,7 +429,7 @@ class GenRepoStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateUpBW(node)
+                    self.updateUpBW(node, period)
 
             # System.out.prln("Depletion is at : "+ deplBW)
             self.lastDepl = curTime
@@ -453,7 +456,7 @@ class GenRepoStorApp(Strategy):
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -577,8 +580,8 @@ class GenRepoStorApp(Strategy):
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
 
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
+                self.updateDeplBW(node, period)
+                self.updateCloudBW(node, period)
             # Revise:
             self.lastDepl = curTime
 
@@ -813,6 +816,7 @@ class HServRepoStorApp(Strategy):
         self.cand_deadline_metric = {x: {} for x in range(0, self.num_nodes)}
         self.replacements_so_far = 0
         self.serviceNodeUtil = [None]*len(self.receivers)
+        self.last_period = 0
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
             if cs.is_cloud:
@@ -1007,13 +1011,14 @@ class HServRepoStorApp(Strategy):
 
     # @profile
     def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
+        # TODO: NEED TO MAKE A COLLECTOR FUNCTION TO UPDATE A HOP COUNTER FOR DATA REPLICATION!!!!!!!!!!!!!!!!!!!!!!!!!!
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg:
-            if node in self.view.labels_sources(msg["labels"]):
+            if node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], False)
-            elif node is self.view.all_labels_main_source(msg["labels"]):
+            elif node in self.view.labels_sources(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], False)
@@ -1030,27 +1035,10 @@ class HServRepoStorApp(Strategy):
                     delay = self.view.path_delay(node, next_node)
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                              curTime + msg['freshness_per'], rtt_delay, STORE)
-
-        elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
-            curTime = time.time()
-
-            if node in self.view.model.repoStorage:
-                self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
-            storTime = curTime - msg['receiveTime']
-            msg['storTime'] = storTime
-            if (msg['storTime'] < msg['shelfLife']):
-                msg['satisfied'] = False
-                msg['overtime'] = False
-
-            if node in self.view.model.repoStorage:
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
+                                              curTime + msg['shelf_life'], rtt_delay, STORE)
 
         else:
-            msg['satisfied'] = True
             msg['overtime'] = False
-            if node in self.view.model.repoStorage:
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -1085,16 +1073,22 @@ class HServRepoStorApp(Strategy):
         else:
             feedback = False
 
+        if time.time() - self.last_period >= 1:
+            self.last_period = time.time()
+            period = True
+        else:
+            period = False
+
         if self.view.hasStorageCapability(node):
 
-            self.updateCloudBW(node)
-            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
-            self.updateDeplBW(node)
-            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -1211,8 +1205,8 @@ class HServRepoStorApp(Strategy):
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
-                        self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
-                                                  deadline, rtt_delay, STORE)
+                        # self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                        #                           deadline, rtt_delay, STORE)
                         rtt_delay += delay * 2
                         if upstream_node != source:
                             self.controller.add_event(curTime + delay, receiver, content, labels, upstream_node,
@@ -1475,16 +1469,21 @@ class HServRepoStorApp(Strategy):
 
     # TODO: UPDATE BELOW WITH COLLECTORS INSTEAD OF PREVIOUS OUTPUT FILES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedCloudMessagesBW(False)
+    def updateCloudBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(period)
 
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateUpBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + self.view.model.repoStorage[node].getDepletedMessagesBW(False)
-
-    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def updateDeplBW(self, node, period):
+        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedMessagesBW(period)
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -1556,7 +1555,7 @@ class HServRepoStorApp(Strategy):
                 # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                 # Revise:
-                self.updateCloudBW(node)
+                self.updateCloudBW(node, period)
 
                 # System.out.prln("Depletion is at: " + deplBW)
                 self.lastDepl = curTime
@@ -1642,7 +1641,7 @@ class HServRepoStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateCloudBW(node)
+                    self.updateCloudBW(node, period)
                     # System.out.prln("Depletion is at: " + deplBW)
                     self.lastDepl = curTime
                     """System.out.prln("self.cloudBW is at " +
@@ -1654,7 +1653,7 @@ class HServRepoStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -1727,7 +1726,7 @@ class HServRepoStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateUpBW(node)
+                    self.updateUpBW(node, period)
 
             # System.out.prln("Depletion is at : "+ deplBW)
             self.lastDepl = curTime
@@ -1754,7 +1753,7 @@ class HServRepoStorApp(Strategy):
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -1878,8 +1877,8 @@ class HServRepoStorApp(Strategy):
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
 
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
+                self.updateDeplBW(node, period)
+                self.updateCloudBW(node, period)
             # Revise:
             self.lastDepl = curTime
 
@@ -2342,23 +2341,8 @@ class HServProStorApp(Strategy):
                         self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                                 curTime + msg['shelf_life'], rtt_delay, STORE)
 
-
-
-        elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
-            curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
-            storTime = curTime - msg['receiveTime']
-            msg['storTime'] = storTime
-            if (msg['storTime'] < msg['shelfLife']):
-                msg['satisfied'] = False
-                msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
-
         else:
-            msg['satisfied'] = True
             msg['overtime'] = False
-            if self.view.hasStorageCapability(node):
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -2392,16 +2376,22 @@ class HServProStorApp(Strategy):
         else:
             feedback = False
 
+        if time.time() - self.last_period >= 1:
+            self.last_period = time.time()
+            period = True
+        else:
+            period = False
+
         if self.view.hasStorageCapability(node):
 
-            self.updateCloudBW(node)
-            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
-            self.updateDeplBW(node)
-            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -2517,8 +2507,8 @@ class HServProStorApp(Strategy):
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
-                        self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
-                                                  deadline, rtt_delay, STORE)
+                        # self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                        #                           deadline, rtt_delay, STORE)
                         rtt_delay += delay * 2
                         if upstream_node != source:
                             self.controller.add_event(curTime + delay, receiver, content, labels, upstream_node,
@@ -2784,22 +2774,22 @@ class HServProStorApp(Strategy):
 
     # TODO: UPDATE BELOW WITH COLLECTORS INSTEAD OF PREVIOUS OUTPUT FILES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(False)
+    def updateCloudBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(period)
 
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateUpBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateDeplBW(self, node, period):
+        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -2875,7 +2865,7 @@ class HServProStorApp(Strategy):
                 # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                 # Revise:
-                self.updateCloudBW(node)
+                self.updateCloudBW(node, period)
 
                 # System.out.prln("Depletion is at: " + deplBW)
                 self.lastDepl = curTime
@@ -2961,7 +2951,7 @@ class HServProStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateCloudBW(node)
+                    self.updateCloudBW(node, period)
                     # System.out.prln("Depletion is at: " + deplBW)
                     self.lastDepl = curTime
                     """System.out.prln("self.cloudBW is at " +
@@ -2973,7 +2963,7 @@ class HServProStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -3046,7 +3036,7 @@ class HServProStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateUpBW(node)
+                    self.updateUpBW(node, period)
 
             # System.out.prln("Depletion is at : "+ deplBW)
             self.lastDepl = curTime
@@ -3072,7 +3062,7 @@ class HServProStorApp(Strategy):
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -3206,8 +3196,8 @@ class HServProStorApp(Strategy):
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
 
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
+                self.updateDeplBW(node, period)
+                self.updateCloudBW(node, period)
             # Revise:
             self.lastDepl = curTime
 
@@ -3675,7 +3665,7 @@ class HServReStorApp(Strategy):
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          curTime + msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['shelf_life'], rtt_delay, STORE)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
@@ -3684,7 +3674,7 @@ class HServReStorApp(Strategy):
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          curTime + msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['shelf_life'], rtt_delay, STORE)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
@@ -3701,21 +3691,8 @@ class HServReStorApp(Strategy):
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
 
-        elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
-            curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
-            storTime = curTime - msg['receiveTime']
-            msg['storTime'] = storTime
-            if msg['storTime'] < msg['shelfLife']:
-                msg['satisfied'] = False
-                msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
-
         else:
-            msg['satisfied'] = False
             msg['overtime'] = False
-            if self.view.hasStorageCapability(node):
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -3749,16 +3726,22 @@ class HServReStorApp(Strategy):
         else:
             feedback = False
 
+        if time.time() - self.last_period >= 1:
+            self.last_period = time.time()
+            period = True
+        else:
+            period = False
+
         if self.view.hasStorageCapability(node):
 
-            self.updateCloudBW(node)
-            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
-            self.updateDeplBW(node)
-            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -3874,8 +3857,8 @@ class HServReStorApp(Strategy):
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
-                        self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
-                                                  deadline, rtt_delay, STORE)
+                        # self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                        #                           deadline, rtt_delay, STORE)
                         rtt_delay += delay * 2
                         if upstream_node != source:
                             self.controller.add_event(curTime + delay, receiver, content, labels, upstream_node,
@@ -4095,7 +4078,7 @@ class HServReStorApp(Strategy):
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
         # start from the upper-most node in the path and check feasibility
-        upstream_node = sourcee
+        upstream_node = source
         aTask = None
         for n in reversed(path[1:-1]):
             cs = self.compSpots[n]
@@ -4140,22 +4123,22 @@ class HServReStorApp(Strategy):
 
     # TODO: UPDATE BELOW WITH COLLECTORS INSTEAD OF PREVIOUS OUTPUT FILES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(False)
+    def updateCloudBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(period)
 
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateUpBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateDeplBW(self, node, period):
+        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -4231,7 +4214,7 @@ class HServReStorApp(Strategy):
                 # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                 # Revise:
-                self.updateCloudBW(node)
+                self.updateCloudBW(node, period)
 
                 # System.out.prln("Depletion is at: " + deplBW)
                 self.lastDepl = curTime
@@ -4317,7 +4300,7 @@ class HServReStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateCloudBW(node)
+                    self.updateCloudBW(node, period)
                     # System.out.prln("Depletion is at: " + deplBW)
                     self.lastDepl = curTime
                     """System.out.prln("self.cloudBW is at " +
@@ -4329,7 +4312,7 @@ class HServReStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -4402,7 +4385,7 @@ class HServReStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateUpBW(node)
+                    self.updateUpBW(node, period)
 
             # System.out.prln("Depletion is at : "+ deplBW)
             self.lastDepl = curTime
@@ -4429,7 +4412,7 @@ class HServReStorApp(Strategy):
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -4563,8 +4546,8 @@ class HServReStorApp(Strategy):
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
 
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
+                self.updateDeplBW(node, period)
+                self.updateCloudBW(node, period)
             # Revise:
             self.lastDepl = curTime
 
@@ -5043,7 +5026,7 @@ class HServSpecStorApp(Strategy):
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          curTime + msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['shelf_life'], rtt_delay, STORE)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
@@ -5052,7 +5035,7 @@ class HServSpecStorApp(Strategy):
                 delay = self.view.path_delay(node, next_node)
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
-                                          curTime + msg['freshness_per'], rtt_delay, STORE)
+                                          curTime + msg['shelf_life'], rtt_delay, STORE)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
@@ -5069,21 +5052,8 @@ class HServSpecStorApp(Strategy):
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
 
-        elif not self.view.hasStorageCapability(node) and msg['service_type'] is "nonproc":
-            curTime = time.time()
-            self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
-            storTime = curTime - msg['receiveTime']
-            msg['storTime'] = storTime
-            if msg['storTime'] < msg['shelfLife']:
-                msg['satisfied'] = False
-                msg['overtime'] = False
-            self.view.model.repoStorage[node].addToDeplMessages(msg)
-
         else:
-            msg['satisfied'] = False
             msg['overtime'] = False
-            if self.view.hasStorageCapability(node):
-                self.view.model.repoStorage[node].addToDeplMessages(msg)
 
         return msg
 
@@ -5117,16 +5087,22 @@ class HServSpecStorApp(Strategy):
         else:
             feedback = False
 
+        if time.time() - self.last_period >= 1:
+            self.last_period = time.time()
+            period = True
+        else:
+            period = False
+
         if self.view.hasStorageCapability(node):
 
-            self.updateCloudBW(node)
-            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
-            self.updateDeplBW(node)
-            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
-            self.updateUpBW(node)
-            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay)
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
 
         """
                 response : True, if this is a response from the cloudlet/cloud
@@ -5242,8 +5218,8 @@ class HServSpecStorApp(Strategy):
                         path = self.view.shortest_path(node, source)
                         upstream_node = self.find_closest_feasible_node(receiver, flow_id, path, curTime, service, deadline, rtt_delay)
                         delay = self.view.path_delay(node, source)
-                        self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
-                                                  deadline, rtt_delay, STORE)
+                        # self.controller.add_event(curTime + delay, receiver, service, labels, upstream_node, flow_id,
+                        #                           deadline, rtt_delay, STORE)
                         rtt_delay += delay * 2
                         if upstream_node != source:
                             self.controller.add_event(curTime + delay, receiver, content, labels, upstream_node,
@@ -5508,22 +5484,22 @@ class HServSpecStorApp(Strategy):
 
     # TODO: UPDATE BELOW WITH COLLECTORS INSTEAD OF PREVIOUS OUTPUT FILES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def updateCloudBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(False)
+    def updateCloudBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedCloudMessagesBW(period)
 
-    def updateUpBW(self, node):
-        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                       self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateUpBW(self, node, period):
+        self.cloudBW = self.view.model.repoStorage[node].getDepletedCloudProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                       self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def updateDeplBW(self, node):
-        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(False) + \
-                      self.view.model.repoStorage[node].getDepletedMessagesBW(False)
+    def updateDeplBW(self, node, period):
+        self.deplBW = self.view.model.repoStorage[node].getDepletedProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedUnProcMessagesBW(period) + \
+                      self.view.model.repoStorage[node].getDepletedMessagesBW(period)
 
-    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplCloud(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() +
                 self.view.model.repoStorage[node].getStaleMessagesSize() >
@@ -5599,7 +5575,7 @@ class HServSpecStorApp(Strategy):
                 # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                 # Revise:
-                self.updateCloudBW(node)
+                self.updateCloudBW(node, period)
 
                 # System.out.prln("Depletion is at: " + deplBW)
                 self.lastDepl = curTime
@@ -5685,7 +5661,7 @@ class HServSpecStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateCloudBW(node)
+                    self.updateCloudBW(node, period)
                     # System.out.prln("Depletion is at: " + deplBW)
                     self.lastDepl = curTime
                     """System.out.prln("self.cloudBW is at " +
@@ -5697,7 +5673,7 @@ class HServSpecStorApp(Strategy):
                       " Total space is " + self.view.model.repoStorage[node].getTotalStorageSpace()) """
                 # System.out.prln("Depleted  messages: " + sdepleted)
 
-    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplUp(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcessedMessagesSize() >
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.min_stor)):
@@ -5770,7 +5746,7 @@ class HServSpecStorApp(Strategy):
                     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
                     # Revise:
-                    self.updateUpBW(node)
+                    self.updateUpBW(node, period)
 
             # System.out.prln("Depletion is at : "+ deplBW)
             self.lastDepl = curTime
@@ -5797,7 +5773,7 @@ class HServSpecStorApp(Strategy):
 
     # System.out.prln("Depletion is at: "+ self.cloudBW)
 
-    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0):
+    def deplStorage(self, node, receiver, content, labels, log, flow_id, deadline, rtt_delay=0, period=False):
         curTime = time.time()
         if (self.view.model.repoStorage[node].getProcMessagesSize() +
                 self.view.model.repoStorage[node].getMessagesSize() >
@@ -5931,8 +5907,8 @@ class HServSpecStorApp(Strategy):
                 self.deplEmptyLoop = False
                 # System.out.prln("Depletion is at: "+ self.deplBW)
 
-                self.updateDeplBW(node)
-                self.updateCloudBW(node)
+                self.updateDeplBW(node, period)
+                self.updateCloudBW(node, period)
             # Revise:
             self.lastDepl = curTime
 
