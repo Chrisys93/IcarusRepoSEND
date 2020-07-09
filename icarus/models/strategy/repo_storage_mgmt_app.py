@@ -61,6 +61,10 @@ class GenRepoStorApp(Strategy):
         super(GenRepoStorApp, self).__init__(view, controller)
 
         self.lastDepl = 0
+        
+        self.last_period = 0
+        
+        self.last_period = 0
 
         self.cloudEmptyLoop = True
 
@@ -838,6 +842,8 @@ class HServRepoStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
+        
+        self.last_period = 0
 
         self.cloudEmptyLoop = True
 
@@ -2136,6 +2142,8 @@ class HServProStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
+        
+        self.last_period = 0
 
         self.cloudEmptyLoop = True
 
@@ -3456,6 +3464,8 @@ class HServReStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
+        
+        self.last_period = 0
 
         self.cloudEmptyLoop = True
 
@@ -4803,6 +4813,8 @@ class HServSpecStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
+        
+        self.last_period = 0
 
         self.cloudEmptyLoop = True
 
