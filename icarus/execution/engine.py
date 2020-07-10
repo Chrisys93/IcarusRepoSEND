@@ -67,7 +67,8 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, repo_po
         strategy_inst.process_event(time, **event)
         if n % 100000 == 0:
             collector.results()
-        n += 1
+        if event['status'] != 3:
+            n += 1
 
     return collector.results()
 

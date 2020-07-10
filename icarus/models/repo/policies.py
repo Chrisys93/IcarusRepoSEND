@@ -99,9 +99,6 @@ class RepoStorage(object):
         self.storedMessages.extend(self.processMessages)
         return self.storedMessages
 
-    def getProcessedMessages(self):
-        return self.processedMessages
-
     def getProcessMessages(self):
         return self.processMessages
 

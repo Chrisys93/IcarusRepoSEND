@@ -549,12 +549,16 @@ class LatencyCollector(DataCollector):
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_replicas.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+            replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_replicas.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
+            replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_replicas.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
+            replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_replicas.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
@@ -562,11 +566,24 @@ class LatencyCollector(DataCollector):
         # TODO: Possibly create another file, specifically for tracking repo/service-specific performance!!!!!!!!!!!!!!!
 
         per_service_sats = {}
+        per_node_replicas_stored = {}
+        per_node_replicas_requested = {}
         res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():
             per_service_sats[service] = 1.0*self.service_satisfied[service]/self.service_requests[service]
             res.write(str(100*self.service_satisfied[service]/self.service_requests[service]) + ", ")
         res.write("\n")
+
+        if self.view.model.strategy != 'HYBRID':
+            for node in self.view.model.storageSize:
+                per_node_replicas_requested[node] = self.view.replications_requests(node)
+                replicas.write(str(per_node_replicas_requested[node]) + ", ")
+            replicas.write("r\n")
+            for node in self.view.model.storageSize:
+                per_node_replicas_stored[node] = self.view.replications_destination(node)
+                replicas.write(str(per_node_replicas_stored[node]) + ", ")
+            replicas.write("s\n")
+
         results['PER_SERVICE_SATISFACTION'] = per_service_sats
         results['PER_SERVICE_REQUESTS'] = self.service_requests
         results['PER_SERVICE_SAT_REQUESTS'] = self.service_satisfied

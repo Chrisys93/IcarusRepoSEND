@@ -1042,6 +1042,7 @@ class HServRepoStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
+                    self.controller.replicate(node, edr.node)
 
         else:
             msg['overtime'] = False
@@ -1153,7 +1154,7 @@ class HServRepoStorApp(Strategy):
             compSpot = self.view.compSpot(node)
         if service is not None:
             if cloud_source == node and status == REQUEST:
-                
+
                 cache_delay = 0
                 if not in_cache and self.view.has_cache(node):
                     if self.controller.put_content(source, content['content']):
@@ -1198,7 +1199,7 @@ class HServRepoStorApp(Strategy):
                                                       rtt_delay + cache_delay, self.controller, self.debug)
 
                     if ret == False:
-                        
+
 
                         source = self.view.content_source_cloud(service, labels)
                         if not source:
@@ -1240,7 +1241,7 @@ class HServRepoStorApp(Strategy):
 
             #  Request at the receiver
             if receiver == node and status == REQUEST:
-                
+
                 self.controller.start_session(curTime, receiver, service, labels, log, flow_id, deadline)
                 path = self.view.shortest_path(node, cloud_source)
                 next_node = path[1]
@@ -1338,7 +1339,7 @@ class HServRepoStorApp(Strategy):
                     # raise ValueError("This should not happen: a task missed its deadline after being executed at an edge node.")
 
             elif status == REQUEST:
-                
+
                 # Processing a request
                 source, cache_ret = self.view.closest_source(node, service)
 
@@ -2142,7 +2143,7 @@ class HServProStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
-        
+
         self.last_period = 0
 
         self.cloudEmptyLoop = True
@@ -2331,7 +2332,7 @@ class HServProStorApp(Strategy):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             else:
-                edr = self.view.all_labels_main_source(msg["labels"])
+                edr = self.view.all_labels_most_requests(msg["labels"])
                 if edr and node != edr.node:
                     self.controller.add_request_labels_to_node(node, msg)
                     if edr and edr.hasMessage(msg['content'], msg['labels']):
@@ -2348,6 +2349,7 @@ class HServProStorApp(Strategy):
 
                         self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                                 curTime + msg['shelf_life'], rtt_delay, STORE)
+                    self.controller.replicate(node, edr.node)
 
         else:
             msg['overtime'] = False
@@ -3464,7 +3466,7 @@ class HServReStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
-        
+
         self.last_period = 0
 
         self.cloudEmptyLoop = True
@@ -3676,6 +3678,7 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                           curTime + msg['shelf_life'], rtt_delay, STORE)
+                self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
@@ -3685,10 +3688,14 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                           curTime + msg['shelf_life'], rtt_delay, STORE)
+                self.controller.replicate(node, edr)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
-                if edr:
+                if edr and node == edr:
+                    self.controller.add_message_to_storage(node, msg)
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], True)
+                elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     if edr and edr.hasMessage(msg['content'], msg['labels']):
                         msg = edr.hasMessage(msg['content'], msg['labels'])
@@ -3700,6 +3707,7 @@ class HServReStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
+                    self.controller.replicate(node, edr.node)
 
         else:
             msg['overtime'] = False
@@ -4813,7 +4821,7 @@ class HServSpecStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
-        
+
         self.last_period = 0
 
         self.cloudEmptyLoop = True
@@ -5039,6 +5047,7 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                           curTime + msg['shelf_life'], rtt_delay, STORE)
+                self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
                 self.controller.add_request_labels_to_node(node, msg)
@@ -5048,10 +5057,14 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                           curTime + msg['shelf_life'], rtt_delay, STORE)
+                self.controller.replicate(node, edr)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
-                if edr:
+                if edr and node == edr.node:
+                    self.controller.add_message_to_storage(node, msg)
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], True)
+                elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     if edr.hasMessage(msg['content'], msg['labels']):
                         msg = edr.hasMessage(msg['content'], msg['labels'])
@@ -5063,6 +5076,7 @@ class HServSpecStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
+                    self.controller.replicate(node, edr.node)
 
         else:
             msg['overtime'] = False

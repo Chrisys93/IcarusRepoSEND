@@ -231,6 +231,20 @@ class NetworkView(object):
                 loc.add(node)
         return loc
 
+    def replications_destination(self, node):
+
+        if self.model.replications_to[node]:
+            return self.model.replications_to[node]
+        else:
+            return 0
+
+    def replications_requests(self, node):
+
+        if self.model.replications_from[node]:
+            return self.model.replications_from[node]
+        else:
+            return 0
+
     def content_source(self, k, labels):
         """Return the node identifier where the content is persistently stored.
 
@@ -524,13 +538,18 @@ class NetworkView(object):
                     nodes.update({self.storage_nodes()[n].node: hops})
 
         for n in nodes:
-            if nodes[n] < current_hops:
-                if on_path and n in path:
+            if 'src' in n:
+                continue
+            if on_path:
+                if n in path and nodes[n] < current_hops:
                     in_path = True
                     auth_node = n
-                else:
-                    in_path = False
-                    auth_node = n
+            elif n in path and nodes[n] < current_hops:
+                in_path = True
+                auth_node = n
+            elif nodes[n] < current_hops:
+                in_path = False
+                auth_node = n
 
         return in_path, auth_node
 
@@ -562,26 +581,33 @@ class NetworkView(object):
             nodes.update({self.storage_nodes()[n].node: no_proc})
 
         for n in nodes:
-            if nodes[n] > current_proc:
-                if on_path and n in path:
-                    in_path = True
-                    auth_node = n
-                else:
-                    in_path = False
-                    auth_node = n
-            else:
+            if not nodes[n] > current_proc:
                 del_nodes.append(n)
 
         for n in del_nodes:
             del nodes[n]
 
+
         current_hops = float('inf')
         for n in nodes:
-            if nodes[n] < current_hops:
-                if on_path and n in path:
+            if self.model.repoStorage[n].hasMessage(None, labels):
+                msg = self.model.repoStorage[n].hasMessage(None, labels)
+                hops = len(self.shortest_path(node, n))
+                if msg['service_type'] is "processed":
+                    nodes[self.storage_nodes()[n].node] = hops
+
+        for n in nodes:
+            if 'src' in n:
+                continue
+            if on_path:
+                if n in path:
                     in_path = True
                     auth_node = n
-                else:
+            else:
+                if n in path and nodes[n] < current_hops:
+                    in_path = True
+                    auth_node = n
+                elif nodes[n] < current_hops:
                     in_path = False
                     auth_node = n
 
@@ -1046,6 +1072,8 @@ class NetworkModel(object):
         self.all_node_labels = {}
         self.contents = {}
         self.node_labels = {}
+        self.replications_from = Counter()
+        self.replications_to = Counter()
         request_labels = {}
         self.rate = rate
         for node in topology.nodes():
@@ -1653,6 +1681,32 @@ class NetworkController(object):
             if l in self.model.node_labels[s]:
                 self.model.node_labels[s].update([l])
 
+
+
+    def replicate(self, s, d):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Storage requesting node
+        d :any hashable type
+            Destination node
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        self.model.replications_from.update([s])
+        self.model.replications_to.update([d])
 
     def put_content(self, node, content=0):
         """Store content in the specified node.
