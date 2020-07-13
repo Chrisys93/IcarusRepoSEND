@@ -547,18 +547,27 @@ class LatencyCollector(DataCollector):
     def results(self):
         if self.view.model.strategy == 'HYBRID':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
             replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_replicas.txt", 'a')
+            labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
             replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_replicas.txt", 'a')
+            labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
             replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_replicas.txt", 'a')
+            labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
             replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_replicas.txt", 'a')
+            labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
@@ -568,11 +577,28 @@ class LatencyCollector(DataCollector):
         per_service_sats = {}
         per_node_replicas_stored = {}
         per_node_replicas_requested = {}
+        per_label_node_storage = {}
+        per_label_node_requests = {}
         res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():
             per_service_sats[service] = 1.0*self.service_satisfied[service]/self.service_requests[service]
             res.write(str(100*self.service_satisfied[service]/self.service_requests[service]) + ", ")
         res.write("\n")
+
+        for content in self.view.model.replication_hops:
+            msg = dict()
+            msg['content'] = content
+            msg['msg_size'] = 1000000
+            for node in self.view.model.storageSize:
+                if self.view.storage_nodes()[node].hasMessage(content, []):
+                    msg = self.view.storage_nodes()[node].hasMessage(content, [])
+                    break
+        if msg['content'] in self.view.model.replication_overheads:
+            self.view.model.replication_overheads[msg['content']] = self.view.model.replication_overheads[msg['content']] + self.view.model.replication_hops[msg['content']] * msg['msg_size']
+        else:
+            self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
+            overhead.write(str(self.view.replication_overhead(content)) + ", ")
+        overhead.write("\n")
 
         if self.view.model.strategy != 'HYBRID':
             for node in self.view.model.storageSize:
@@ -583,6 +609,21 @@ class LatencyCollector(DataCollector):
                 per_node_replicas_stored[node] = self.view.replications_destination(node)
                 replicas.write(str(per_node_replicas_stored[node]) + ", ")
             replicas.write("s\n")
+
+            for label in ["value", "video", "control", "photo", "audio", "traffic", "home_IoT", "office_IoT", "security"]:
+                labels_dist.write(label + ": ")
+                for node in self.view.model.request_labels_nodes[label]:
+                    per_label_node_requests[node] = self.view.model.request_labels_nodes[label][node]
+                    labels_dist.write(str(per_label_node_requests[node]) + ", ")
+                labels_dist.write("\n ")
+            labels_dist.write("r\n")
+            for label in ["value", "video", "control", "photo", "audio", "traffic", "home_IoT", "office_IoT", "security"]:
+                labels_dist.write(label + ": ")
+                for node in self.view.labels_sources([label]):
+                    per_label_node_storage[node] = self.view.labels_sources([label])[node]
+                    labels_dist.write(str(per_label_node_storage[node]) + ", ")
+                labels_dist.write("\n ")
+            labels_dist.write("s\n")
 
         results['PER_SERVICE_SATISFACTION'] = per_service_sats
         results['PER_SERVICE_REQUESTS'] = self.service_requests

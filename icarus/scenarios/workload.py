@@ -771,7 +771,7 @@ class StationaryRepoWorkload(object):
             #     event = {'receiver': receiver, 'content': datum, 'labels': labels, 'log': log, 'node': node,
             #              'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
             # el
-            if labels is not None:
+            if labels:
 
                 index = int(self.zipf.rv())
                 datum = self.data[index]
@@ -779,13 +779,14 @@ class StationaryRepoWorkload(object):
                 datum.update(labels=labels)
 
                 self.model.node_labels[node] = dict()
-                self.model.node_labels[node].update(request_labels=labels)
                 for c in self.data:
                     if all(label in labels for label in self.data[c]['labels']):
                         index = self.data[c]['content']
                 deadline = self.model.services[index].deadline + t_event
                 self.model.node_labels[node] = dict()
-                self.model.node_labels[node].update(request_labels=labels)
+                if node not in self.model.request_labels:
+                    self.model.request_labels[node] = Counter()
+                self.model.request_labels[node].update(labels)
                 for label in labels:
                     if label not in self.model.request_labels_nodes:
                         self.model.request_labels_nodes[label] = Counter()
@@ -793,8 +794,11 @@ class StationaryRepoWorkload(object):
                 event = {'receiver': receiver, 'content': datum, 'labels': labels, 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
             else:
+                index = int(self.zipf.rv())
+                datum = self.data[index]
+                datum.update(service_type="proc")
                 deadline = self.model.services[content].deadline + t_event
-                event = {'receiver': receiver, 'content': content, 'labels': '', 'log': log, 'node': node,
+                event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
 
             # NOTE: STOPPED HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

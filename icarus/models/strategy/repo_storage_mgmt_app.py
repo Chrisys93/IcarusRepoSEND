@@ -1020,14 +1020,17 @@ class HServRepoStorApp(Strategy):
         # TODO: NEED TO MAKE A COLLECTOR FUNCTION TO UPDATE A HOP COUNTER FOR DATA REPLICATION!!!!!!!!!!!!!!!!!!!!!!!!!!
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg:
+            self.controller.add_replication_hops(msg)
             if node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node in self.view.labels_sources(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             else:
                 edr = self.view.all_labels_main_source(msg["labels"])
                 if edr:
@@ -1162,6 +1165,9 @@ class HServRepoStorApp(Strategy):
                     else:
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.01
+                for n in range(0, 3):
+                    self.controller.add_replication_hops(content)
+                self.controller.replication_overhead_update(content)
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
                                                   rtt_delay + cache_delay, self.controller, self.debug)
 
@@ -1297,35 +1303,42 @@ class HServRepoStorApp(Strategy):
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
                         service['labels'] = self.controller.has_message(node, labels, content)['labels']
-                    else:
-                        print "This should not happen! The service should not be processed by a node which " \
-                              "does not have the associated data"
-                    if service['freshness_per'] > curTime - service['receiveTime']:
-                        service['Fresh'] = True
-                        service['Shelf'] = True
-                    elif service['shelf_life'] > curTime - service['receiveTime']:
-                        service['Fresh'] = False
-                        service['Shelf'] = True
+                        if service['freshness_per'] > curTime - service['receiveTime']:
+                            service['Fresh'] = True
+                            service['Shelf'] = True
+                        elif service['shelf_life'] > curTime - service['receiveTime']:
+                            service['Fresh'] = False
+                            service['Shelf'] = True
+                        else:
+                            service['Fresh'] = False
+                            service['Shelf'] = False
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     else:
                         service['Fresh'] = False
                         service['Shelf'] = False
-                    service['receiveTime'] = curTime
-                    service['service_type'] = "processed"
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     if self.controller.has_message(node, service['labels'], service['content']):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        self.controller.replication_overhead_update(service)
+                        self.controller.remove_replication_hops(service)
                         service['msg_size'] = service['msg_size'] / 2
                         all_in = 0
                         if labels:
                             for l in labels:
-                                if "request_labels" in self.view.model.node_labels[node] and l in \
-                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                if node in self.view.model.request_labels and l in self.view.model.request_labels[
+                                    node]:
                                     all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
-                        else:
-                            self.controller.add_message_to_storage(node, service)
-                            self.controller.add_storage_labels_to_node(node, service)
+                    else:
+                        self.controller.add_message_to_storage(node, service)
+                        self.controller.add_storage_labels_to_node(node, service)
+                        print "This should not happen! The service should not be processed by a node which " \
+                              "does not have the associated data"
+
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                               deadline, rtt_delay, STORE)
@@ -2325,6 +2338,7 @@ class HServProStorApp(Strategy):
     def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg:
+            self.controller.add_replication_hops(msg)
             if node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
@@ -2602,35 +2616,42 @@ class HServProStorApp(Strategy):
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
                         service['labels'] = self.controller.has_message(node, labels, content)['labels']
-                    else:
-                        print "This should not happen! The service should not be processed by a node which " \
-                              "does not have the associated data"
-                    if service['freshness_per'] > curTime - service['receiveTime']:
-                        service['Fresh'] = True
-                        service['Shelf'] = True
-                    elif service['shelf_life'] > curTime - service['receiveTime']:
-                        service['Fresh'] = False
-                        service['Shelf'] = True
+                        if service['freshness_per'] > curTime - service['receiveTime']:
+                            service['Fresh'] = True
+                            service['Shelf'] = True
+                        elif service['shelf_life'] > curTime - service['receiveTime']:
+                            service['Fresh'] = False
+                            service['Shelf'] = True
+                        else:
+                            service['Fresh'] = False
+                            service['Shelf'] = False
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     else:
                         service['Fresh'] = False
                         service['Shelf'] = False
-                    service['receiveTime'] = curTime
-                    service['service_type'] = "processed"
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     if self.controller.has_message(node, service['labels'], service['content']):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        self.controller.replication_overhead_update(service)
+                        self.controller.remove_replication_hops(service)
                         service['msg_size'] = service['msg_size'] / 2
                         all_in = 0
                         if labels:
                             for l in labels:
-                                if "request_labels" in self.view.model.node_labels[node] and l in \
-                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                if node in self.view.model.request_labels and l in self.view.model.request_labels[
+                                    node]:
                                     all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
-                        else:
-                            self.controller.add_message_to_storage(node, service)
-                            self.controller.add_storage_labels_to_node(node, service)
+                    else:
+                        self.controller.add_message_to_storage(node, service)
+                        self.controller.add_storage_labels_to_node(node, service)
+                        print "This should not happen! The service should not be processed by a node which " \
+                              "does not have the associated data"
+
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                               deadline, rtt_delay, STORE)
@@ -3653,6 +3674,7 @@ class HServReStorApp(Strategy):
         """
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg:
+            self.controller.add_replication_hops(msg)
             # TODO: Check usages of IS OPERATOR throughout code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             on_path = True
             in_path, node_c = self.view.service_labels_closest_repo(msg['labels'], node, path, on_path)
@@ -3661,14 +3683,16 @@ class HServReStorApp(Strategy):
             if node == node_c and in_path is True:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]).node:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
@@ -3960,35 +3984,42 @@ class HServReStorApp(Strategy):
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
                         service['labels'] = self.controller.has_message(node, labels, content)['labels']
-                    else:
-                        print "This should not happen! The service should not be processed by a node which " \
-                              "does not have the associated data"
-                    if service['freshness_per'] > curTime - service['receiveTime']:
-                        service['Fresh'] = True
-                        service['Shelf'] = True
-                    elif service['shelf_life'] > curTime - service['receiveTime']:
-                        service['Fresh'] = False
-                        service['Shelf'] = True
+                        if service['freshness_per'] > curTime - service['receiveTime']:
+                            service['Fresh'] = True
+                            service['Shelf'] = True
+                        elif service['shelf_life'] > curTime - service['receiveTime']:
+                            service['Fresh'] = False
+                            service['Shelf'] = True
+                        else:
+                            service['Fresh'] = False
+                            service['Shelf'] = False
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     else:
                         service['Fresh'] = False
                         service['Shelf'] = False
-                    service['receiveTime'] = curTime
-                    service['service_type'] = "processed"
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     if self.controller.has_message(node, service['labels'], service['content']):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        self.controller.replication_overhead_update(service)
+                        self.controller.remove_replication_hops(service)
                         service['msg_size'] = service['msg_size'] / 2
                         all_in = 0
                         if labels:
                             for l in labels:
-                                if "request_labels" in self.view.model.node_labels[node] and l in \
-                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                if node in self.view.model.request_labels and l in self.view.model.request_labels[
+                                    node]:
                                     all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
-                        else:
-                            self.controller.add_message_to_storage(node, service)
-                            self.controller.add_storage_labels_to_node(node, service)
+                    else:
+                        self.controller.add_message_to_storage(node, service)
+                        self.controller.add_storage_labels_to_node(node, service)
+                        print "This should not happen! The service should not be processed by a node which " \
+                              "does not have the associated data"
+
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                               deadline, rtt_delay, STORE)
@@ -5021,6 +5052,7 @@ class HServSpecStorApp(Strategy):
         """
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg:
+            self.controller.add_replication_hops(msg)
             # TODO: Check usages of IS OPERATOR throughout code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             on_path = True
             in_path, node_c = self.view.most_services_labels_closest_repo(msg['labels'], node, path, on_path)
@@ -5029,7 +5061,8 @@ class HServSpecStorApp(Strategy):
             if node == node_c and in_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg)
@@ -5037,7 +5070,8 @@ class HServSpecStorApp(Strategy):
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                self.controller.add_request_labels_to_storage(node, msg['labels'], False)
+                if self.controller.has_request_labels(node, msg['labels']):
+                    self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
                 edr = node_c
                 self.controller.add_request_labels_to_node(node, msg)
@@ -5329,35 +5363,42 @@ class HServSpecStorApp(Strategy):
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
                         service['labels'] = self.controller.has_message(node, labels, content)['labels']
-                    else:
-                        print "This should not happen! The service should not be processed by a node which " \
-                              "does not have the associated data"
-                    if service['freshness_per'] > curTime - service['receiveTime']:
-                        service['Fresh'] = True
-                        service['Shelf'] = True
-                    elif service['shelf_life'] > curTime - service['receiveTime']:
-                        service['Fresh'] = False
-                        service['Shelf'] = True
+                        if service['freshness_per'] > curTime - service['receiveTime']:
+                            service['Fresh'] = True
+                            service['Shelf'] = True
+                        elif service['shelf_life'] > curTime - service['receiveTime']:
+                            service['Fresh'] = False
+                            service['Shelf'] = True
+                        else:
+                            service['Fresh'] = False
+                            service['Shelf'] = False
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     else:
                         service['Fresh'] = False
                         service['Shelf'] = False
-                    service['receiveTime'] = curTime
-                    service['service_type'] = "processed"
+                        service['receiveTime'] = curTime
+                        service['service_type'] = "processed"
                     if self.controller.has_message(node, service['labels'], service['content']):
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
+                        self.controller.replication_overhead_update(service)
+                        self.controller.remove_replication_hops(service)
                         service['msg_size'] = service['msg_size'] / 2
                         all_in = 0
                         if labels:
                             for l in labels:
-                                if "request_labels" in self.view.model.node_labels[node] and l in \
-                                        self.view.model.node_labels[node]["request_labels"].keys():
+                                if node in self.view.model.request_labels and l in self.view.model.request_labels[
+                                    node]:
                                     all_in += 1
                             if all_in == len(labels):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
-                        else:
-                            self.controller.add_message_to_storage(node, service)
-                            self.controller.add_storage_labels_to_node(node, service)
+                    else:
+                        self.controller.add_message_to_storage(node, service)
+                        self.controller.add_storage_labels_to_node(node, service)
+                        print "This should not happen! The service should not be processed by a node which " \
+                              "does not have the associated data"
+
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
                                               deadline, rtt_delay, STORE)

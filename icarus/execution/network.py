@@ -245,6 +245,10 @@ class NetworkView(object):
         else:
             return 0
 
+    def replication_overhead(self, content):
+
+        return self.model.replication_overheads[content]
+
     def content_source(self, k, labels):
         """Return the node identifier where the content is persistently stored.
 
@@ -391,11 +395,11 @@ class NetworkView(object):
         nodes = Counter()
 
         for label in labels:
-            nodes.update(self.model.labels_sources.get(label, None))
+            nodes.update(self.model.labels_sources[label])
         valid_nodes = list(nodes)
         for n in valid_nodes:
-            if type(n) == int and "src" in n:
-                continue
+            if type(n) != int and "src" in n:
+                del nodes[n]
             elif not self.model.repoStorage[n].hasMessage(None, labels):
                 del nodes[n]
 
@@ -426,9 +430,10 @@ class NetworkView(object):
 
         for n in nodes:
             for l in r_labels:
-                for label in self.model.node_labels[n]["request_labels"]:
-                    if l != label[1]:
-                        del_nodes.append(n)
+                if n in self.model.request_labels:
+                    for label in self.model.request_labels[n]:
+                        if l != label:
+                            del_nodes.append(n)
 
         for n in del_nodes:
             del nodes[n]
@@ -538,8 +543,9 @@ class NetworkView(object):
                     nodes.update({self.storage_nodes()[n].node: hops})
 
         for n in nodes:
-            if 'src' in n:
-                continue
+            if type(n) != int:
+                if 'src' in n:
+                    continue
             if on_path:
                 if n in path and nodes[n] < current_hops:
                     in_path = True
@@ -597,8 +603,9 @@ class NetworkView(object):
                     nodes[self.storage_nodes()[n].node] = hops
 
         for n in nodes:
-            if 'src' in n:
-                continue
+            if type(n) != int:
+                if 'src' in n:
+                    continue
             if on_path:
                 if n in path:
                     in_path = True
@@ -809,8 +816,10 @@ class NetworkView(object):
             with caches. Otherwise it is a dict mapping nodes with a cache
             and their size.
         """
-        return {v: s.storageSize for v, s in self.model.repoStorage.items()} if size \
-            else self.model.repoStorage
+        if size:
+            return self.model.storageSize
+        else:
+            return self.model.repoStorage
 
     def has_cache(self, node):
         """Check if a node has a content cache.
@@ -1048,6 +1057,9 @@ class NetworkModel(object):
         # Dictionary mapping the labels associated with requests, received by each node,
         # and counted, for a quantisation of service popularity, related to those labels
         self.request_labels_nodes = {}
+        # Dictionary of counters, each entry/key corresponding to a node and each counter
+        # corresponding to a request-associated label
+        self.request_labels = {}
 
         #  A heap with events (see Event class above)
         self.eventQ = []
@@ -1071,10 +1083,11 @@ class NetworkModel(object):
         self.service_size = {}
         self.all_node_labels = {}
         self.contents = {}
+        self.replication_hops = Counter()
+        self.replication_overheads = {}
         self.node_labels = {}
         self.replications_from = Counter()
         self.replications_to = Counter()
-        request_labels = {}
         self.rate = rate
         for node in topology.nodes():
             # TODO: Sort out content association in the case that "contents" aren't objects!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1114,6 +1127,7 @@ class NetworkModel(object):
                         k = list(self.contents[node].keys())[0]
                         if type(self.contents[node][k]) is dict:
                             for c in self.contents[node]:
+                                self.replication_hops.update([self.contents[node][c]['content']])
                                 for label in self.contents[node][c]['labels']:
                                     self.all_node_labels[node].update([label])
 
@@ -1130,7 +1144,8 @@ class NetworkModel(object):
                                 self.node_labels[node].update({label:self.all_node_labels[node][label]})
 
                             for k in self.all_node_labels[node]:
-                                self.labels_sources[k] = Counter()
+                                if k not in self.labels_sources:
+                                    self.labels_sources[k] = Counter()
                                 self.labels_sources[k].update({node: self.all_node_labels[node][k]})
                         else:
                             self.contents[node] = stack_props['contents']
@@ -1168,7 +1183,8 @@ class NetworkModel(object):
                             self.node_labels[node] = self.all_node_labels[node]
 
                         for k in self.all_node_labels[node]:
-                            self.labels_sources[k] = Counter()
+                            if k not in self.labels_sources:
+                                self.labels_sources[k] = Counter()
                             self.labels_sources[k].update({node: self.all_node_labels[node][k]})
                     else:
                         self.contents[node] = stack_props['contents']
@@ -1572,20 +1588,37 @@ class NetworkController(object):
             The path to use. If not provided, shortest path is used
 
         """
-        self.model.node_labels[s] = dict()
-        if self.model.node_labels[s].has_key("request_labels"):
-            if type(self.model.node_labels[s]["request_labels"]) is not Counter():
-                self.model.node_labels[s]["request_labels"] = Counter()
-            for label in service_request['labels']:
-                self.model.node_labels[s]["request_labels"].update([label])
-        else:
-            self.model.node_labels[s]["request_labels"] = Counter()
-            for label in service_request['labels']:
-                self.model.node_labels[s]["request_labels"].update([label])
-        for label in service_request["labels"]:
+
+        if s not in self.model.request_labels:
+            self.model.request_labels[s] = Counter()
+        elif type(self.model.request_labels[s]) is not Counter():
+            self.model.request_labels[s] = Counter()
+        for label in service_request['labels']:
+            self.model.request_labels[s].update([label])
             if not self.model.request_labels_nodes.has_key(label):
                 self.model.request_labels_nodes[label] = Counter()
             self.model.request_labels_nodes[label].update([s])
+
+
+    def has_request_labels(self, s, labels):
+        all_in = []
+        for label in labels:
+            if s not in self.model.request_labels:
+                return False
+            if label in self.model.request_labels[s]:
+                all_in.append(label)
+
+        n = 0
+
+        for label in all_in:
+            for l in labels:
+                if l == label:
+                    n += 1
+        if n == len(labels):
+            return True
+        else:
+            return False
+
 
     def add_request_labels_to_storage(self, s, labels, add=False):
         """Forward a request from node *s* to node *t* over the provided path.
@@ -1612,13 +1645,17 @@ class NetworkController(object):
 
         Deletion = []
         for label in labels:
-            if 'request_labels' in self.model.node_labels[s] and label in self.model.node_labels[s]["request_labels"].keys():
+            if label in self.model.request_labels[s]:
                 Deletion.append(label)
                 if add:
-                    self.model.node_labels[s].update(label)
+                    self.model.node_labels[s].update([label])
+                    if label not in self.model.labels_sources:
+                        self.model.labels_sources[label] = Counter()
+                    self.model.labels_sources[label].update([s])
+                    
         for label in Deletion:
-            if label in self.model.node_labels[s]["request_labels"]:
-                del self.model.node_labels[s]["request_labels"][label]
+            if label in self.model.request_labels[s]:
+                del self.model.request_labels[s][label]
 
     def add_message_to_storage(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1680,6 +1717,11 @@ class NetworkController(object):
         for l in content["labels"]:
             if l in self.model.node_labels[s]:
                 self.model.node_labels[s].update([l])
+            else:
+                self.model.node_labels[s] = [l]
+            if l not in self.model.labels_sources:
+                self.model.labels_sources[l] = Counter()
+            self.model.labels_sources[l].update([s])
 
 
 
@@ -1707,6 +1749,87 @@ class NetworkController(object):
         """
         self.model.replications_from.update([s])
         self.model.replications_to.update([d])
+
+
+
+    def add_replication_hops(self, content):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Storage requesting node
+        d :any hashable type
+            Destination node
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        self.model.replication_hops.update([content['content']])
+
+
+
+    def remove_replication_hops(self, content):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Storage requesting node
+        d :any hashable type
+            Destination node
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        self.model.replication_hops[content['content']] = 1
+
+
+
+    def replication_overhead_update(self, content):
+        """Forward a content from node *s* to node *t* over the provided path.
+
+        TODO: This (and all called methods, defined within this class) should be
+            redefined, to account for the feedback and redirection of the content,
+            towards the optimal storage locations. BUT (!!!) once the content gets
+            redirected, it should also be stored by the appropriate Repo.
+            The _content methods defined from here on need to be adapted for storage,
+            as well!
+
+        Parameters
+        ----------
+        s : any hashable type
+            Storage requesting node
+        d :any hashable type
+            Destination node
+        main_path : bool, optional
+            If *True*, indicates that this path is being traversed by content
+            that will be delivered to the receiver. This is needed to
+            calculate latency correctly in multicast cases. Default value is
+            *True*
+        """
+        if content['content'] in self.model.replication_overheads:
+            self.model.replication_overheads[content['content']] = self.model.replication_overheads[content['content']] + self.model.replication_hops[content['content']] * content['msg_size']
+        else:
+            self.model.replication_overheads[content['content']] = self.model.replication_hops[content['content']] * content['msg_size']
 
     def put_content(self, node, content=0):
         """Store content in the specified node.
