@@ -397,11 +397,24 @@ class NetworkView(object):
         for label in labels:
             nodes.update(self.model.labels_sources[label])
         valid_nodes = list(nodes)
+
+        del_nodes = []
+
         for n in valid_nodes:
             if type(n) != int and "src" in n:
                 del nodes[n]
-            elif not self.model.repoStorage[n].hasMessage(None, labels):
-                del nodes[n]
+            for l in labels:
+                if n in self.model.node_labels:
+                    Found = False
+                    for label in self.model.node_labels[n]:
+                        if l == label:
+                            Found = True
+                    if not Found:
+                        del_nodes.append(n)
+                        break
+
+        for n in del_nodes:
+            del nodes[n]
 
 
         return nodes
@@ -431,9 +444,13 @@ class NetworkView(object):
         for n in nodes:
             for l in r_labels:
                 if n in self.model.request_labels:
+                    Found = False
                     for label in self.model.request_labels[n]:
-                        if l != label:
-                            del_nodes.append(n)
+                        if l == label:
+                            Found = True
+                    if not Found:
+                        del_nodes.append(n)
+                        break
 
         for n in del_nodes:
             del nodes[n]
@@ -460,7 +477,7 @@ class NetworkView(object):
         for n in self.labels_sources(labels):
             count = self.labels_sources(labels)[n]
             if count >= current_count:
-                if type(n) == int and "src" in n:
+                if type(n) != int and "src" in n:
                     auth_node = n
                     continue
                 auth_node = self.storage_nodes()[n]
@@ -1648,6 +1665,8 @@ class NetworkController(object):
             if label in self.model.request_labels[s]:
                 Deletion.append(label)
                 if add:
+                    if s not in self.model.node_labels:
+                        self.model.node_labels[s] = Counter()
                     self.model.node_labels[s].update([label])
                     if label not in self.model.labels_sources:
                         self.model.labels_sources[label] = Counter()
@@ -1737,7 +1756,7 @@ class NetworkController(object):
 
         Parameters
         ----------
-        s : any hashable type
+        s : any hashabe type
             Storage requesting node
         d :any hashable type
             Destination node

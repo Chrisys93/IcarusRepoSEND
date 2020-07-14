@@ -586,6 +586,7 @@ class LatencyCollector(DataCollector):
         res.write("\n")
 
         for content in self.view.model.replication_hops:
+            overhead.write(str(content) + ": ")
             msg = dict()
             msg['content'] = content
             msg['msg_size'] = 1000000
@@ -593,10 +594,10 @@ class LatencyCollector(DataCollector):
                 if self.view.storage_nodes()[node].hasMessage(content, []):
                     msg = self.view.storage_nodes()[node].hasMessage(content, [])
                     break
-        if msg['content'] in self.view.model.replication_overheads:
-            self.view.model.replication_overheads[msg['content']] = self.view.model.replication_overheads[msg['content']] + self.view.model.replication_hops[msg['content']] * msg['msg_size']
-        else:
-            self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
+            if msg['content'] in self.view.model.replication_overheads:
+                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_overheads[msg['content']] + self.view.model.replication_hops[msg['content']] * msg['msg_size']
+            else:
+                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
             overhead.write(str(self.view.replication_overhead(content)) + ", ")
         overhead.write("\n")
 

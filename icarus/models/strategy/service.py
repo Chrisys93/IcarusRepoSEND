@@ -727,6 +727,7 @@ class Hybrid(Strategy):
         elif status == REQUEST:
             # Processing a request
             source = self.view.content_source(service, labels)[len(self.view.content_source(service, labels))-1]
+            self.controller.add_replication_hops(content)
             path = self.view.shortest_path(node, source)
             next_node = path[1]
             delay = self.view.path_delay(node, next_node)
