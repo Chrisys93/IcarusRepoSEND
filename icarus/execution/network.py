@@ -417,7 +417,7 @@ class NetworkView(object):
             del nodes[n]
 
 
-        return nodes
+        return nodes 
 
     def labels_requests(self, r_labels):
         """Return the node identifier where the content is persistently stored.
