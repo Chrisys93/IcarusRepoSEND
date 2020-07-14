@@ -1425,6 +1425,10 @@ class HServRepoStorApp(Strategy):
                         service['receiveTime'] = curTime
                         service['service_type'] = "processed"
                     else:
+                        service = dict()
+                        service['content'] = content
+                        service['labels'] = labels
+                        service['msg_size'] = 1000000
                         service['Fresh'] = False
                         service['Shelf'] = False
                         service['receiveTime'] = curTime
@@ -2896,6 +2900,8 @@ class HServProStorApp(Strategy):
                     else:
                         service = dict()
                         service['content'] = content
+                        service['labels'] = labels
+                        service['msg_size'] = 1000000
                         service['Fresh'] = False
                         service['Shelf'] = False
                         service['receiveTime'] = curTime
@@ -4419,6 +4425,10 @@ class HServReStorApp(Strategy):
                         service['receiveTime'] = curTime
                         service['service_type'] = "processed"
                     else:
+                        service = dict()
+                        service['content'] = content
+                        service['labels'] = labels
+                        service['msg_size'] = 1000000
                         service['Fresh'] = False
                         service['Shelf'] = False
                         service['receiveTime'] = curTime
@@ -5952,6 +5962,10 @@ class HServSpecStorApp(Strategy):
                         service['receiveTime'] = curTime
                         service['service_type'] = "processed"
                     else:
+                        service = dict()
+                        service['content'] = content
+                        service['labels'] = labels
+                        service['msg_size'] = 1000000
                         service['Fresh'] = False
                         service['Shelf'] = False
                         service['receiveTime'] = curTime
