@@ -599,8 +599,9 @@ class NetworkView(object):
         in_path = False
         for n in self.labels_sources(labels):
             no_proc = 0
-            for msg in self.model.repoStorage[n].getProcessedMessages(labels):
-                no_proc += 1
+            if self.model.repoStorage[n].getProcessedMessages(labels):
+                for msg in self.model.repoStorage[n].getProcessedMessages(labels):
+                    no_proc += 1
             nodes.update({self.storage_nodes()[n].node: no_proc})
 
         for n in nodes:
