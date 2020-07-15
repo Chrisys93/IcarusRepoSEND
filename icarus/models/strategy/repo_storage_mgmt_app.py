@@ -1117,9 +1117,9 @@ class HServRepoStorApp(Strategy):
         service = None
         if type(content) is dict and 'shelf_life' in content:
             if content["shelf_life"]:
-            source, in_cache = self.view.closest_source(node, content)
-            path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                source, in_cache = self.view.closest_source(node, content)
+                path = self.view.shortest_path(node, source)
+                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -2591,9 +2591,9 @@ class HServProStorApp(Strategy):
         service = None
         if type(content) is dict and 'shelf_life' in content:
             if content["shelf_life"]:
-            source, in_cache = self.view.closest_source(node, content)
-            path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                source, in_cache = self.view.closest_source(node, content)
+                path = self.view.shortest_path(node, source)
+                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -4120,9 +4120,9 @@ class HServReStorApp(Strategy):
         service = None
         if type(content) is dict and 'shelf_life' in content:
             if content["shelf_life"]:
-            source, in_cache = self.view.closest_source(node, content)
-            path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+                source, in_cache = self.view.closest_source(node, content)
+                path = self.view.shortest_path(node, source)
+                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -5658,9 +5658,9 @@ class HServSpecStorApp(Strategy):
         service = None
         if type(content) is dict and 'shelf_life' in content:
             if content["shelf_life"]:
-            source, in_cache = self.view.closest_source(node, content)
-            path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+                source, in_cache = self.view.closest_source(node, content)
+                path = self.view.shortest_path(node, source)
+                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
