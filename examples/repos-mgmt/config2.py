@@ -61,13 +61,13 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = 500
-#N_CONTENTS = 1000
+#N_CONTENTS = 500
+N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 500.0
+NETWORK_REQUEST_RATE = 1000.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
@@ -81,7 +81,7 @@ N_WARMUP_REQUESTS = 0 #30000
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 5.0 #5.5
+MINS = 7.5 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
