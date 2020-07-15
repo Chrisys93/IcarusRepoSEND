@@ -1115,7 +1115,8 @@ class HServRepoStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and content["shelf_life"]:
+        if type(content) is dict and 'shelf_life' in content:
+            if content["shelf_life"]:
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
             self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
@@ -1395,8 +1396,7 @@ class HServRepoStorApp(Strategy):
                                 delay = self.view.link_delay(node, next_node)
                                 path_del = self.view.path_delay(node, receiver)
                                 self.controller.add_event(curTime + cache_delay + delay, receiver, service, labels,
-                                                          next_node,
-                                                          flow_id, deadline, rtt_delay, RESPONSE)
+                                                          next_node,flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
                                     compSpot.missed_requests[service['content']] += 1
                                 return
@@ -2589,7 +2589,8 @@ class HServProStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and content["shelf_life"]:
+        if type(content) is dict and 'shelf_life' in content:
+            if content["shelf_life"]:
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
             self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
@@ -4117,7 +4118,8 @@ class HServReStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and content["shelf_life"]:
+        if type(content) is dict and 'shelf_life' in content:
+            if content["shelf_life"]:
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
             self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
@@ -5654,7 +5656,8 @@ class HServSpecStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and content["shelf_life"]:
+        if type(content) is dict and 'shelf_life' in content:
+            if content["shelf_life"]:
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
             self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)

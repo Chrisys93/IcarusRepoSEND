@@ -404,7 +404,7 @@ class RepoStorage(object):
         for i in (0, len(self.processMessages)-1):
             if (self.processMessages[i]['content'] == MessageId):
                 self.processSize -= self.processMessages[i]['msg_size']
-                self.processMessages.remove(i)
+                self.processMessages.remove(self.processMessages[i])
                 return True
 
         return False
