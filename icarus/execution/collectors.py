@@ -608,7 +608,7 @@ class LatencyCollector(DataCollector):
             else:
                 self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
             overhead.write(str(self.view.replication_overhead(content)) + ", ")
-            self.view.model.replication_hops[content['content']] = 1
+            self.view.model.replication_hops[msg['content']] = 1
         overhead.write("\n")
 
         if self.view.model.strategy != 'HYBRID':
