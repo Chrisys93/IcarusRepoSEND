@@ -1145,7 +1145,7 @@ class NetworkModel(object):
                         k = list(self.contents[node].keys())[0]
                         if type(self.contents[node][k]) is dict:
                             for c in self.contents[node]:
-                                self.replication_hops.update([self.contents[node][c]['content']])
+                                self.replication_hops[self.contents[node][c]['content']] = 1
                                 for label in self.contents[node][c]['labels']:
                                     self.all_node_labels[node].update([label])
 
@@ -1169,6 +1169,7 @@ class NetworkModel(object):
                             self.contents[node] = stack_props['contents']
                             self.source_node[node] = self.contents[node]
                             for content in self.contents[node]:
+                                self.replication_hops[self.contents[node][content]] = 1
                                 # content = hash(content)
                                 # set(self.content_source[content]).add(node)
                                 if self.content_source.has_key(content):
@@ -1184,6 +1185,7 @@ class NetworkModel(object):
                     k = list(self.contents[node].keys())[0]
                     if type(self.contents[node][k]) is dict:
                         for c in self.contents[node]:
+                            self.replication_hops[self.contents[node][c]['content']] = 1
                             for label in self.contents[node][c]['labels']:
                                 self.all_node_labels[node].update([label])
 
@@ -1208,6 +1210,7 @@ class NetworkModel(object):
                         self.contents[node] = stack_props['contents']
                         self.source_node[node] = self.contents[node]
                         for content in self.contents[node]:
+                            self.replication_hops[self.contents[node][content]] = 1
                             # content = hash(content)
                             # set(self.content_source[content]).add(node)
                             if self.content_source.has_key(content):

@@ -1363,8 +1363,7 @@ class HServRepoStorApp(Strategy):
                                 delay = self.view.link_delay(node, next_node)
                                 path_del = self.view.path_delay(node, receiver)
                                 self.controller.add_event(curTime + cache_delay + delay, receiver, service, labels,
-                                                          next_node,
-                                                          flow_id, deadline, rtt_delay, RESPONSE)
+                                                          next_node, flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
                                     compSpot.missed_requests[service] += 1
                                 return
