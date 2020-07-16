@@ -519,7 +519,7 @@ class LatencyCollector(DataCollector):
             if self.flow_cloud[flow_id]:
                 self.n_sat_cloud_interval += 1
             self.n_satisfied += 1
-            print "Request satisfied"
+            # print "Request satisfied"
             self.n_satisfied_interval += 1
             sat = True 
             self.latency_interval += timestamp - self.flow_start[flow_id]
@@ -546,36 +546,36 @@ class LatencyCollector(DataCollector):
     @inheritdoc(DataCollector)
     def results(self):
         if self.view.model.strategy == 'HYBRID':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
