@@ -621,6 +621,8 @@ class LatencyCollector(DataCollector):
                 s_replicas.write(str(per_node_s_replicas_stored[node]) + ", ")
             s_replicas.write("\n")
 
+            # TODO: Modify the following, to include ALL NODES, no matter what!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             for label in ["value", "video", "control", "photo", "audio", "traffic", "home_IoT", "office_IoT", "security"]:
                 # r_labels_dist.write(label + ": ")
                 for node in self.view.model.request_labels_nodes[label]:
