@@ -67,7 +67,7 @@ N_CONTENTS = 1000
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 150.0
+NETWORK_REQUEST_RATE = 100.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
