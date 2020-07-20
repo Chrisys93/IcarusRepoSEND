@@ -95,6 +95,10 @@ NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
 REPLACEMENT_INTERVAL = 30.0
 NUM_REPLACEMENTS = 5000
 
+# List of workloads that generate the request rates
+# The code is located in ./icarus/scenatios
+WORKLOADS = 'STATIONARY_MORE_LABEL_REQS'
+
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP']
@@ -131,7 +135,7 @@ DATA_TYPES = ["value", "video", "control", "photo", "audio"]
 EXPERIMENT_QUEUE = deque()
 default = Tree()
 
-default['workload'] = {'name':       'STATIONARY_MORE_LABEL_REQS',
+default['workload'] = {'name':       WORKLOADS,
                        'n_contents': N_CONTENTS,
                        'n_warmup':   N_WARMUP_REQUESTS,
                        'n_measured': N_MEASURED_REQUESTS,
@@ -191,7 +195,8 @@ for strategy in ['LRU']: # STRATEGIES:
 """
 # Compare SDF, LFU, Hybrid for default values
 #"""
-SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*1, NUM_CORES*NUM_NODES*3/2, NUM_CORES*NUM_NODES*2, NUM_CORES*NUM_NODES*5/2, NUM_CORES*NUM_NODES*3]
+# TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*3]
 for strategy in STRATEGIES:
     for service_budget in SERVICE_BUDGETS:
         experiment = copy.deepcopy(default)

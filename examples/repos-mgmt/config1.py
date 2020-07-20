@@ -193,7 +193,8 @@ for strategy in ['LRU']: # STRATEGIES:
 """
 # Compare SDF, LFU, Hybrid for default values
 #"""
-SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*1, NUM_CORES*NUM_NODES*3/2, NUM_CORES*NUM_NODES*2, NUM_CORES*NUM_NODES*5/2, NUM_CORES*NUM_NODES*3]
+# TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*3]
 for strategy in STRATEGIES:
     for service_budget in SERVICE_BUDGETS:
         experiment = copy.deepcopy(default)
