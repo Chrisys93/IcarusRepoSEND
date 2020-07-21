@@ -965,13 +965,13 @@ class TraceDrivenRepoWorkload(object):
                     labels.append(label)
         locations = []
         with open(self.content_locations, 'r', buffering=self.buffering) as loc:
-            reader = csv.reader(loc)
-            data = list(reader)
+            data = csv.reader(loc)
             for cont_loc in data:
-                locations.append(int(cont_loc))
+                for c_loc in cont_loc:
+                    locations.append(int(c_loc))
         for location in locations:
-            self.contents.append(contents[location])
-            self.labels.append(labels[location])
+            self.contents.append(contents[location-1])
+            self.labels.append(labels[location-1])
 
         unique_labels = []
         label_counts = Counter()
