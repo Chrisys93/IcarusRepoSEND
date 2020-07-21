@@ -134,10 +134,10 @@ LABEL_EXCL = False
 
 # Files for workload:
 dir_path = os.path.realpath('./')
-RATES_FILE = dir_path + 'target_and_rates.csv'
-CONTENTS_FILE = dir_path + 'contents.csv'
-LABELS_FILE = dir_path + 'labels.csv'
-CONTENT_LOCATIONS = dir_path + 'content_loactions.csv'
+RATES_FILE = dir_path + '/target_and_rates.csv'
+CONTENTS_FILE = dir_path + '/contents.csv'
+LABELS_FILE = dir_path + '/labels.csv'
+CONTENT_LOCATIONS = dir_path + '/content_loactions.csv'
 
 
 # Queue of experiments
