@@ -4,6 +4,7 @@
 from multiprocessing import cpu_count
 from collections import deque
 import copy
+import os
 from math import pow
 from icarus.util import Tree
 
@@ -95,6 +96,10 @@ NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
 REPLACEMENT_INTERVAL = 30.0
 NUM_REPLACEMENTS = 5000
 
+# List of workloads that generate the request rates
+# The code is located in ./icarus/scenatios
+WORKLOAD = 'STATIONARY_MORE_LABEL_REQS'
+
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = ['HYBRID']
@@ -125,30 +130,41 @@ MAX_REQUESTED_LABELS = 3
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
-LABEL_EXCL = True
+LABEL_EXCL = False
+
+# Files for workload:
+dir_path = os.path.realpath('./')
+RATES_FILE = dir_path + 'target_and_rates.csv'
+CONTENTS_FILE = dir_path + 'contents.csv'
+LABELS_FILE = dir_path + 'labels.csv'
+CONTENT_LOCATIONS = dir_path + 'content_loactions.csv'
 
 
 # Queue of experiments
 EXPERIMENT_QUEUE = deque()
 default = Tree()
 
-default['workload'] = {'name':       'STATIONARY_MORE_LABEL_REQS',
+default['workload'] = {'name': WORKLOAD,
                        'n_contents': N_CONTENTS,
-                       'n_warmup':   N_WARMUP_REQUESTS,
+                       'n_warmup': N_WARMUP_REQUESTS,
                        'n_measured': N_MEASURED_REQUESTS,
-                       'rate':       NETWORK_REQUEST_RATE,
-                       'seed':  0,
+                       'rate': NETWORK_REQUEST_RATE,
+                       'seed': 0,
                        'n_services': N_SERVICES,
-                       'alpha' : ALPHA,
-                       'alpha_labels' : ALPHA_LABELS,
-                       'topics' : DATA_TOPICS,
-                       'label_ex' : LABEL_EXCL,
-                       'types' : DATA_TYPES,
-                       'max_labels' : MAX_REQUESTED_LABELS,
-                       'freshness_pers' : FRESHNESS_PER,
-                       'shelf_lives' : SHELF_LIFE,
-                       'msg_sizes' : MSG_SIZE
-                      }
+                       'alpha': ALPHA,
+                       'alpha_labels': ALPHA_LABELS,
+                       'topics': DATA_TOPICS,
+                       'label_ex': LABEL_EXCL,
+                       'types': DATA_TYPES,
+                       'max_labels': MAX_REQUESTED_LABELS,
+                       'freshness_pers': FRESHNESS_PER,
+                       'shelf_lives': SHELF_LIFE,
+                       'msg_sizes': MSG_SIZE,
+                       'rates_file': RATES_FILE,
+                       'contents_file': CONTENTS_FILE,
+                       'labels_file': LABELS_FILE,
+                       'content_locations': CONTENT_LOCATIONS
+                       }
 
 default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'
 default['cache_placement']['storage_budget'] = 10000000000
@@ -194,16 +210,15 @@ for strategy in ['LRU']: # STRATEGIES:
 # Compare SDF, LFU, Hybrid for default values
 #"""
 # TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SERVICE_BUDGETS = [NUM_CORES*NUM_NODES*3]
+SERVICE_BUDGET = NUM_CORES*NUM_NODES*3
 for strategy in STRATEGIES:
-    for service_budget in SERVICE_BUDGETS:
-        experiment = copy.deepcopy(default)
-        experiment['computation_placement']['service_budget'] = service_budget
-        experiment['strategy']['name'] = strategy
-        experiment['warmup_strategy']['name'] = strategy
-        experiment['desc'] = "strategy: %s" \
-                         % (strategy)
-        EXPERIMENT_QUEUE.append(experiment)
+    experiment = copy.deepcopy(default)
+    experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
+    experiment['strategy']['name'] = strategy
+    experiment['warmup_strategy']['name'] = strategy
+    experiment['desc'] = "strategy: %s" \
+                     % (strategy)
+    EXPERIMENT_QUEUE.append(experiment)
 #"""
 # Experiment with different budgets
 """

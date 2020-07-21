@@ -872,9 +872,60 @@ class TraceDrivenRepoWorkload(object):
         dictionary of event attributes.
     """
 
-    def __init__(self, topology, reqs_file, rates_file, contents_file, labels_file, content_locations, n_contents,
-                 n_warmup, n_measured, rate=1.0, beta=0, **kwargs):
+    def __init__(self, topology, rates_file, contents_file, labels_file, content_locations, n_contents,
+                 n_warmup, n_measured, n_services=10, max_labels=1, msg_sizes=1000000, freshness_pers=0.2,
+                 shelf_lives=5, rate=1.0, label_ex=False, alpha_labels=0, beta=0, seed=0, **kwargs):
         """Constructor"""
+
+        if alpha_labels < 0:
+            raise ValueError('alpha_labels must be positive')
+
+        if beta < 0:
+            raise ValueError('beta must be positive')
+        self.receivers = [v for v in topology.nodes()
+                          if topology.node[v]['stack'][0] == 'receiver']
+
+        self.n_contents = n_contents
+        # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # TODO: Associate all below content properties to contents, according to CONFIGURATION required IN FILE, in
+        #  contentplacement.py file, registered placement strategies!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.contents = range(0, n_contents)
+        self.data = dict()
+
+        for content in self.contents:
+            if type(content) is not dict:
+                datum = dict()
+                datum.update(content=content)
+            else:
+                datum = content
+            datum.update(service_type="proc")
+            datum.update(labels=[])
+            datum.update(msg_size=msg_sizes)
+            datum.update(shelf_life=[])
+            datum.update(freshness_per=freshness_pers)
+            self.data[content] = datum
+
+        self.freshness_pers = freshness_pers
+        self.shelf_lives = shelf_lives
+        self.sizes = msg_sizes
+
+        self.n_services = n_services
+        self.alpha_labels = alpha_labels
+        self.max_labels = max_labels
+        self.label_ex = label_ex
+        self.alter = False
+        self.rate = rate
+        self.n_measured = n_measured
+        self.model = None
+        self.beta = beta
+        self.topology = topology
+        if beta != 0:
+            degree = nx.degree(self.topology)
+            self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)
+            self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers), seed)
+
+        self.seed = seed
+
         if beta < 0:
             raise ValueError('beta must be positive')
         # Set high buffering to avoid one-line reads
@@ -882,7 +933,9 @@ class TraceDrivenRepoWorkload(object):
         self.n_contents = n_contents
         self.n_warmup = n_warmup
         self.n_measured = n_measured
-        self.reqs_file = reqs_file
+        self.contents_file = contents_file
+        self.labels_file = labels_file
+        self.content_locations =content_locations
         self.rates_file = rates_file
         self.coeffs = []
         with open(rates_file, 'r') as f:
@@ -897,22 +950,32 @@ class TraceDrivenRepoWorkload(object):
                           if topology.node[v]['stack'][0] == 'receiver']
         self.contents = []
         contents = []
-        with open(contents_file, 'r', buffering=self.buffering) as f:
+        with open(self.contents_file, 'r', buffering=self.buffering) as f:
             for content in f:
                 contents.append(content)
         self.labels = []
         labels = []
-        with open(labels_file, 'r', buffering=self.buffering) as f:
+        with open(self.labels_file, 'r', buffering=self.buffering) as f:
             for label in f:
                 if label not in labels:
                     labels.append(label)
         locations = []
-        with open(content_locations, 'r', buffering=self.buffering) as loc:
+        with open(self.content_locations, 'r', buffering=self.buffering) as loc:
             for cont_loc in loc:
                 locations.append(int(cont_loc))
         for location in locations:
             self.contents.append(contents[location])
             self.labels.append(labels[location])
+
+        unique_labels = []
+        label_counts = Counter()
+        for label in self.labels:
+            if label not in unique_labels:
+                unique_labels.append(label)
+            label_counts.update([label])
+        for label in unique_labels:
+            self.labels_pdf[label] = label_counts[label]/len(self.labels)
+
         for number in range(0, len(contents)-1):
             self.contents[number] = number
         self.rates_pdf = {}

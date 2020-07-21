@@ -1,4 +1,4 @@
-# -*- codi# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """This module contains all configuration information used to run simulations
 """
 from multiprocessing import cpu_count
@@ -32,7 +32,7 @@ WARMUP_STRATEGY = 'HYBRID' #'HYBRID'
 
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
-# Currently only PICKLE is supported
+# Currently only PICKLE is supported 
 RESULTS_FORMAT = 'TXT'
 
 # Number of times each experiment is replicated
@@ -44,17 +44,17 @@ N_REPLICATIONS = 1
 DATA_COLLECTORS = ['LATENCY']
 
 # Range of alpha values of the Zipf distribution using to generate content requests
-# alpha values must be positive. The greater the value the more skewed is the
+# alpha values must be positive. The greater the value the more skewed is the 
 # content popularity distribution
 # Range of alpha values of the Zipf distribution using to generate content requests
-# alpha values must be positive. The greater the value the more skewed is the
+# alpha values must be positive. The greater the value the more skewed is the 
 # content popularity distribution
 # Note: to generate these alpha values, numpy.arange could also be used, but it
-# is not recommended because generated numbers may be not those desired.
-# E.g. arange may return 0.799999999999 instead of 0.8.
+# is not recommended because generated numbers may be not those desired. 
+# E.g. arange may return 0.799999999999 instead of 0.8. 
 # This would give problems while trying to plot the results because if for
 # example I wanted to filter experiment with alpha=0.8, experiments with
-# alpha = 0.799999999999 would not be recognized
+# alpha = 0.799999999999 would not be recognized 
 ALPHA = 0.75 #0.75
 #ALPHA = [0.00001]
 
@@ -68,7 +68,7 @@ N_CONTENTS = 1000
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 100.0
+NETWORK_REQUEST_RATE = 350.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
@@ -78,11 +78,11 @@ NUM_CORES = 50
 N_WARMUP_REQUESTS = 0 #30000
 
 # Number of content requests generated after the warmup and logged
-# to generate results.
+# to generate results. 
 #N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
 SECS = 60 #do not change
-MINS = 7.5 #5.5
+MINS = 15 #5.5
 N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
@@ -90,7 +90,7 @@ N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 TOPOLOGIES =  ['TREE']
 TREE_DEPTH = 3
 BRANCH_FACTOR = 2
-NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
+NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1) 
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30.0
@@ -98,11 +98,11 @@ NUM_REPLACEMENTS = 5000
 
 # List of workloads that generate the request rates
 # The code is located in ./icarus/scenatios
-WORKLOAD = 'STATIONARY_MORE_LABEL_REQS'
+WORKLOAD = 'TRACE_DRIVEN_REPO'
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP']
+STRATEGIES = ['HYBRID']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -120,7 +120,7 @@ REPO_POLICY = 'REPO_STORAGE'
 SCHED_POLICY = 'EDF'
 
 FRESHNESS_PER = 0.15
-SHELF_LIFE =5
+SHELF_LIFE = 10
 MSG_SIZE = 1000000
 SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
@@ -213,6 +213,7 @@ for strategy in ['LRU']: # STRATEGIES:
 #"""
 # TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SERVICE_BUDGET = NUM_CORES*NUM_NODES*3
+
 for strategy in STRATEGIES:
     experiment = copy.deepcopy(default)
     experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
@@ -237,7 +238,7 @@ for strategy in STRATEGIES:
                              % (strategy, str(budget))
         EXPERIMENT_QUEUE.append(experiment)
 """
-# Experiment comparing FIFO with EDF
+# Experiment comparing FIFO with EDF 
 """
 for schedule_policy in ['EDF', 'FIFO']:
     for strategy in STRATEGIES:
