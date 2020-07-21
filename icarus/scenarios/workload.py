@@ -951,17 +951,23 @@ class TraceDrivenRepoWorkload(object):
         self.contents = []
         contents = []
         with open(self.contents_file, 'r', buffering=self.buffering) as f:
-            for content in f:
+            reader = csv.reader(f)
+            data = list(reader)
+            for content in data:
                 contents.append(content)
         self.labels = []
         labels = []
         with open(self.labels_file, 'r', buffering=self.buffering) as f:
-            for label in f:
+            reader = csv.reader(f)
+            data = list(reader)
+            for label in data:
                 if label not in labels:
                     labels.append(label)
         locations = []
         with open(self.content_locations, 'r', buffering=self.buffering) as loc:
-            for cont_loc in loc:
+            reader = csv.reader(loc)
+            data = list(reader)
+            for cont_loc in data:
                 locations.append(int(cont_loc))
         for location in locations:
             self.contents.append(contents[location])
