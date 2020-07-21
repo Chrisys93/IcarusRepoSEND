@@ -970,8 +970,8 @@ class TraceDrivenRepoWorkload(object):
                 for c_loc in cont_loc:
                     locations.append(int(c_loc))
         for location in locations:
-            self.contents.append(contents[location-1])
-            self.labels.append(labels[location-1])
+            self.contents.append(contents[location])
+            self.labels.append(labels[location])
 
         unique_labels = []
         label_counts = Counter()
