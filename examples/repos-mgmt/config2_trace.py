@@ -182,8 +182,8 @@ default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  
 default['content_placement'] = {"name":             'WEIGHTED_REPO',
                                 "source_weights" :  SOURCE_WEIGHTS,
                                 "service_weights":  SERVICE_WEIGHTS,
-                                "types_weights" :   TYPES_WEIGHTS,
-                                "topics_weights" :  TOPICS_WEIGHTS,
+                                "types_weights" :   None,
+                                # "topics_weights" :  TOPICS_WEIGHTS,
                                 "max_label_nos" :   MAX_REQUESTED_LABELS
                                 }
 

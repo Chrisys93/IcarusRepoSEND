@@ -267,9 +267,14 @@ def run_scenario(settings, params, curr_exp, n_exp):
         #       It seems like the contents are generated \/\/\/ within workload (workload.contents)!
         if "UNIFORM_REPO" in contpl_name:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
-        elif "REPO" in contpl_name:
+        elif "REPO" in contpl_name and "TRACE" not in workload_name:
             CONTENT_PLACEMENT[contpl_name](topology, workload.data, workload.freshness_pers,
                                            workload.shelf_lives, workload.sizes, **contpl_spec)
+
+        elif "TRACE" in workload_name and "REPO" in contpl_name:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.data, workload.freshness_pers,
+                                           workload.shelf_lives, workload.sizes, workload.labels_weights,
+                                           **contpl_spec)
         else:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
 

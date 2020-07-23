@@ -1168,6 +1168,13 @@ class HServRepoStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1180,6 +1187,13 @@ class HServRepoStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1226,6 +1240,13 @@ class HServRepoStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1238,6 +1259,13 @@ class HServRepoStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1389,6 +1417,13 @@ class HServRepoStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1401,6 +1436,13 @@ class HServRepoStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1505,6 +1547,13 @@ class HServRepoStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1518,6 +1567,13 @@ class HServRepoStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -2641,6 +2697,13 @@ class HServProStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -2653,6 +2716,13 @@ class HServProStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -2698,6 +2768,13 @@ class HServProStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -2710,6 +2787,13 @@ class HServProStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -2862,6 +2946,13 @@ class HServProStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -2875,6 +2966,13 @@ class HServProStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -2980,6 +3078,13 @@ class HServProStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -2993,6 +3098,13 @@ class HServProStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -4170,6 +4282,13 @@ class HServReStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4182,6 +4301,13 @@ class HServReStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4227,6 +4353,13 @@ class HServReStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4239,6 +4372,13 @@ class HServReStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4390,6 +4530,13 @@ class HServReStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -4403,6 +4550,13 @@ class HServReStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -4507,6 +4661,13 @@ class HServReStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -4520,6 +4681,13 @@ class HServReStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5708,6 +5876,13 @@ class HServSpecStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -5720,6 +5895,13 @@ class HServSpecStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -5765,6 +5947,13 @@ class HServSpecStorApp(Strategy):
                         self.controller.put_content_local_cache(source)
                         cache_delay = 0.005
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -5777,6 +5966,13 @@ class HServSpecStorApp(Strategy):
                         return
                 elif in_cache:
                     pc = self.controller.has_message(node, labels, content['content'])
+                    if type(pc) != dict:
+                        source, in_cache = self.view.closest_source(node, service)
+                        pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                        if type(pc) != dict:
+                            for n in self.content_source(content, content['labels']):
+                                if n == source:
+                                    pc = self.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -5928,6 +6124,13 @@ class HServSpecStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5941,6 +6144,13 @@ class HServSpecStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -6045,6 +6255,13 @@ class HServSpecStorApp(Strategy):
                                 self.controller.put_content_local_cache(source)
                                 cache_delay = 0.005
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -6058,6 +6275,13 @@ class HServSpecStorApp(Strategy):
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content['content'])
+                            if type(pc) != dict:
+                                source, in_cache = self.view.closest_source(node, service)
+                                pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
+                                if type(pc) != dict:
+                                    for n in self.content_source(content, content['labels']):
+                                        if n == source:
+                                            pc = self.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]

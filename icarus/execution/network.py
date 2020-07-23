@@ -1932,7 +1932,7 @@ class NetworkController(object):
 
         name, props = fnss.get_stack(self.model.topology, node)
         if name == 'source':
-            if self.collector is not None and self.session['log']:
+            if self.collector is not None:
                 self.collector.server_hit(node)
             return True
         else:

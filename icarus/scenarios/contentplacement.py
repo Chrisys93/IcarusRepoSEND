@@ -180,8 +180,8 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
 
 @register_content_placement('WEIGHTED_REPO')
 def weighted_repo_content_placement(topology, contents, freshness_per, shelf_life,
-                                    msg_size, source_weights, service_weights,
-                                    types_weights, topics_weights, max_label_nos, seed=None):
+                                    msg_size, topics_weights, types_weights,
+                                    source_weights, service_weights, max_label_nos, seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
 

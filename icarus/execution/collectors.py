@@ -623,14 +623,14 @@ class LatencyCollector(DataCollector):
 
             # TODO: Modify the following, to include ALL NODES, no matter what!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            for label in ["value", "video", "control", "photo", "audio", "traffic", "home_IoT", "office_IoT", "security"]:
+            for label in self.view.model.labels_sources:
                 # r_labels_dist.write(label + ": ")
                 for node in self.view.model.request_labels_nodes[label]:
-                    per_label_node_requests[node] = self.view.model.request_labels_nodes[label][node]
+                    per_label_node_requests [node] = self.view.model.request_labels_nodes[label][node]
                     r_labels_dist.write(str(per_label_node_requests[node]) + ", ")
                 r_labels_dist.write("\n ")
             # r_labels_dist.write("r\n")
-            for label in ["value", "video", "control", "photo", "audio", "traffic", "home_IoT", "office_IoT", "security"]:
+            for label in self.view.model.labels_sources:
                 # s_labels_dist.write(label + ": ")
                 for node in self.view.labels_sources([label]):
                     per_label_node_storage[node] = self.view.labels_sources([label])[node]
