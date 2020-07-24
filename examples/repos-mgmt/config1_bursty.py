@@ -139,6 +139,15 @@ CONTENTS_FILE = dir_path + '/contents.csv'
 LABELS_FILE = dir_path + '/labels.csv'
 CONTENT_LOCATIONS = dir_path + '/content_locations.csv'
 
+# Bursty workload settings:
+# Maximum times for online and offline request generation
+MAX_ON = NETWORK_REQUEST_RATE/2
+MAX_OFF = NETWORK_REQUEST_RATE
+# Mode of receiver network connection disruption (Available: None, 'RAND', 'WEIGHTED')
+DISRUPT_MODE = 'RAND'
+# Only for WEIGHTED mode, above, otherwise None - weights of receivers' off-time distribution
+DISRUPTION_WEIGHTS = None # {'rec_0': 0.2, rec_1: 0.1, rec_2: 0.1, rec_4: 0.2, rec_5: 0.2, rec_6: 0.1, rec_7: 0.1}
+
 
 # Queue of experiments
 EXPERIMENT_QUEUE = deque()
@@ -163,7 +172,11 @@ default['workload'] = {'name': WORKLOAD,
                        'rates_file': RATES_FILE,
                        'contents_file': CONTENTS_FILE,
                        'labels_file': LABELS_FILE,
-                       'content_locations': CONTENT_LOCATIONS
+                       'content_locations': CONTENT_LOCATIONS,
+                       'max_on': MAX_ON,
+                       'max_off': MAX_OFF,
+                       'disrupt_mode': DISRUPT_MODE,
+                       'disrupt_weights': DISRUPTION_WEIGHTS
                        }
 
 default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'

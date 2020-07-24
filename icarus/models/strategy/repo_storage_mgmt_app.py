@@ -1393,7 +1393,10 @@ class HServRepoStorApp(Strategy):
                                 self.controller.add_event(curTime + cache_delay + delay, receiver, service, labels,
                                                           next_node, flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
@@ -1405,7 +1408,10 @@ class HServRepoStorApp(Strategy):
                                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
@@ -2883,7 +2889,10 @@ class HServProStorApp(Strategy):
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                               flow_id, deadline, rtt_delay, RESPONSE)
                     if path_del + curTime > deadline:
-                        compSpot.missed_requests[service['content']] += 1
+                        if type(content) is dict:
+                            compSpot.missed_requests[content['content']] += 1
+                        else:
+                            compSpot.missed_requests[content['content']] += 1 
 
             elif status == TASK_COMPLETE:
                 self.controller.complete_task(task, curTime)
@@ -2922,7 +2931,10 @@ class HServProStorApp(Strategy):
                                                           next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
@@ -2934,7 +2946,10 @@ class HServProStorApp(Strategy):
                                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
@@ -4506,7 +4521,10 @@ class HServReStorApp(Strategy):
                                                           next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1 
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
@@ -4518,7 +4536,10 @@ class HServReStorApp(Strategy):
                                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):
@@ -6100,7 +6121,10 @@ class HServSpecStorApp(Strategy):
                                                           next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
@@ -6112,7 +6136,10 @@ class HServSpecStorApp(Strategy):
                                 self.controller.add_event(curTime + delay, receiver, service, labels, next_node,
                                                           flow_id, deadline, rtt_delay, RESPONSE)
                                 if path_del + curTime > deadline:
-                                    compSpot.missed_requests[service] += 1
+                                    if type(content) is dict:
+                                        compSpot.missed_requests[content['content']] += 1
+                                    else:
+                                        compSpot.missed_requests[content] += 1
                                 return
                         service = self.view.storage_nodes()[node].hasMessage(content, labels)
                     elif type(service) is dict and self.controller.has_message(node, labels, content):

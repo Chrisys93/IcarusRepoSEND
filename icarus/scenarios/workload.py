@@ -1144,21 +1144,6 @@ class TraceDrivenRepoWorkload(object):
         # THIS is where CONTENTS are generated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # TODO: Associate all below content properties to contents, according to CONFIGURATION required IN FILE, in
         #  contentplacement.py file, registered placement strategies!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.contents = range(0, n_contents)
-        self.data = dict()
-
-        for content in self.contents:
-            if type(content) is not dict:
-                datum = dict()
-                datum.update(content=content)
-            else:
-                datum = content
-            datum.update(service_type="proc")
-            datum.update(labels=[])
-            datum.update(msg_size=msg_sizes)
-            datum.update(shelf_life=[])
-            datum.update(freshness_per=freshness_pers)
-            self.data[content] = datum
 
         self.freshness_pers = freshness_pers
         self.shelf_lives = shelf_lives
@@ -1242,7 +1227,7 @@ class TraceDrivenRepoWorkload(object):
         labels_norm_factor = float(sum(self.labels_weights.values()))
         self.labels_pdf = dict((k, v / labels_norm_factor) for k, v in self.labels_weights.items())
 
-        for number in range(0, len(self.contents)-1):
+        for number in range(0, len(self.contents)):
             self.contents[number] = number
         self.rates_pdf = {}
         for content in self.contents:
@@ -1254,6 +1239,23 @@ class TraceDrivenRepoWorkload(object):
             contents_weights[content] = self.rates_pdf[content]
         contents_norm_factor = float(sum(contents_weights.values()))
         self.rates_pdf = dict((k, v / contents_norm_factor) for k, v in contents_weights.items())
+
+
+        self.data = dict()
+
+        for content in self.contents:
+            if type(content) is not dict:
+                datum = dict()
+                datum.update(content=content)
+            else:
+                datum = content
+            datum.update(service_type="proc")
+            datum.update(labels=[])
+            datum.update(msg_size=msg_sizes)
+            datum.update(shelf_life=[])
+            datum.update(freshness_per=freshness_pers)
+            self.data[content] = datum
+
 
         self.beta = beta
         if beta != 0:
@@ -1354,6 +1356,7 @@ class TraceDrivenRepoWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                self.data[index] = datum
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -1444,8 +1447,9 @@ class BurstyTraceRepoWorkload(object):
     """
 
     def __init__(self, topology, rates_file, contents_file, labels_file, content_locations, n_contents,
-                 n_warmup, n_measured, n_services=10, max_labels=1, msg_sizes=1000000, freshness_pers=0.2,
-                 shelf_lives=5, rate=1.0, label_ex=False, alpha_labels=0, beta=0, seed=0, **kwargs):
+                 n_warmup, n_measured, max_on=0, max_off=0, disrupt_mode=None, disrupt_weights=None, n_services=10,
+                 max_labels=1, msg_sizes=1000000, freshness_pers=0.2, shelf_lives=5, rate=1.0, label_ex=False,
+                 alpha_labels=0, beta=0, seed=0, **kwargs):
         """Constructor"""
 
         if alpha_labels < 0:
@@ -1490,6 +1494,11 @@ class BurstyTraceRepoWorkload(object):
         self.model = None
         self.beta = beta
         self.topology = topology
+        self.max_on = max_on
+        self.max_off = max_off
+        self.disrupt_mode = disrupt_mode
+        if self.disrupt_mode == 'WEIGHTED':
+            self.disrupt_weights = disrupt_weights
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)

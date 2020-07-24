@@ -509,39 +509,41 @@ class LatencyCollector(DataCollector):
     @inheritdoc(DataCollector)
     def end_session(self, success=True, timestamp=0, flow_id=0):
         sat = False
-        if not success:
-            return
-        if self.cdf:
-            self.latency_data.append(self.sess_latency)
+        if flow_id in self.flow_deadline:
+            if not success:
+                return
+            if self.cdf:
+                self.latency_data.append(self.sess_latency)
+            if self.flow_deadline[flow_id] >= timestamp:
+                # Request is satisfied
+                if self.flow_cloud[flow_id]:
+                    self.n_sat_cloud_interval += 1
+                self.n_satisfied += 1
+                # print "Request satisfied"
+                self.n_satisfied_interval += 1
+                sat = True
+                self.latency_interval += timestamp - self.flow_start[flow_id]
+                self.deadline_metric_interval += self.flow_deadline[flow_id] - timestamp
 
-        if self.flow_deadline[flow_id] >= timestamp:
-            # Request is satisfied
-            if self.flow_cloud[flow_id]:
-                self.n_sat_cloud_interval += 1
-            self.n_satisfied += 1
-            # print "Request satisfied"
-            self.n_satisfied_interval += 1
-            sat = True 
-            self.latency_interval += timestamp - self.flow_start[flow_id]
-            self.deadline_metric_interval += self.flow_deadline[flow_id] - timestamp
-
-        service = self.flow_service[flow_id]
-        if service not in self.service_requests.keys():
-            self.service_requests[service['content']] = 1
-            self.service_satisfied[service['content']] = 0
-        else:
-            self.service_requests[service['content']] += 1
-
-        if sat:
-            if service in self.service_satisfied.keys():
-                self.service_satisfied[service['content']] += 1
+            service = self.flow_service[flow_id]
+            if service not in self.service_requests.keys():
+                self.service_requests[service['content']] = 1
+                self.service_satisfied[service['content']] = 0
             else:
-                self.service_satisfied[service['content']] = 1
+                self.service_requests[service['content']] += 1
 
-        del self.flow_deadline[flow_id]
-        del self.flow_start[flow_id]
-        del self.flow_service[flow_id]
-        del self.flow_cloud[flow_id]
+            if sat:
+                if service in self.service_satisfied.keys():
+                    self.service_satisfied[service['content']] += 1
+                else:
+                    self.service_satisfied[service['content']] = 1
+
+            del self.flow_deadline[flow_id]
+            del self.flow_start[flow_id]
+            del self.flow_service[flow_id]
+            del self.flow_cloud[flow_id]
+        else:
+            pass
 
     @inheritdoc(DataCollector)
     def results(self):
@@ -625,10 +627,11 @@ class LatencyCollector(DataCollector):
 
             for label in self.view.model.labels_sources:
                 # r_labels_dist.write(label + ": ")
-                for node in self.view.model.request_labels_nodes[label]:
-                    per_label_node_requests [node] = self.view.model.request_labels_nodes[label][node]
-                    r_labels_dist.write(str(per_label_node_requests[node]) + ", ")
-                r_labels_dist.write("\n ")
+                if label in self.view.model.request_labels_nodes:
+                    for node in self.view.model.request_labels_nodes[label]:
+                        per_label_node_requests [node] = self.view.model.request_labels_nodes[label][node]
+                        r_labels_dist.write(str(per_label_node_requests[node]) + ", ")
+                    r_labels_dist.write("\n ")
             # r_labels_dist.write("r\n")
             for label in self.view.model.labels_sources:
                 # s_labels_dist.write(label + ": ")

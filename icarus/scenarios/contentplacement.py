@@ -274,6 +274,8 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
                 elif topics_weights is not None and alter:
                     labels_association[random_from_pdf(topics_labels_pdf)].add(c)
                     alter = False
+                elif topics_weights is not None:
+                    labels_association[random_from_pdf(topics_labels_pdf)].add(c)
 
     placed_data = apply_labels_association(labels_association, placed_data)
     #placed_data = apply_service_association(service_association, placed_data)

@@ -501,7 +501,13 @@ class NetworkView(object):
 
         current_count = 0
         auth_node = None
+        del_nodes = []
         nodes = self.labels_requests(request_labels)
+        for n in nodes:
+            if n not in self.model.storageSize:
+                del_nodes.append(n)
+        for n in del_nodes:
+            del nodes[n]
         for n in nodes:
             if nodes[n] >= current_count and self.hasStorageCapability(n):
                 auth_node = self.model.repoStorage[n]
@@ -1705,7 +1711,8 @@ class NetworkController(object):
         self.model.repoStorage[s].addToStoredMessages(content)
         for c in self.model.content_source:
             if content['content'] == c:
-                self.model.content_source[content['content']].append(s)
+                if s not in self.model.content_source[content['content']]:
+                    self.model.content_source[content['content']].append(s)
                 if s in self.model.contents:
                     if content['content'] in self.model.contents[s]:
                         self.model.contents[s][content['content']].update(content)
@@ -1714,9 +1721,6 @@ class NetworkController(object):
                 else:
                     self.model.contents[s] = dict()
                     self.model.contents[s][content['content']] = content
-
-        else:
-            self.model.content_source[content['content']] = [s]
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
@@ -1738,10 +1742,7 @@ class NetworkController(object):
         if s not in self.model.node_labels:
             self.model.node_labels[s] = Counter()
         for l in content["labels"]:
-            if l in self.model.node_labels[s]:
-                self.model.node_labels[s].update([l])
-            else:
-                self.model.node_labels[s] = [l]
+            self.model.node_labels[s].update([l])
             if l not in self.model.labels_sources:
                 self.model.labels_sources[l] = Counter()
             self.model.labels_sources[l].update([s])
