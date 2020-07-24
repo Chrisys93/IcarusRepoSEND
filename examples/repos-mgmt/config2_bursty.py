@@ -98,7 +98,7 @@ NUM_REPLACEMENTS = 5000
 
 # List of workloads that generate the request rates
 # The code is located in ./icarus/scenatios
-WORKLOAD = 'STATIONARY_MORE_LABEL_REQS'
+WORKLOAD = 'BURSTY_MORE_LABEL_REQS'
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
