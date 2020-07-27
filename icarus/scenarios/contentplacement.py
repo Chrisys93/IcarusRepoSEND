@@ -179,9 +179,9 @@ def weighted_content_placement(topology, contents, source_weights, seed=None):
 
 
 @register_content_placement('WEIGHTED_REPO')
-def weighted_repo_content_placement(topology, contents, freshness_per, shelf_life,
-                                    msg_size, topics_weights, types_weights,
-                                    source_weights, service_weights, max_label_nos, seed=None):
+def weighted_repo_content_placement(topology, contents, freshness_per, shelf_life, msg_size, max_replications,
+                                    topics_weights, types_weights, source_weights, service_weights, max_label_nos,
+                                    seed=None):
     """Places content objects to source nodes randomly according to the weight
     of the source node.
 
@@ -260,6 +260,11 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
                 placed_data[contents[c]['content']]['freshness_per'] = freshness_per
         if shelf_life is not None:
             placed_data[contents[c]['content']].update(shelf_life=shelf_life)
+        if max_replications:
+            placed_data[contents[c]['content']].update(max_replications=max_replications)
+            placed_data[contents[c]['content']].update(replications=0)
+        else:
+            placed_data[contents[c]['content']].update(max_replications=None)
         service_association[random_from_pdf(service_labels_pdf)].add(c)
         placed_data[contents[c]['content']].update(content=c)
         placed_data[contents[c]['content']].update(msg_size=msg_size)

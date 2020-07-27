@@ -127,6 +127,7 @@ SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
 TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
 TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
 MAX_REQUESTED_LABELS = 3
+MAX_REPLICATIONS = None
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
@@ -184,7 +185,8 @@ default['content_placement'] = {"name":             'WEIGHTED_REPO',
                                 "service_weights":  SERVICE_WEIGHTS,
                                 "types_weights" :   None,
                                 #"topics_weights" :  TOPICS_WEIGHTS,
-                                "max_label_nos" :   MAX_REQUESTED_LABELS
+                                "max_label_nos" :   MAX_REQUESTED_LABELS,
+                                "max_replications": MAX_REPLICATIONS
                                 }
 
 default['cache_policy']['name'] = CACHE_POLICY

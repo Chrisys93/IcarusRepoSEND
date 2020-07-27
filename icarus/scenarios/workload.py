@@ -1209,7 +1209,7 @@ class TraceDrivenRepoWorkload(object):
                 first = True
                 for coeff in co:
                     if first:
-                        self.rate = float(coeff) + float(coeff)*0.1
+                        self.rate = float(coeff) #+ float(coeff)*0.1
                         first = False
                     else:
                         self.coeffs.append(float(coeff))
@@ -1794,9 +1794,10 @@ class BurstyRepoDataAndWorkload(object):
     """
 
     def __init__(self, topology, n_contents, alpha, max_on=0, max_off=0, disrupt_mode=None, disrupt_weights=None,
-                 beta=0, label_ex=False, alpha_labels=0, rate=1.0, n_warmup=10 ** 5, n_measured=4 * 10 ** 5, seed=0,
-                 n_services=10, topics=None, types=None, max_labels=1, freshness_pers=0, shelf_lives=0,
-                 msg_sizes=1000000, **kwargs):
+                 data_gen_dist_mode=None, data_gen_dist=None, data_rate=0, stor_shelf=0, stor_scope=0, n_stor_warmup=0,
+                 n_stor_measured=0, beta=0, label_ex=False, alpha_labels=0, rate=100, n_warmup=10 ** 5,
+                 n_measured=4 * 10 ** 5, seed=0, n_services=10, topics=None, types=None, max_labels=1, freshness_pers=0,
+                 shelf_lives=0, msg_sizes=1000000, **kwargs):
         if types is None:
             types = []
         if alpha < 0:
@@ -1851,6 +1852,7 @@ class BurstyRepoDataAndWorkload(object):
         self.beta = beta
         self.topology = topology
 
+        # Requests/Data generation disruption settings
         self.max_on = max_on
         self.max_off = max_off
         self.disrupt_mode = disrupt_mode
@@ -1862,6 +1864,16 @@ class BurstyRepoDataAndWorkload(object):
             self.last_event[self.receivers[receiver]].update(None)
         self.receivers_downtime = {}
         self.receivers_uptime = {}
+
+        # Continuous data (for storage) generation settings
+        self.data_gen_dist_mode = data_gen_dist_mode
+        self.data_gen_dist = data_gen_dist
+        self.data_rate = data_rate
+        self.stor_shelf = stor_shelf
+        self.stor_scope = stor_scope
+        self.n_stor_warmup = n_stor_warmup
+        self.n_stor_measured = n_stor_measured
+
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)
