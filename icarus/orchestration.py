@@ -247,6 +247,9 @@ def run_scenario(settings, params, curr_exp, n_exp):
         # If there are many contents, after doing this, performing operations
         # requiring a topology deep copy, i.e. to_directed/undirected, will
         # take long.
+
+        # TODO: NEED TO REVISE THIS WHOLE THING! (even though it seems to be working pretty much fine...)
+
         contpl_spec = tree['content_placement']
         contpl_name = contpl_spec.pop('name')
         if contpl_name not in CONTENT_PLACEMENT:

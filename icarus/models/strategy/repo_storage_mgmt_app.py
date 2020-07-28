@@ -106,7 +106,7 @@ class GenRepoStorApp(Strategy):
     def replicate(self, ProcApplication):
         return ProcApplication(self)
 
-    def handle(self, msg, node):
+    def handle(self, curTime, receiver, msg, node, flow_id, deadline, rtt_delay):
         if (self.view.hasStorageCapability(node) and node.hasProcessingCapability):
             self.view.model.repoStorage[node].addToStoredMessages(msg)
 
@@ -123,6 +123,17 @@ class GenRepoStorApp(Strategy):
 
         else:
             msg['overtime'] = False
+            source = self.view.content_source_cloud(msg, msg['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                        source = n
+            path = self.view.shortest_path(node, source)
+            next_node = path[1]
+            delay = self.view.path_delay(node, next_node)
+            rtt_delay += delay * 2
+            self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
+                                      STORE)
 
         return msg
 
@@ -215,14 +226,14 @@ class GenRepoStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline, rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
@@ -231,10 +242,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                       source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
@@ -244,16 +261,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -287,16 +304,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -309,16 +326,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -330,16 +347,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -380,16 +397,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -398,16 +415,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -415,16 +432,16 @@ class GenRepoStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                 #
@@ -472,10 +489,17 @@ class GenRepoStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -485,10 +509,17 @@ class GenRepoStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -498,9 +529,17 @@ class GenRepoStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
@@ -520,9 +559,11 @@ class GenRepoStorApp(Strategy):
                         for n in self.view.model.comp_size:
                                 if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
                                     source = n
-                    delay = self.view.path_delay(node, source)
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, ctemp, labels, source, flow_id, deadline, rtt_delay,
+                    self.controller.add_event(curTime + delay, receiver, ctemp, labels, next_node, flow_id, deadline, rtt_delay,
                                               STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
@@ -540,12 +581,15 @@ class GenRepoStorApp(Strategy):
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, ctemp, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, ctemp, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     if (storTime <= ctemp['shelfLife'] + 1):
@@ -559,12 +603,15 @@ class GenRepoStorApp(Strategy):
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                    node] is not None:
                                     source = n
-                        delay = self.view.path_delay(node, source)
+                        path = self.view.shortest_path(node, source)
+                        next_node = path[1]
+                        delay = self.view.path_delay(node, next_node)
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
-                                                  STORE)
+                        self.controller.add_event(curTime + delay, receiver, ctemp, labels, next_node, flow_id,
+                                                  deadline, rtt_delay, STORE)
                         if self.debug:
                             print("Message is scheduled to be stored in the CLOUD")
                     else:
@@ -572,12 +619,15 @@ class GenRepoStorApp(Strategy):
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
                             for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                    node] is not None:
                                     source = n
-                        delay = self.view.path_delay(node, source)
+                        path = self.view.shortest_path(node, source)
+                        next_node = path[1]
+                        delay = self.view.path_delay(node, next_node)
                         rtt_delay += delay * 2
-                        self.controller.add_event(curTime + delay, receiver, content, labels, source, flow_id, deadline, rtt_delay,
-                                                  STORE)
+                        self.controller.add_event(curTime + delay, receiver, ctemp, labels, next_node, flow_id,
+                                                  deadline, rtt_delay, STORE)
                         if self.debug:
                             print("Message is scheduled to be stored in the CLOUD")
             else:
@@ -1016,7 +1066,7 @@ class HServRepoStorApp(Strategy):
         return ProcApplication(self)
 
     # @profile
-    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
+    def handle(self, curTime, receiver, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         # TODO: NEED TO MAKE A COLLECTOR FUNCTION TO UPDATE A HOP COUNTER FOR DATA REPLICATION!!!!!!!!!!!!!!!!!!!!!!!!!!
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
@@ -1050,6 +1100,17 @@ class HServRepoStorApp(Strategy):
 
         else:
             msg['overtime'] = False
+            source = self.view.content_source_cloud(msg, msg['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                        source = n
+            path = self.view.shortest_path(node, source)
+            next_node = path[1]
+            delay = self.view.path_delay(node, next_node)
+            rtt_delay += delay * 2
+            self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
+                                      STORE)
 
         return msg
 
@@ -1119,11 +1180,11 @@ class HServRepoStorApp(Strategy):
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, receiver, content, node, log, feedback, flow_id, rtt_delay, deadline)
         elif type(content) is dict and 'shelf_life' in content and content["shelf_life"] :
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+            self.handle(curTime, receiver, content, node, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -1225,6 +1286,9 @@ class HServRepoStorApp(Strategy):
                         print("This should not happen in Hybrid.")
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                            self.controller.add_request_labels_to_node(node, service)
                         # request is to be executed in the cloud and returned to receiver
                         services = self.view.services()
                         serviceTime = services[service['content']].service_time
@@ -1299,6 +1363,9 @@ class HServRepoStorApp(Strategy):
                     if ret == False:
 
 
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                            self.controller.add_request_labels_to_node(node, service)
                         source = self.view.content_source_cloud(service, labels)
                         if not source:
                             source, in_cache = self.view.closest_source(node, service)
@@ -1321,12 +1388,6 @@ class HServRepoStorApp(Strategy):
                                 self.controller.add_request_labels_to_node(node, service)
                             if self.debug:
                                 print("Message is scheduled to run at: " + str(upstream_node))
-                            for n in path[1:]:
-                                cs = self.view.compSpot(n)
-                                if cs.is_cloud:
-                                    continue
-                                self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
-                                    service['content']].service_time
                         else:  # request is to be executed in the cloud and returned to receiver
                             services = self.view.services()
                             serviceTime = services[service['content']].service_time
@@ -1781,11 +1842,16 @@ class HServRepoStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -1793,29 +1859,35 @@ class HServRepoStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                       source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -1847,18 +1919,19 @@ class HServRepoStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -1869,18 +1942,19 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     msg = self.oldestUnProcDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -1890,18 +1964,19 @@ class HServRepoStorApp(Strategy):
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
                     msg = self.processedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -1940,53 +2015,56 @@ class HServRepoStorApp(Strategy):
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
                     msg = self.processedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
                 elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                 #
@@ -2031,39 +2109,63 @@ class HServRepoStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     msg = self.oldestUnProcDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
                     msg = self.oldestSatisfiedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     msg = self.oldestInvalidProcDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
-                    delay = self.view.path_delay(node, source)
+                    if not source:
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -2584,7 +2686,7 @@ class HServProStorApp(Strategy):
 
     # TODO: ADAPT FOR POPULARITY PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #@profile
-    def handle(self, curTime, msg, node, log, feedback, flow_id, rtt_delay, deadline):
+    def handle(self, curTime, receiver, msg, node, log, feedback, flow_id, rtt_delay, deadline):
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
             self.controller.add_replication_hops(msg)
@@ -2617,6 +2719,17 @@ class HServProStorApp(Strategy):
 
         else:
             msg['overtime'] = False
+            source = self.view.content_source_cloud(msg, msg['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                        source = n
+            path = self.view.shortest_path(node, source)
+            next_node = path[1]
+            delay = self.view.path_delay(node, next_node)
+            rtt_delay += delay * 2
+            self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
+                                      STORE)
 
         return msg
 
@@ -2685,11 +2798,11 @@ class HServProStorApp(Strategy):
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, receiver, content, node, log, feedback, flow_id, rtt_delay, deadline)
         elif type(content) is dict and 'shelf_life' in content and content["shelf_life"] :
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, log, feedback, flow_id, rtt_delay, deadline)
+            self.handle(curTime, receiver, content, node, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -2791,6 +2904,9 @@ class HServProStorApp(Strategy):
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
                         # request is to be executed in the cloud and returned to receiver
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                            self.controller.add_request_labels_to_node(node, service)
                         services = self.view.services()
                         serviceTime = services[service['content']].service_time
                         self.controller.add_event(curTime + rtt_delay + serviceTime, receiver, service, labels,
@@ -2864,6 +2980,9 @@ class HServProStorApp(Strategy):
 
                     if ret == False:
 
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                                self.controller.add_request_labels_to_node(node, service)
                         source = self.view.content_source_cloud(service, labels)
                         if not source:
                             source, in_cache = self.view.closest_source(node, service)
@@ -2886,12 +3005,6 @@ class HServProStorApp(Strategy):
                                 self.controller.add_request_labels_to_node(node, service)
                             if self.debug:
                                 print("Message is scheduled to run at: " + str(upstream_node))
-                            for n in path[1:]:
-                                cs = self.view.compSpot(n)
-                                if cs.is_cloud:
-                                    continue
-                                self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
-                                    service['content']].service_time
                         else:  # request is to be executed in the cloud and returned to receiver
                             services = self.view.services()
                             serviceTime = services[service['content']].service_time
@@ -3351,29 +3464,37 @@ class HServProStorApp(Strategy):
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
                     msg = self.processedDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
                     msg = self.oldestUnProcDepletion(node)
+                    
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3382,16 +3503,16 @@ class HServProStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3425,16 +3546,16 @@ class HServProStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3447,16 +3568,16 @@ class HServProStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3468,16 +3589,16 @@ class HServProStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3518,16 +3639,16 @@ class HServProStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3536,16 +3657,16 @@ class HServProStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3553,16 +3674,16 @@ class HServProStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                 #
@@ -3608,13 +3729,18 @@ class HServProStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -3623,13 +3749,18 @@ class HServProStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -3638,13 +3769,18 @@ class HServProStorApp(Strategy):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -4157,7 +4293,7 @@ class HServReStorApp(Strategy):
 
     # TODO: ADAPT FOR SERVICE-PROXIMATE PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
+    def handle(self, curTime, receiver, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
         """
 
         curTime:
@@ -4239,6 +4375,17 @@ class HServReStorApp(Strategy):
 
         else:
             msg['overtime'] = False
+            source = self.view.content_source_cloud(msg, msg['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                        source = n
+            path = self.view.shortest_path(node, source)
+            next_node = path[1]
+            delay = self.view.path_delay(node, next_node)
+            rtt_delay += delay * 2
+            self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
+                                      STORE)
 
         return msg
 
@@ -4307,11 +4454,11 @@ class HServReStorApp(Strategy):
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, receiver, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         elif type(content) is dict and 'shelf_life' in content and content["shelf_life"] :
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+            self.handle(curTime, receiver, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
 
         service = content
 
@@ -4414,18 +4561,21 @@ class HServReStorApp(Strategy):
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
                         # request is to be executed in the cloud and returned to receiver
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                                self.controller.add_request_labels_to_node(node, service)
                         services = self.view.services()
                         serviceTime = services[service['content']].service_time
                         self.controller.add_event(curTime + rtt_delay + serviceTime, receiver, service, labels,
                                                   receiver, flow_id, deadline, rtt_delay, RESPONSE)
                         if self.debug:
                             print("Request is scheduled to run at the CLOUD")
-                    for n in path[1:]:
-                        cs = self.view.compSpot(n)
-                        if cs.is_cloud:
-                            continue
-                        self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
-                            service['content']].service_time
+                        for n in path[1:]:
+                            cs = self.view.compSpot(n)
+                            if cs.is_cloud:
+                                continue
+                            self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
+                                service['content']].service_time
                     return
                 return
 
@@ -4486,6 +4636,9 @@ class HServReStorApp(Strategy):
 
                     if ret == False:
 
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                                self.controller.add_request_labels_to_node(node, service)
                         source = self.view.content_source_cloud(service, labels)
                         if not source:
                             source, in_cache = self.view.closest_source(node, service)
@@ -4508,12 +4661,6 @@ class HServReStorApp(Strategy):
                                 self.controller.add_request_labels_to_node(node, service)
                             if self.debug:
                                 print("Message is scheduled to run at: " + str(upstream_node))
-                            for n in path[1:]:
-                                cs = self.view.compSpot(n)
-                                if cs.is_cloud:
-                                    continue
-                                self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
-                                    service['content']].service_time
                         else:  # request is to be executed in the cloud and returned to receiver
                             services = self.view.services()
                             serviceTime = services[service['content']].service_time
@@ -4974,12 +5121,15 @@ class HServReStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -4988,12 +5138,15 @@ class HServReStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5002,16 +5155,16 @@ class HServReStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5045,16 +5198,16 @@ class HServReStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5067,16 +5220,16 @@ class HServReStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5088,16 +5241,16 @@ class HServReStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5138,16 +5291,16 @@ class HServReStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5156,16 +5309,16 @@ class HServReStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5173,16 +5326,16 @@ class HServReStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                 #
@@ -5244,13 +5397,18 @@ class HServReStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5259,13 +5417,18 @@ class HServReStorApp(Strategy):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -5788,7 +5951,7 @@ class HServSpecStorApp(Strategy):
 
     # TODO: ADAPT FOR MOST-USED/SPECIFIC-SERVICE-PROXIMATE PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def handle(self, curTime, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
+    def handle(self, curTime, receiver, msg, node, path, log, feedback, flow_id, rtt_delay, deadline):
         """
 
         curTime:
@@ -5871,6 +6034,17 @@ class HServSpecStorApp(Strategy):
 
         else:
             msg['overtime'] = False
+            source = self.view.content_source_cloud(msg, msg['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
+                        source = n
+            path = self.view.shortest_path(node, source)
+            next_node = path[1]
+            delay = self.view.path_delay(node, next_node)
+            rtt_delay += delay * 2
+            self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
+                                      STORE)
 
         return msg
 
@@ -5939,11 +6113,11 @@ class HServSpecStorApp(Strategy):
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
-                self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+                self.handle(curTime, receiver, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         elif type(content) is dict and 'shelf_life' in content and content["shelf_life"] :
             source, in_cache = self.view.closest_source(node, content)
             path = self.view.shortest_path(node, source)
-            self.handle(curTime, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
+            self.handle(curTime, receiver, content, node, path, log, feedback, flow_id, rtt_delay, deadline)
         service = content
 
         if curTime - self.last_replacement > self.replacement_interval:
@@ -6045,6 +6219,9 @@ class HServSpecStorApp(Strategy):
                         raise ValueError("Task should not be rejected at the cloud.")
                     else:
                         # request is to be executed in the cloud and returned to receiver
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                            self.controller.add_request_labels_to_node(node, service)
                         services = self.view.services()
                         serviceTime = services[service['content']].service_time
                         self.controller.add_event(curTime + rtt_delay + serviceTime, receiver, service, labels,
@@ -6117,6 +6294,9 @@ class HServSpecStorApp(Strategy):
 
                     if ret == False:
 
+                        if type(service) is dict and self.view.hasStorageCapability(node) and not self.view.storage_nodes()[node].hasMessage(
+                                    service['content'], service['labels']):
+                            self.controller.add_request_labels_to_node(node, service)
                         source = self.view.content_source_cloud(service, labels)
                         if not source:
                             source, in_cache = self.view.closest_source(node, service)
@@ -6139,12 +6319,6 @@ class HServSpecStorApp(Strategy):
                                 self.controller.add_request_labels_to_node(node, service)
                             if self.debug:
                                 print("Message is scheduled to run at: " + str(upstream_node))
-                            for n in path[1:]:
-                                cs = self.view.compSpot(n)
-                                if cs.is_cloud:
-                                    continue
-                                self.serviceNodeUtil[int(receiver[4:])][n][service['content']] += self.view.services()[
-                                    service['content']].service_time
                         else:  # request is to be executed in the cloud and returned to receiver
                             services = self.view.services()
                             serviceTime = services[service['content']].service_time
@@ -6605,12 +6779,15 @@ class HServSpecStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -6619,12 +6796,15 @@ class HServSpecStorApp(Strategy):
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6633,16 +6813,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6676,16 +6856,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6698,16 +6878,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6719,16 +6899,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6769,16 +6949,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.processedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6787,16 +6967,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6804,16 +6984,16 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
-                        source, in_cache = self.view.closest_source(node, content)
-                        if not source:
-                            for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
+                        for n in self.view.model.comp_size:
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
                     path = self.view.shortest_path(node, source)
-                    delay = self.view.path_delay(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                 #
@@ -6860,13 +7040,18 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
@@ -6875,13 +7060,18 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
@@ -6890,13 +7080,18 @@ class HServSpecStorApp(Strategy):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
+                       source, in_cache = self.view.closest_source(node, content)
+                    if not source:
                         for n in self.view.model.comp_size:
-                                if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[node] is not None:
-                                    source = n
-                    delay = self.view.path_delay(node, source)
+                            if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[
+                                node] is not None:
+                                source = n
+                    path = self.view.shortest_path(node, source)
+                    next_node = path[1]
+                    delay = self.view.path_delay(node, next_node)
                     rtt_delay += delay * 2
-                    self.controller.add_event(curTime + delay, receiver, msg, labels, source, flow_id, deadline, rtt_delay,
-                                              STORE)
+                    self.controller.add_event(curTime + delay, receiver, msg, labels, next_node, flow_id, deadline,
+                                              rtt_delay, STORE)
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 

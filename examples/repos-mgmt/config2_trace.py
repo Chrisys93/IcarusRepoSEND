@@ -20,15 +20,15 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 10 #cpu_count()
+N_PROCESSES = 10  # cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
 CACHING_GRANULARITY = 'OBJECT'
 
 # Warm-up strategy
-#WARMUP_STRATEGY = 'MFU' #'HYBRID'
-WARMUP_STRATEGY = 'HYBRID' #'HYBRID'
+# WARMUP_STRATEGY = 'MFU' #'HYBRID'
+WARMUP_STRATEGY = 'HYBRID'  # 'HYBRID'
 
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
@@ -55,42 +55,42 @@ DATA_COLLECTORS = ['LATENCY']
 # This would give problems while trying to plot the results because if for
 # example I wanted to filter experiment with alpha=0.8, experiments with
 # alpha = 0.799999999999 would not be recognized
-ALPHA = 0.75 #0.75
-#ALPHA = [0.00001]
+ALPHA = 0.75  # 0.75
+# ALPHA = [0.00001]
 
 # Total size of network cache as a fraction of content population
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-#N_CONTENTS = 500
-N_CONTENTS = 1000
+N_CONTENTS = 500
+#N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
 NETWORK_REQUEST_RATE = 100.0
 
-# Number of cores for each node in the experiment
+#  Number of cores for each node in the experiment
 NUM_CORES = 50
 
 # Number of content requests generated to prepopulate the caches
 # These requests are not logged
-N_WARMUP_REQUESTS = 0 #30000
+N_WARMUP_REQUESTS = 0  # 30000
 
 # Number of content requests generated after the warmup and logged
 # to generate results.
-#N_MEASURED_REQUESTS = 1000 #60*30000 #100000
+# N_MEASURED_REQUESTS = 1000 #60*30000 #100000
 
-SECS = 60 #do not change
-MINS = 7.5 #5.5
-N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
+SECS = 60  # do not change
+MINS = 7.5  # 5.5
+N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE * SECS * MINS
 
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
-TOPOLOGIES =  ['TREE']
+TOPOLOGIES = ['TREE']
 TREE_DEPTH = 3
 BRANCH_FACTOR = 2
-NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
+NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH + 1) - 1)
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30.0
@@ -103,7 +103,7 @@ WORKLOAD = 'TRACE_DRIVEN_REPO'
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP']
-#STRATEGIES = ['COORDINATED']  # service-based routing
+# STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
@@ -120,7 +120,7 @@ REPO_POLICY = 'REPO_STORAGE'
 SCHED_POLICY = 'EDF'
 
 FRESHNESS_PER = 0.15
-SHELF_LIFE =5
+SHELF_LIFE = 5
 MSG_SIZE = 1000000
 SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
@@ -140,12 +140,9 @@ CONTENTS_FILE = dir_path + '/contents.csv'
 LABELS_FILE = dir_path + '/labels.csv'
 CONTENT_LOCATIONS = dir_path + '/content_locations.csv'
 
-
 # Queue of experiments
 EXPERIMENT_QUEUE = deque()
 default = Tree()
-
-
 
 default['workload'] = {'name': WORKLOAD,
                        'n_contents': N_CONTENTS,
@@ -171,22 +168,21 @@ default['workload'] = {'name': WORKLOAD,
 
 default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'
 default['cache_placement']['storage_budget'] = 10000000000
-#default['computation_placement']['name'] = 'CENTRALITY'
+# default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['name'] = 'UNIFORM_REPO'
-#default['computation_placement']['name'] = 'CENTRALITY'
-default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
+# default['computation_placement']['name'] = 'CENTRALITY'
+default['computation_placement']['service_budget'] = NUM_CORES * NUM_NODES * 3  # N_SERVICES/2 #N_SERVICES/2
 default['computation_placement']['storage_budget'] = 10000000000
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
-default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
-#default['content_placement']['name'] = 'WEIGHTED_REPO'
+default['computation_placement']['computation_budget'] = (NUM_NODES) * NUM_CORES  # NUM_CORES for each node
+# default['content_placement']['name'] = 'WEIGHTED_REPO'
 
-default['content_placement'] = {"name":             'WEIGHTED_REPO',
-                                "source_weights" :  SOURCE_WEIGHTS,
-                                "service_weights":  SERVICE_WEIGHTS,
-                                "types_weights" :   None,
-                                # "topics_weights" :  TOPICS_WEIGHTS,
-                                "max_label_nos" :   MAX_REQUESTED_LABELS,
-                                "max_replications": MAX_REPLICATIONS
+default['content_placement'] = {"name": 'WEIGHTED_REPO',
+                                "types_weights": None,
+                                "max_replications": MAX_REPLICATIONS,
+                                "source_weights": SOURCE_WEIGHTS,
+                                "service_weights": SERVICE_WEIGHTS,
+                                "max_label_nos": MAX_REQUESTED_LABELS
                                 }
 
 default['cache_policy']['name'] = CACHE_POLICY
@@ -212,18 +208,18 @@ for strategy in ['LRU']: # STRATEGIES:
         EXPERIMENT_QUEUE.append(experiment)
 """
 # Compare SDF, LFU, Hybrid for default values
-#"""
+# """
 # TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SERVICE_BUDGET = NUM_CORES*NUM_NODES*3
+SERVICE_BUDGET = NUM_CORES * NUM_NODES * 3
 for strategy in STRATEGIES:
     experiment = copy.deepcopy(default)
     experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
     experiment['strategy']['name'] = strategy
     experiment['warmup_strategy']['name'] = strategy
     experiment['desc'] = "strategy: %s" \
-                     % (strategy)
+                         % (strategy)
     EXPERIMENT_QUEUE.append(experiment)
-#"""
+# """
 # Experiment with different budgets
 """
 budgets = [N_SERVICES/8, N_SERVICES/4, N_SERVICES/2, 0.75*N_SERVICES, N_SERVICES, 2*N_SERVICES]

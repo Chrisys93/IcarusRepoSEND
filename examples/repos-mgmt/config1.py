@@ -62,8 +62,8 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-#N_CONTENTS = 500
-N_CONTENTS = 1000
+N_CONTENTS = 500
+#N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
@@ -127,6 +127,7 @@ SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
 TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
 TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
 MAX_REQUESTED_LABELS = 3
+MAX_REPLICATIONS = None
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
@@ -178,10 +179,11 @@ default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  
 #default['content_placement']['name'] = 'WEIGHTED_REPO'
 
 default['content_placement'] = {"name":             'WEIGHTED_REPO',
+                                "topics_weights" :  TOPICS_WEIGHTS,
+                                "types_weights" :   TYPES_WEIGHTS,
+                                "max_replications": MAX_REPLICATIONS,
                                 "source_weights" :  SOURCE_WEIGHTS,
                                 "service_weights":  SERVICE_WEIGHTS,
-                                "types_weights" :   TYPES_WEIGHTS,
-                                "topics_weights" :  TOPICS_WEIGHTS,
                                 "max_label_nos" :   MAX_REQUESTED_LABELS
                                 }
 
