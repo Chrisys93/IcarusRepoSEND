@@ -2120,7 +2120,9 @@ class BurstyRepoDataAndWorkload(object):
             content = None
 
             # TODO: INCLUDE stor_scope AND THEN PASS self.stor_scope (workload.stor_scope) TO THE CONTENT PLACEMENT
-            #  IMPLEMENTATION IN THE ORCHESTRATOR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            #  IMPLEMENTATION IN THE ORCHESTRATOR
+            #  Done, but the DATA_SCOPE must be used CAREFULLY, as MAX_REPLICATIONS for content placement
+            #  configuration, as well!
 
             if self.label_ex is True:
 
@@ -2182,6 +2184,7 @@ class BurstyRepoDataAndWorkload(object):
                 datum.update(service_type="non-proc")
                 datum.update(labels=labels)
                 datum.update(shelf_life=self.stor_shelf)
+                datum.update(max_replications=self.stor_scope)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:

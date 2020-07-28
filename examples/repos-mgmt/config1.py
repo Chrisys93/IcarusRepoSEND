@@ -68,7 +68,7 @@ N_CONTENTS = 500
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 350.0
+NETWORK_REQUEST_RATE = 100.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
@@ -127,7 +127,12 @@ SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
 TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
 TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
 MAX_REQUESTED_LABELS = 3
+
+# MAX_REPLICATIONS defines the maximum number of times a content should be replicated within the repository system,
+# before it is not deemed safe/efficient to do so, anymore.
+# Note: MAX REPLICATIONS should be used for both the WORKLOAD and CONTENT_PLACEMENT definitions
 MAX_REPLICATIONS = None
+
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
