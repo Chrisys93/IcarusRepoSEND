@@ -403,7 +403,10 @@ class Scheduler(object):
                             oldService = aTask.service
                             numStartingVMs[newService] += 1
                             numVMs[oldService] -= 1
-                            self.assign_task_to_cpu_core(core_indx, aTask, curTime)
+                            if aTask.arrivalTime <= curTime:
+                                self.assign_task_to_cpu_core(core_indx, aTask, curTime)
+                            else:
+                                self._taskQueue.append(aTask)
 
                         elif aTask.taskType == Task.TASK_TYPE_SERVICE:
                             self.assign_task_to_cpu_core(core_indx, aTask, curTime)

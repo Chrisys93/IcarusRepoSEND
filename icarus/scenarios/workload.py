@@ -1804,10 +1804,10 @@ class BurstyRepoDataAndWorkload(object):
     """
 
     def __init__(self, topology, n_contents, alpha, max_on=0, max_off=0, disrupt_mode=None, disrupt_weights=None,
-                 data_gen_dist_mode=None, data_gen_dist=None, data_rate=0, stor_shelf=0, stor_scope=0, n_stor_warmup=0,
-                 n_stor_measured=0, beta=0, label_ex=False, alpha_labels=0, rate=100, n_warmup=10 ** 5,
+                 beta=0, label_ex=False, alpha_labels=0, rate=100, n_warmup=10 ** 5,
                  n_measured=4 * 10 ** 5, seed=0, n_services=10, topics=None, types=None, max_labels=1, freshness_pers=0,
-                 shelf_lives=0, msg_sizes=1000000, **kwargs):
+                 shelf_lives=0, msg_sizes=1000000, data_gen_dist_mode=None, data_gen_dist=None, data_rate=0,
+                 stor_shelf=0, stor_scope=0, n_stor_warmup=0, n_stor_measured=0, **kwargs):
         if types is None:
             types = []
         if alpha < 0:
@@ -2080,7 +2080,7 @@ class BurstyRepoDataAndWorkload(object):
             eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
             while eventObj is not None and eventObj.time < t_data:
                 heapq.heappop(self.model.eventQ)
-                log = (stor_counter >= self.n_warmup)
+                log = (stor_counter >= self.n_stor_warmup)
                 event = {'receiver': eventObj.receiver, 'content': eventObj.service, 'labels': eventObj.labels,
                          'log': log, 'node': eventObj.node, 'flow_id': eventObj.flow_id, 'deadline': eventObj.deadline,
                          'rtt_delay': eventObj.rtt_delay, 'status': eventObj.status, 'task': eventObj.task}
@@ -2088,7 +2088,7 @@ class BurstyRepoDataAndWorkload(object):
                 yield (eventObj.time, event)
                 eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
 
-            if stor_counter >= (self.n_warmup + self.n_measured):
+            if stor_counter >= (self.n_stor_warmup + self.n_stor_measured):
                 # skip below if we already sent all the requests
                 continue
 
@@ -2152,7 +2152,7 @@ class BurstyRepoDataAndWorkload(object):
                     self.alter = True
                     content = int(self.zipf.rv())
 
-            log = (stor_counter >= self.n_warmup)
+            log = (stor_counter >= self.n_stor_warmup)
             flow_id += 1
             # TODO: Since services are associated with deadlines based on labels as well now, this should be
             #  accounted for in service placement from now on, as well, the lowest deadline being prioritised

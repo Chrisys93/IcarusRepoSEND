@@ -38,6 +38,7 @@ __all__ = [
         'topology_path',
         'topology_ring',
         'topology_mesh',
+        'topology_repo_mesh',
         'topology_geant',
         'topology_tiscali',
         'topology_wide',
@@ -219,8 +220,8 @@ def topology_tree(k, h, delay=0.020, **kwargs):
 @register_topology_factory('REPO_TREE')
 def topology_repo_tree(k, h, delay=0.020, **kwargs):
     """
-    Returns a tree topology, with sources (and EDRs) at the leaves, randomly
-    distributed receivers and EDRs at all intermediate nodes.
+    Returns a tree topology, with sources (and EDRs) at the root,
+    receivers at the leaves and EDRs at all intermediate nodes.
 
     Parameters
     ----------
@@ -462,6 +463,95 @@ def topology_mesh(n, m, delay_int=1, delay_ext=5, **kwargs):
     fnss.set_delays_constant(topology, delay_int, 'ms', internal_links)
     fnss.set_delays_constant(topology, delay_ext, 'ms', external_links)
     return IcnTopology(topology)
+
+
+
+@register_topology_factory('REPO_MESH')
+def topology_repo_mesh(n, m, delay_int=0.02, delay_ext=1, **kwargs):
+    """Returns a ring topology
+
+    This topology is comprised of a mesh of *n* nodes. Each of these nodes is
+    attached to a receiver. In addition *m* router are attached each to a source.
+    Therefore, this topology has in fact 2n + m nodes.
+
+    Parameters
+    ----------
+    n : int
+        The number of routers in the ring
+    m : int
+        The number of sources
+    delay_int : float
+        The internal link delay in milliseconds
+    delay_ext : float
+        The external link delay in milliseconds
+
+    Returns
+    -------
+    topology : IcnTopology
+        The topology object
+    """
+    receiver_access_delay = 0.001
+    if m > n:
+        raise ValueError("m cannot be greater than n")
+    topology = fnss.full_mesh_topology(n)
+    routers = range(n)
+    receivers = range(n, 2 * n)
+    sources = range(2 * n, 2 * n + m)
+    internal_links = zip(routers, receivers)
+    external_links = zip(routers[:m], sources)
+    for u, v in internal_links:
+        topology.add_edge(u, v, type='internal')
+    for u, v in external_links:
+        topology.add_edge(u, v, type='external')
+    topology.graph['icr_candidates'] = set(routers)
+
+    receivers = ['rec_%d' % i for i in range(n, n*2)]
+
+    n_sources = m
+    sources = ['src_%d' % i for i in range(n_sources)]
+
+    print("The number of sources: " + repr(n_sources))
+    print("The number of receivers: " + repr(n))
+    topology.graph['receiver_access_delay'] = receiver_access_delay
+    topology.graph['link_delay'] = delay_int
+    for v in routers:
+        fnss.add_stack(topology, v, 'router')
+        if 'source' not in topology.node[v]['stack']:
+            try:
+                if topology.node[v]['type'] == 'leaf':
+                    try:
+                        topology.node[v]['extra_types'].append('source')
+                        topology.node[v]['extra_types'].append('router')
+                    except Exception as e:
+                        err_type = str(type(e)).split("'")[1].split(".")[1]
+                        if err_type == "KeyError":
+                            topology.node[v].update(extra_types=['source'])
+                            topology.node[v]['extra_types'].append('router')
+
+            except Exception as e:
+                err_type = str(type(e)).split("'")[1].split(".")[1]
+                if err_type == "KeyError":
+                    continue
+    for v in sources:
+        fnss.add_stack(topology, v, 'source')
+    for v in receivers:
+        fnss.add_stack(topology, v, 'receiver')
+
+    # set weights and delays on all links
+    fnss.set_weights_constant(topology, 1.0)
+    fnss.set_delays_constant(topology, delay_int, 'ms', internal_links)
+    fnss.set_delays_constant(topology, delay_ext, 'ms', external_links)
+
+    # label links as internal
+
+    topology.graph['receivers'] = receivers
+    topology.graph['sources'] = sources
+    topology.graph['sources'].extend(routers)
+    topology.graph['routers'] = routers
+    topology.graph['edge_routers'] = routers
+
+    return IcnTopology(topology)
+
 
 
 @register_topology_factory('GEANT')

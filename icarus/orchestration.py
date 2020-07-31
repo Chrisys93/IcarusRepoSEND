@@ -278,6 +278,9 @@ def run_scenario(settings, params, curr_exp, n_exp):
             CONTENT_PLACEMENT[contpl_name](topology, workload.data, workload.freshness_pers,
                                            workload.shelf_lives, workload.sizes, workload.labels_weights,
                                            **contpl_spec)
+        elif "DATA" in workload_name and "REPO" in contpl_name:
+            CONTENT_PLACEMENT[contpl_name](topology, workload.data, workload.freshness_pers,
+                                           workload.stor_shelf, workload.sizes, **contpl_spec)
         else:
             CONTENT_PLACEMENT[contpl_name](topology, workload.contents, **contpl_spec)
 
