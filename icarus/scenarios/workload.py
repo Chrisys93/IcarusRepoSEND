@@ -997,6 +997,24 @@ class BurstyRepoWorkload(object):
                 elif self.receivers_down[node] and t_event > self.receivers_down[node] + self.receivers_uptime[node]:
                     self.receivers_down[node] = None
                 self.last_event[node] = t_event
+
+
+            elif self.disrupt_mode == 'WEIGHTED':
+
+                if self.beta == 0:
+                    w_receiver = random.choice(self.receivers)
+                else:
+                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                d_node = w_receiver
+                self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
+                self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
+                if self.last_event[d_node] is not None and self.receivers_down[d_node] is None:
+                    self.receivers_down[d_node] = self.last_event[d_node] + self.receivers_downtime[d_node]
+                elif self.receivers_down[d_node] and t_event < self.receivers_down[d_node]:
+                    t_event = self.receivers_down[d_node]
+                elif self.receivers_down[d_node] and t_event > self.receivers_down[d_node] + self.receivers_uptime[d_node]:
+                    self.receivers_down[d_node] = None
+                self.last_event[d_node] = t_event
                     
             
 
@@ -1955,6 +1973,24 @@ class BurstyRepoDataAndWorkload(object):
                             self.receivers_down[node] = None
                     self.last_event[node] = t_event
 
+
+            elif self.disrupt_mode == 'WEIGHTED':
+
+                if self.beta == 0:
+                    w_receiver = random.choice(self.receivers)
+                else:
+                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                d_node = w_receiver
+                self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
+                self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
+                if self.last_event[d_node] is not None and self.receivers_down[d_node] is None:
+                    self.receivers_down[d_node] = self.last_event[d_node] + self.receivers_downtime[d_node]
+                elif self.receivers_down[d_node] and t_event < self.receivers_down[d_node]:
+                    t_event = self.receivers_down[d_node]
+                elif self.receivers_down[d_node] and t_event > self.receivers_down[d_node] + self.receivers_uptime[d_node]:
+                    self.receivers_down[d_node] = None
+                self.last_event[d_node] = t_event
+
             labels = []
             content = None
             if self.label_ex is True:
@@ -2050,6 +2086,8 @@ class BurstyRepoDataAndWorkload(object):
 
 
 
+
+
         # # Continuous data (for storage) generation settings
         # self.data_gen_dist_mode
         # self.data_gen_dist
@@ -2115,6 +2153,25 @@ class BurstyRepoDataAndWorkload(object):
                         elif t_data > self.receivers_down[node] + self.receivers_uptime[node]:
                             self.receivers_down[node] = None
                     self.last_data[node] = t_data
+
+
+            elif self.disrupt_mode == 'WEIGHTED':
+
+                if self.beta == 0:
+                    w_receiver = random.choice(self.receivers)
+                else:
+                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                d_node = w_receiver
+                self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
+                self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
+                if self.last_event[d_node] is not None and self.receivers_down[d_node] is None:
+                    self.receivers_down[d_node] = self.last_event[d_node] + self.receivers_downtime[d_node]
+                elif self.receivers_down[d_node] and t_event < self.receivers_down[d_node]:
+                    t_event = self.receivers_down[d_node]
+                elif self.receivers_down[d_node] and t_event > self.receivers_down[d_node] + self.receivers_uptime[d_node]:
+                    self.receivers_down[d_node] = None
+                self.last_event[d_node] = t_event
+
 
             labels = []
             content = None
