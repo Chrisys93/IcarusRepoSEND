@@ -547,6 +547,39 @@ class LatencyCollector(DataCollector):
 
     @inheritdoc(DataCollector)
     def results(self):
+        # TODO: Maybe revise the below and make it even more customisable
+        if self.view.model.strategy == 'HYBRID':
+            res_file = "/hybrid.txt"
+            overhead_file = "/hybrid_overheads.txt"
+        elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
+            res_file = "/hybrid_repo.txt"
+            r_replicas_file = "/gen_r_replicas.txt"
+            s_replicas_file = "/gen_s_replicas.txt"
+            r_labels_dist_file = "/gen_r_labels.txt"
+            s_labels_dist_file = "/gen_s_labels.txt"
+            overhead_file = "/gen_overheads.txt"
+        elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
+            res_file = "/hybrid_pro_repo.txt"
+            r_replicas_file = "/pro_r_replicas.txt"
+            s_replicas_file = "/pro_s_replicas.txt"
+            r_labels_dist_file = "/pro_r_labels.txt"
+            s_labels_dist_file = "/pro_s_labels.txt"
+            overhead_file = "/pro_overheads.txt"
+        elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
+            res_file = "/hybrid_repo.txt"
+            r_replicas_file = "/re_r_replicas.txt"
+            s_replicas_file = "/re_s_replicas.txt"
+            r_labels_dist_file = "/re_r_labels.txt"
+            s_labels_dist_file = "/re_s_labels.txt"
+            overhead_file = "/re_overheads.txt"
+        elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
+            res_file = "/hybrid_repo.txt"
+            r_replicas_file = "/spec_r_replicas.txt"
+            s_replicas_file = "/spec_s_replicas.txt"
+            r_labels_dist_file = "/spec_r_labels.txt"
+            s_labels_dist_file = "/spec_s_labels.txt"
+            overhead_file = "/spec_overheads.txt"
+
         if self.view.model.strategy == 'HYBRID':
             res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
             overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
