@@ -139,6 +139,7 @@ RATES_FILE = dir_path + '/target_and_rates.csv'
 CONTENTS_FILE = dir_path + '/contents.csv'
 LABELS_FILE = dir_path + '/labels.csv'
 CONTENT_LOCATIONS = dir_path + '/content_locations.csv'
+LABELS_NO = 10
 
 
 # Queue of experiments
@@ -148,25 +149,24 @@ default = Tree()
 
 
 default['workload'] = {'name': WORKLOAD,
-                       'n_contents': N_CONTENTS,
-                       'n_warmup': N_WARMUP_REQUESTS,
-                       'n_measured': N_MEASURED_REQUESTS,
-                       'rate': NETWORK_REQUEST_RATE,
-                       'seed': 0,
-                       'n_services': N_SERVICES,
-                       'alpha': ALPHA,
-                       'alpha_labels': ALPHA_LABELS,
-                       'topics': DATA_TOPICS,
-                       'label_ex': LABEL_EXCL,
-                       'types': DATA_TYPES,
-                       'max_labels': MAX_REQUESTED_LABELS,
-                       'freshness_pers': FRESHNESS_PER,
-                       'shelf_lives': SHELF_LIFE,
-                       'msg_sizes': MSG_SIZE,
                        'rates_file': RATES_FILE,
                        'contents_file': CONTENTS_FILE,
                        'labels_file': LABELS_FILE,
-                       'content_locations': CONTENT_LOCATIONS
+                       'content_locations': CONTENT_LOCATIONS,
+                       'n_contents': N_CONTENTS,
+                       'n_labels': LABELS_NO,
+                       'n_warmup': N_WARMUP_REQUESTS,
+                       'n_measured': N_MEASURED_REQUESTS,
+                       'n_services': N_SERVICES,
+                       'max_labels': MAX_REQUESTED_LABELS,
+                       'msg_sizes': MSG_SIZE,
+                       'freshness_pers': FRESHNESS_PER,
+                       'shelf_lives': SHELF_LIFE,
+                       'rate': NETWORK_REQUEST_RATE,
+                       'label_ex': LABEL_EXCL,
+                       'alpha_labels': ALPHA_LABELS,
+                       'seed': 0,
+                       'alpha': ALPHA
                        }
 
 default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'

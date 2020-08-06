@@ -1171,7 +1171,7 @@ class TraceDrivenRepoWorkload(object):
         dictionary of event attributes.
     """
 
-    def __init__(self, topology, rates_file, contents_file, labels_file, content_locations, n_contents,
+    def __init__(self, topology, rates_file, contents_file, labels_file, content_locations, n_contents, n_labels,
                  n_warmup, n_measured, n_services=10, max_labels=1, msg_sizes=1000000, freshness_pers=0.2,
                  shelf_lives=5, rate=1.0, label_ex=False, alpha_labels=0, beta=0, seed=0, **kwargs):
         """Constructor"""
@@ -1214,7 +1214,6 @@ class TraceDrivenRepoWorkload(object):
             raise ValueError('beta must be positive')
         # Set high buffering to avoid one-line reads
         self.buffering = 64 * 1024 * 1024
-        self.n_contents = n_contents
         self.n_warmup = n_warmup
         self.n_measured = n_measured
         self.contents_file = contents_file
@@ -1269,10 +1268,14 @@ class TraceDrivenRepoWorkload(object):
 
         unique_labels = []
         label_counts = Counter()
+        no_labels = 0
         for label in self.labels:
             if label not in unique_labels:
+                no_labels += 1
                 unique_labels.append(label)
             label_counts.update([label])
+            if no_labels == n_labels:
+                break
         self.labels_pdf = {}
         self.labels_weights = {}
         for label in unique_labels:

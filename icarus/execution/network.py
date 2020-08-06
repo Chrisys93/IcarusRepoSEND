@@ -1113,6 +1113,7 @@ class NetworkModel(object):
         self.replications_from = Counter()
         self.replications_to = Counter()
         self.rate = rate
+        self.n_services = n_services
         for node in topology.nodes():
             # TODO: Sort out content association in the case that "contents" aren't objects!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             self.all_node_labels[node] = Counter()
@@ -1824,7 +1825,7 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        self.model.replication_hops[content['content']] = 1
+        self.model.replication_hops[content['content']] = 0
 
 
 

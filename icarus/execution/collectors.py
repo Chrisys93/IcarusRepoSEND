@@ -526,14 +526,14 @@ class LatencyCollector(DataCollector):
                 self.deadline_metric_interval += self.flow_deadline[flow_id] - timestamp
 
             service = self.flow_service[flow_id]
-            if service not in self.service_requests.keys():
+            if service['content'] not in self.service_requests.keys():
                 self.service_requests[service['content']] = 1
                 self.service_satisfied[service['content']] = 0
             else:
                 self.service_requests[service['content']] += 1
 
             if sat:
-                if service in self.service_satisfied.keys():
+                if service['content'] in self.service_satisfied.keys():
                     self.service_satisfied[service['content']] += 1
                 else:
                     self.service_satisfied[service['content']] = 1
@@ -596,7 +596,7 @@ class LatencyCollector(DataCollector):
         res.write("\n")
 
 
-        for content in range(0, 1000):
+        for content in range(0, self.view.model.n_services):
             # overhead.write(str(content) + ": ")
             msg = dict()
             msg['content'] = content
@@ -610,7 +610,7 @@ class LatencyCollector(DataCollector):
             else:
                 self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
             overhead.write(str(self.view.replication_overhead(content)) + ", ")
-            self.view.model.replication_hops[msg['content']] = 1
+            self.view.model.replication_hops[msg['content']] = 0
         overhead.write("\n")
 
         if self.view.model.strategy != 'HYBRID':
