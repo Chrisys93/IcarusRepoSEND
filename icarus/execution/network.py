@@ -28,7 +28,7 @@ import fnss
 
 import heapq
 
-from icarus.registry import CACHE_POLICY, REPO_POLICY
+from icarus.registry import CACHE_POLICY, REPO_POLICY, LOGGING_PARAMETERS
 from icarus.util import path_links, iround
 from icarus.models.service.compSpot import ComputationSpot
 from icarus.models.service.compSpot import Task
@@ -755,6 +755,26 @@ class NetworkView(object):
 
         return delay
 
+    def get_logs_path(self):
+        """Return the path to the results logs
+
+        Returns
+        _______
+        logs_path: model.logs_path (string)
+            The path provided in the configuration
+        """
+        return self.model.logs_path
+
+    def get_logs_sampling_size(self):
+        """Return the number of requests per log sample (logging sample rate)
+
+        Returns
+        _______
+        logs_path: model.sampling_size (int)
+            The path sampling interval in the configuration
+        """
+        return self.model.sampling_size
+
     def topology(self):
         """Return the network topology
 
@@ -1249,6 +1269,10 @@ class NetworkModel(object):
                     self.repoStorage[node] = REPO_POLICY[repo_policy_name](node, self, self.contents[node], self.storageSize[node], **repo_policy_args)
                 elif node in self.storageSize:
                     self.repoStorage[node] = REPO_POLICY[repo_policy_name](node, self, None, self.storageSize[node], **repo_policy_args)
+
+        if LOGGING_PARAMETERS is not None:
+            self.logs_path = LOGGING_PARAMETERS['logs_path']
+            self.sampling_size = LOGGING_PARAMETERS['sampling_interval']
 
 
 
@@ -1824,7 +1848,7 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        self.model.replication_hops[content['content']] = 1
+        self.model.replication_hops[content['content']] = 0
 
 
 

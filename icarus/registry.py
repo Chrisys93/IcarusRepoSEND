@@ -34,6 +34,9 @@ RESULTS_READER = {}
 # Dictionary storying all results writer functions keyed by ID
 RESULTS_WRITER = {}
 
+# Dictionary storying all continuous logging parameters keyed by ID
+LOGGING_PARAMETERS = {}
+
 def register_decorator(register):
     """Returns a decorator that register a class or function to a specified
     register
@@ -75,3 +78,4 @@ register_workload = register_decorator(WORKLOAD)
 register_data_collector = register_decorator(DATA_COLLECTOR)
 register_results_reader = register_decorator(RESULTS_READER)
 register_results_writer = register_decorator(RESULTS_WRITER)
+register_log_writer = register_decorator(LOGGING_PARAMETERS)

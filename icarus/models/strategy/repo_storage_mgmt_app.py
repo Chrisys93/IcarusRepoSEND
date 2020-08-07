@@ -1599,9 +1599,12 @@ class HServRepoStorApp(Strategy):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
                     else:
+                        if service['msg_size'] == 1000000:
+                            self.controller.replication_overhead_update(service)
+                            self.controller.remove_replication_hops(service)
+                            service['msg_size'] = service['msg_size'] / 2
                         self.controller.add_message_to_storage(node, service)
                         self.controller.add_storage_labels_to_node(node, service)
-                        print "This should not happen! The service should not be processed by a node which does not have the associated data"
 
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
@@ -3222,10 +3225,12 @@ class HServProStorApp(Strategy):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
                     else:
+                        if service['msg_size'] == 1000000:
+                            self.controller.replication_overhead_update(service)
+                            self.controller.remove_replication_hops(service)
+                            service['msg_size'] = service['msg_size'] / 2
                         self.controller.add_message_to_storage(node, service)
                         self.controller.add_storage_labels_to_node(node, service)
-                        print "This should not happen! The service should not be processed by a node which " \
-                              "does not have the associated data"
 
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
@@ -4886,9 +4891,12 @@ class HServReStorApp(Strategy):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
                     else:
+                        if service['msg_size'] == 1000000:
+                            self.controller.replication_overhead_update(service)
+                            self.controller.remove_replication_hops(service)
+                            service['msg_size'] = service['msg_size'] / 2
                         self.controller.add_message_to_storage(node, service)
                         self.controller.add_storage_labels_to_node(node, service)
-                        print "This should not happen! The service should not be processed by a node which does not have the associated data"
 
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
@@ -6552,9 +6560,12 @@ class HServSpecStorApp(Strategy):
                                 self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
                     else:
+                        if service['msg_size'] == 1000000:
+                            self.controller.replication_overhead_update(service)
+                            self.controller.remove_replication_hops(service)
+                            service['msg_size'] = service['msg_size'] / 2
                         self.controller.add_message_to_storage(node, service)
                         self.controller.add_storage_labels_to_node(node, service)
-                        print "This should not happen! The service should not be processed by a node which does not have the associated data"
 
                 else:
                     self.controller.add_event(curTime + delay, receiver, service, labels, next_node, flow_id,
