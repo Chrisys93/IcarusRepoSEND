@@ -22,6 +22,8 @@ import collections
 from icarus.registry import register_data_collector
 from icarus.tools import cdf
 from icarus.util import Tree, inheritdoc
+from icarus.registry import LOGGING_PARAMETERS
+# from icarus.registry import register_log_writer
 
 
 __all__ = [
@@ -355,6 +357,7 @@ class LinkLoadCollector(DataCollector):
                      'PER_LINK_EXTERNAL': link_loads_ext})
 
 
+#@register_log_writer('LATENCY_W_STORAGE')
 @register_data_collector('LATENCY')
 class LatencyCollector(DataCollector):
     """Data collector measuring latency, i.e. the delay taken to delivery a
@@ -409,6 +412,9 @@ class LatencyCollector(DataCollector):
 
         # Log-specific paths TODO: Maybe set up in the same way that the result output is set up.
         # self.logs_path = logs_path
+        # if LOGGING_PARAMETERS:
+        #     self.logs_path = LOGGING_PARAMETERS['logs_path']
+        #     self.sampling_size = LOGGING_PARAMETERS['sampling_interval']
 
         if cdf:
             self.latency_data = collections.deque()
@@ -701,6 +707,7 @@ class LatencyCollector(DataCollector):
         return results
 
 
+# @register_log_writer('REPO_STORAGE')
 @register_data_collector('REPO_STATS_W_LATENCY')
 class RepoStatsLatencyCollector(DataCollector):
     """Data collector measuring latency, i.e. the delay taken to delivery a
@@ -756,6 +763,9 @@ class RepoStatsLatencyCollector(DataCollector):
         # Log-specific variables TODO: Maybe set up in the same way that the result output is set up.
         # self.logs_path = self.view.get_logs_path
         # self.sampling_size = self.view.get_logs_sampling_size
+        # if LOGGING_PARAMETERS is not None:
+        #     self.logs_path = LOGGING_PARAMETERS['logs_path']
+        #     self.sampling_size = LOGGING_PARAMETERS['sampling_interval']
 
         if cdf:
             self.latency_data = collections.deque()

@@ -28,7 +28,7 @@ import fnss
 
 import heapq
 
-from icarus.registry import CACHE_POLICY, REPO_POLICY, LOGGING_PARAMETERS
+from icarus.registry import CACHE_POLICY, REPO_POLICY
 from icarus.util import path_links, iround
 from icarus.models.service.compSpot import ComputationSpot
 from icarus.models.service.compSpot import Task
@@ -1145,10 +1145,11 @@ class NetworkModel(object):
                 if err_type == "KeyError":
                     extra_types = []
             # get the depth of the tree
-            if stack_name == 'router' or 'source' and 'depth' in self.topology[node].keys():
-                depth = self.topology.nodes[node]['depth']
-                if depth > self.topology_depth:
-                    self.topology_depth = depth
+            if stack_name == 'router' or stack_name == 'source':
+                if 'depth' in self.topology[node].keys():
+                    depth = self.topology.nodes[node]['depth']
+                    if depth > self.topology_depth:
+                        self.topology_depth = depth
             # get computation size per depth
             if 'router' in stack_name:
                 if 'cache_size' in stack_props:
@@ -1270,11 +1271,6 @@ class NetworkModel(object):
                 elif node in self.storageSize:
                     self.repoStorage[node] = REPO_POLICY[repo_policy_name](node, self, None, self.storageSize[node], **repo_policy_args)
 
-        if LOGGING_PARAMETERS is not None:
-            self.logs_path = LOGGING_PARAMETERS['logs_path']
-            self.sampling_size = LOGGING_PARAMETERS['sampling_interval']
-
-
 
         #  Generate the actual services processing requests
         self.services = []
@@ -1284,9 +1280,13 @@ class NetworkModel(object):
         service_time_min = 0.10  # used to be 0.001
         service_time_max = 0.10  # used to be 0.1
         # delay_min = 0.005
-        delay_min = 2 * topology.graph['receiver_access_delay'] + service_time_max
-        delay_max = delay_min + 2 * topology.graph['depth'] * topology.graph['link_delay'] + 0.005
-
+        if 'depth' in topology.graph:
+            delay_min = 2 * topology.graph['receiver_access_delay'] + service_time_max
+            delay_max = delay_min + 2 * topology.graph['depth'] * topology.graph['link_delay'] + 0.005
+        else:
+            delay_min = 2 * topology.graph['receiver_access_delay'] + service_time_max
+            delay_max = delay_min + 2 * (len(topology.graph['routers']) + len(topology.graph['sources'])) * topology.graph[
+                'link_delay'] + 0.005
         service_indx = 0
         random.seed(seed)
         for service in range(0, n_services):

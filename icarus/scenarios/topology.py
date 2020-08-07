@@ -494,9 +494,11 @@ def topology_repo_mesh(n, m, delay_int=0.02, delay_ext=1, **kwargs):
     if m > n:
         raise ValueError("m cannot be greater than n")
     topology = fnss.full_mesh_topology(n)
+    topology.sources_no = m
+    topology.routers_no = n
     routers = range(n)
-    receivers = range(n, 2 * n)
-    sources = range(2 * n, 2 * n + m)
+    receivers = ['rec_%d' % i for i in range(n)]
+    sources = ['src_%d' % i for i in range(m)]
     internal_links = zip(routers, receivers)
     external_links = zip(routers[:m], sources)
     for u, v in internal_links:
@@ -505,10 +507,7 @@ def topology_repo_mesh(n, m, delay_int=0.02, delay_ext=1, **kwargs):
         topology.add_edge(u, v, type='external')
     topology.graph['icr_candidates'] = set(routers)
 
-    receivers = ['rec_%d' % i for i in range(n, n*2)]
-
     n_sources = m
-    sources = ['src_%d' % i for i in range(n_sources)]
 
     print("The number of sources: " + repr(n_sources))
     print("The number of receivers: " + repr(n))

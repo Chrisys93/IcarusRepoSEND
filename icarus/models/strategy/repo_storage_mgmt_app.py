@@ -134,7 +134,7 @@ class GenRepoStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -893,7 +893,7 @@ class HServRepoStorApp(Strategy):
         # vars
 
         self.lastDepl = 0
-        
+
         self.last_period = 0
 
         self.cloudEmptyLoop = True
@@ -1075,13 +1075,13 @@ class HServRepoStorApp(Strategy):
             if node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node in self.view.labels_sources(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             else:
@@ -1099,7 +1099,7 @@ class HServRepoStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -1115,7 +1115,7 @@ class HServRepoStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -1883,7 +1883,7 @@ class HServRepoStorApp(Strategy):
 
                 elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -1927,7 +1927,7 @@ class HServRepoStorApp(Strategy):
                 if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -1950,7 +1950,7 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     msg = self.oldestUnProcDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -1972,7 +1972,7 @@ class HServRepoStorApp(Strategy):
                     """
                 elif (not self.view.model.repoStorage[node].isProcessedEmpty):
                     msg = self.processedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -2023,7 +2023,7 @@ class HServRepoStorApp(Strategy):
                 # TODO: NEED TO add COMPRESSED PROCESSED messages to storage AFTER normal servicing
                 if (not self.view.model.repoStorage[node].isProcessedEmpty):
                     msg = self.processedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -2042,7 +2042,7 @@ class HServRepoStorApp(Strategy):
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -2060,7 +2060,7 @@ class HServRepoStorApp(Strategy):
 
                 elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -2117,7 +2117,7 @@ class HServRepoStorApp(Strategy):
             for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
                 if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
                     msg = self.oldestUnProcDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
@@ -2138,7 +2138,7 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
                     msg = self.oldestSatisfiedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
@@ -2159,7 +2159,7 @@ class HServRepoStorApp(Strategy):
 
                 elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
                     msg = self.oldestInvalidProcDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                        source, in_cache = self.view.closest_source(node, content)
@@ -2701,11 +2701,11 @@ class HServProStorApp(Strategy):
             if node in self.view.storage_nodes() and self.view.all_labels_most_requests(msg["labels"]) and self.view.storage_nodes()[node] is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
                 if edr and node != edr.node:
@@ -2725,7 +2725,7 @@ class HServProStorApp(Strategy):
 
                         self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                        # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                        print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -2741,7 +2741,7 @@ class HServProStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -3478,7 +3478,7 @@ class HServProStorApp(Strategy):
 
                 if not self.view.model.repoStorage[node].isProcessedEmpty():
                     msg = self.processedDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -3496,7 +3496,7 @@ class HServProStorApp(Strategy):
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
                 elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
                     msg = self.oldestUnProcDepletion(node)
-                    
+
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
                         for n in self.view.model.comp_size:
@@ -4337,17 +4337,17 @@ class HServReStorApp(Strategy):
             if node == node_c and in_path is True:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]).node:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
@@ -4359,7 +4359,7 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
@@ -4370,7 +4370,7 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
 
             else:
@@ -4378,7 +4378,7 @@ class HServReStorApp(Strategy):
                 if edr and node == edr:
                     self.controller.add_message_to_storage(node, msg)
                     self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                    # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                    print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     # if edr and edr.hasMessage(msg['content'], msg['labels']):
@@ -4391,7 +4391,7 @@ class HServReStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -4407,7 +4407,7 @@ class HServReStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -4772,7 +4772,7 @@ class HServReStorApp(Strategy):
                                     if type(content) is dict:
                                         compSpot.missed_requests[content['content']] += 1
                                     else:
-                                        compSpot.missed_requests[content] += 1 
+                                        compSpot.missed_requests[content] += 1
                                 return
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
@@ -6006,18 +6006,18 @@ class HServSpecStorApp(Strategy):
             if node == node_c and in_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
@@ -6029,7 +6029,7 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
@@ -6040,7 +6040,7 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
 
             else:
@@ -6048,7 +6048,7 @@ class HServSpecStorApp(Strategy):
                 if edr and node == edr.node:
                     self.controller.add_message_to_storage(node, msg)
                     self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                    # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                    print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     # if edr and edr.hasMessage(msg['content'], msg['labels']):
@@ -6061,7 +6061,7 @@ class HServSpecStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -6077,7 +6077,7 @@ class HServSpecStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 

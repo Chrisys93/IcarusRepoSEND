@@ -28,7 +28,7 @@ CACHING_GRANULARITY = 'OBJECT'
 
 # Warm-up strategy
 #WARMUP_STRATEGY = 'MFU' #'HYBRID'
-WARMUP_STRATEGY = 'HYBRID' #'HYBRID'
+WARMUP_STRATEGY = 'HYBRIDS_REPO_APP' #'HYBRID'
 
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
@@ -39,9 +39,13 @@ RESULTS_FORMAT = 'TXT'
 # This is necessary for extracting confidence interval of selected metrics
 N_REPLICATIONS = 1
 
+# Logging parameters and variables
+LOGGING_PARAMETERS = ''
+
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icaurs/execution/collectors.py
 DATA_COLLECTORS = ['LATENCY']
+# DATA_COLLECTORS = [('REPO_STORAGE', LOGGING_PARAMETERS)]
 
 # Range of alpha values of the Zipf distribution using to generate content requests
 # alpha values must be positive. The greater the value the more skewed is the
@@ -88,8 +92,8 @@ N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
 TOPOLOGIES = ['REPO_MESH']
-REC_ROUTE = 3  # (of each, receivers and routers)
-SOURCES = 2
+REC_ROUTE = 5  # (of each, receivers and routers)
+SOURCES = 1
 NUM_NODES = int(REC_ROUTE+SOURCES)
 
 # Replacement Interval in seconds
@@ -102,7 +106,7 @@ WORKLOAD = 'BURSTY_MORE_LABEL_REQS_DATA'
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = 'HYBRIDS_REPO_APP'
+STRATEGIES = ['HYBRIDS_REPO_APP']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -122,7 +126,7 @@ SCHED_POLICY = 'EDF'
 FRESHNESS_PER = 0.15
 SHELF_LIFE =5
 MSG_SIZE = 1000000
-SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
+SOURCE_WEIGHTS = {'src_0': 0.25, 0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
 TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
 TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
@@ -148,6 +152,15 @@ STOR_SHELF = 0
 STOR_SCOPE = 0
 N_STOR_WARMUP = 0
 N_STOR_MEASURED = 0
+
+# Bursty workload settings:
+# Maximum times for online and offline request generation
+MAX_ON = NETWORK_REQUEST_RATE/2
+MAX_OFF = NETWORK_REQUEST_RATE
+# Mode of receiver network connection disruption (Available: None, 'RAND', 'WEIGHTED')
+DISRUPT_MODE = 'RAND'
+# Only for WEIGHTED mode, above, otherwise None - weights of receivers' off-time distribution
+DISRUPTION_WEIGHTS = None # {'rec_0': 0.2, rec_1: 0.1, rec_2: 0.1, rec_4: 0.2, rec_5: 0.2, rec_6: 0.1, rec_7: 0.1}
 
 
 # Queue of experiments
@@ -210,11 +223,10 @@ default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
 default['strategy']['replacement_interval'] = REPLACEMENT_INTERVAL
 default['strategy']['n_replacements'] = NUM_REPLACEMENTS
-default['topology']['name'] = 'REPO_TREE'
-default['topology']['k'] = BRANCH_FACTOR
-default['topology']['h'] = TREE_DEPTH
+default['topology']['name'] = 'REPO_MESH'
+default['topology']['n']=REC_ROUTE
+default['topology']['m']= SOURCES
 default['warmup_strategy']['name'] = WARMUP_STRATEGY
-
 # Create experiments multiplexing all desired parameters
 """
 for strategy in ['LRU']: # STRATEGIES:
