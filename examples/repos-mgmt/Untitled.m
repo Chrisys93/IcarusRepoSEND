@@ -50,31 +50,31 @@ OAS1 = dlmread('Azure results/spec_overheads.txt', ',', 0, 1);
 [m, n] = size(H1);
 
 for i = 1:1000
-H1_perf(i) = sum(H1(i+500,:))/n;
+H1_perf(i) = sum(H1(i+200,:))/n;
 end
 
 [p, q] = size(HR1);
 
 for i = 1:1000
-HR1_perf(i) = sum(HR1(i+500, :))/q;
+HR1_perf(i) = sum(HR1(i+200, :))/q;
 end
 
 [r, s] = size(HRP1);
 
 for i = 1:1000
-HRP1_perf(i) = sum(HRP1(i+500,:))/s;
+HRP1_perf(i) = sum(HRP1(i+200,:))/s;
 end
 
 [t, u] = size(HRR1);
 
 for i = 1:1000
-HRR1_perf(i) = sum(HRR1(i+500, :))/u;
+HRR1_perf(i) = sum(HRR1(i+200, :))/u;
 end
 
 [v, w] = size(HRS1);
 
 for i = 1:1000
-HRS1_perf(i) = sum(HRS1(i+500, :))/w;
+HRS1_perf(i) = sum(HRS1(i+200, :))/w;
 end
 
 
@@ -83,31 +83,31 @@ end
 [m, n] = size(OH1);
 
 for i = 1:1000
-OH1_perf(i) = mean(OH1(i+500,:))/5e5;
+OH1_perf(i) = mean(OH1(i+200,:))/5e5;
 end
 
 [p, q] = size(OG1);
 
 for i = 1:1000
-OG1_perf(i) = mean(OG1(i+500,:))/5e5;
+OG1_perf(i) = mean(OG1(i+200,:))/5e5;
 end
 
 [r, s] = size(HRP1);
 
 for i = 1:1000
-OP1_perf(i) = mean(OP1(i+500,:))/5e5;
+OP1_perf(i) = mean(OP1(i+200,:))/5e5;
 end
 
 [t, u] = size(HRR1);
 
 for i = 1:1000
-OR1_perf(i) = mean(OR1(i+500, :))/5e5;
+OR1_perf(i) = mean(OR1(i+200, :))/5e5;
 end
 
 [v, w] = size(HRS1);
 
 for i = 1:1000
-OS1_perf(i) = mean(OS1(i+500, :))/5e5;
+OS1_perf(i) = mean(OS1(i+200, :))/5e5;
 end
 
 
@@ -175,31 +175,31 @@ end
 [m, n] = size(AH1);
 
 for i = 1:1100
-AH1_perf(i) = sum(AH1(i+500,:))/n;
+AH1_perf(i) = sum(AH1(i+200,:))/n;
 end
 
 [p, q] = size(AHR1);
 
 for i = 1:1100
-AHR1_perf(i) = sum(AHR1(i+100, :))/q;
+AHR1_perf(i) = sum(AHR1(i+200, :))/q;
 end
 
 [r, s] = size(AHRP1);
 
 for i = 1:1100
-AHRP1_perf(i) = sum(AHRP1(i+500,:))/s;
+AHRP1_perf(i) = sum(AHRP1(i+200,:))/s;
 end
 
 [t, u] = size(AHRR1);
 
 for i = 1:1100
-AHRR1_perf(i) = sum(AHRR1(i+500, :))/u;
+AHRR1_perf(i) = sum(AHRR1(i+200, :))/u;
 end
 
 [v, w] = size(AHRS1);
 
 for i = 1:1100
-AHRS1_perf(i) = sum(AHRS1(i+500, :))/w;
+AHRS1_perf(i) = sum(AHRS1(i+200, :))/w;
 end
 
 
@@ -208,31 +208,31 @@ end
 [m, n] = size(OAH1);
 
 for i = 1:1100
-OAH1_perf(i) = mean(OAH1(i+500,:))/5e5;
+OAH1_perf(i) = mean(OAH1(i+200,:))/5e5;
 end
 
 [p, q] = size(OG1);
 
 for i = 1:1100
-OAG1_perf(i) = mean(OAG1(i+100,:))/5e5;
+OAG1_perf(i) = mean(OAG1(i+200+100,:))/5e5;
 end
 
 [r, s] = size(AHRP1);
 
 for i = 1:1100
-OAP1_perf(i) = mean(OAP1(i+500,:))/5e5;
+OAP1_perf(i) = mean(OAP1(i+200,:))/5e5;
 end
 
 [t, u] = size(AHRR1);
 
 for i = 1:1100
-OAR1_perf(i) = mean(OAR1(i+500, :))/5e5;
+OAR1_perf(i) = mean(OAR1(i+200, :))/5e5;
 end
 
 [v, w] = size(AHRS1);
 
 for i = 1:1100
-OAS1_perf(i) = mean(OAS1(i+500, :))/5e5;
+OAS1_perf(i) = mean(OAS1(i+200, :))/5e5;
 end
 
 
@@ -294,7 +294,7 @@ figure
 plot(1:2:1000, H1_perf(2:2:1000), 2:2:1000, HR1_perf(2:2:1000), 2:2:1000, HRP1_perf(2:2:1000), 2:2:1000, HRR1_perf(2:2:1000), 2:2:1000, HRS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-%legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+%legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 hold on
@@ -302,7 +302,7 @@ hold on
 plot(2:2:1000, polyval(fitted_H1, 2:2:1000), 2:2:1000, polyval(fitted_HR1, 2:2:1000), 2:2:1000, polyval(fitted_HRP1, 2:2:1000), 2:2:1000, polyval(fitted_HRR1, 2:2:1000), 2:2:1000, polyval(fitted_HRS1, 2:2:1000), 'LineWidth', 2)
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 % 
@@ -316,18 +316,18 @@ legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-React
 % errorbar(1:200:1000, HRS_avg, HRS_min, HRS_max)
 % xlabel('Number of requests (500)')
 % ylabel('Request Satisfaction Rate (%)')
-% legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+% legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 figure
 hold on
-bar([1:200:1000], [H_avg', HR_avg', HRP_avg', HRR_avg', HRS_avg'], 'group')
-set(gca,'xtick',1:200:1000,'XTickLabel', 1:200:1000)
+bar([200:200:1200], [H_avg', HR_avg', HRP_avg', HRR_avg', HRS_avg'], 'group')
+set(gca,'xtick',200:200:1200,'XTickLabel', 200:200:1200)
 % plot(1:200:1000, H_min, 1:200:1000, HR_min, 1:200:1000, HRP_min, 1:200:1000, HRR_min, 1:200:1000, HRS_min)
 % plot(1:200:1000, H_max, 1:200:1000, HR_max, 1:200:1000, HRP_max, 1:200:1000, HRR_max, 1:200:1000, HRS_max)
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 
 
 
@@ -336,7 +336,7 @@ figure
 plot(2:2:1000, HR1_perf(2:2:1000), 2:2:1000, HRP1_perf(2:2:1000), 2:2:1000, HRR1_perf(2:2:1000), 2:2:1000, HRS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend('Hybrid Repo', 'Hybrid Repo Proactive', 'Hybrid Repo Reactive', 'Hybrid Repo Specialised')
+legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 figure
@@ -344,7 +344,7 @@ figure
 semilogy(1:2:1000, OH1_perf(2:2:1000), 2:2:1000, OG1_perf(2:2:1000), 2:2:1000, OP1_perf(2:2:1000), 2:2:1000, OR1_perf(2:2:1000), 2:2:1000, OS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Normalized Overhead')
-legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 % figure
 % 
@@ -376,7 +376,7 @@ figure
 plot(1:2:1000, AH1_perf(2:2:1000), 2:2:1000, AHR1_perf(2:2:1000), 2:2:1000, AHRP1_perf(2:2:1000), 2:2:1000, AHRR1_perf(2:2:1000), 2:2:1000, AHRS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-%legend('AHybrid', 'AHybrid Repo', 'AHybrid Repo Proactive', 'AHybrid Repo Reactive', 'AHybrid Repo Specialised')
+%legend('AHybrid', 'AHybrid SEND', 'AHybrid SEND Proactive', 'AHybrid SEND Reactive', 'AHybrid SEND Specialised')
 
 
 hold on
@@ -384,7 +384,7 @@ hold on
 plot(2:2:1000, polyval(fitted_AH1, 2:2:1000), 2:2:1000, polyval(fitted_AHR1, 2:2:1000), 2:2:1000, polyval(fitted_AHRP1, 2:2:1000), 2:2:1000, polyval(fitted_AHRR1, 2:2:1000), 2:2:1000, polyval(fitted_AHRS1, 2:2:1000), 'LineWidth', 2)
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 
@@ -398,19 +398,19 @@ legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-React
 % errorbar(1:200:1000, AHRS_avg, AHRS_min, AHRS_max)
 % xlabel('Number of requests (500)')
 % ylabel('Request Satisfaction Rate (%)')
-% legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+% legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 figure
 hold on
-bar([1:200:1000], [AH_avg', AHR_avg', AHRP_avg', AHRR_avg', AHRS_avg'], 'group')
-set(gca,'xtick',1:200:1000,'XTickLabel', 1:200:1000)
-legend1 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+bar([200:200:1200], [AH_avg', AHR_avg', AHRP_avg', AHRR_avg', AHRS_avg'], 'group')
+set(gca,'xtick',200:200:1200,'XTickLabel', 200:200:1200)
+legend1 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 % plot(1:200:1000, AH_min, 1:200:1000, AHR_min, 1:200:1000, AHRP_min, 1:200:1000, AHRR_min, 1:200:1000, AHRS_min)
 % plot(1:200:1000, AH_max, 1:200:1000, AHR_max, 1:200:1000, AHRP_max, 1:200:1000, AHRR_max, 1:200:1000, AHRS_max)
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 
 
 
@@ -420,27 +420,27 @@ figure
 
 
 %subplot(1, 2, 1)
-h = bar([1:200:1000], [H_avg', HR_avg', HRP_avg', HRR_avg', HRS_avg'], 'group');
-legend1 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+h = bar([200:200:1200], [H_avg', HR_avg', HRP_avg', HRR_avg', HRS_avg'], 'group');
+legend1 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([h.XData]) + [diff(unique([h.XData]))/2, inf]; 
 %subplot(1, 2, 2)
 figure
-g = bar([1:200:1000], [AH_avg', AHR_avg', AHRP_avg', AHRR_avg', AHRS_avg'], 'group');
+g = bar([200:200:1200], [AH_avg', AHR_avg', AHRP_avg', AHRR_avg', AHRS_avg'], 'group');
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([.XData]) + [diff(unique([h.XData]))/2, inf]; 
 % set(gca,'xtick',1:100:1100,'XTickLabel', 1:100:1100)
-legend1 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend1 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 % plot(1:200:1000, AH_min, 1:200:1000, AHR_min, 1:200:1000, AHRP_min, 1:200:1000, AHRR_min, 1:200:1000, AHRS_min)
 % plot(1:200:1000, AH_max, 1:200:1000, AHR_max, 1:200:1000, AHRP_max, 1:200:1000, AHRR_max, 1:200:1000, AHRS_max)
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 
 
 
@@ -450,20 +450,20 @@ figure
 hold on
 
 subplot(1, 2, 1)
-h = bar([1:200:1000], [HR_avg'./H_avg', HRP_avg'./H_avg', HRR_avg'./H_avg', HRS_avg'./H_avg'], 'group');
-legend1 = legend('Hybrid Repo', 'Hybrid Repo Proactive', 'Hybrid Repo Reactive', 'Hybrid Repo Specialised');
+h = bar([200:200:1200], [HR_avg'./H_avg', HRP_avg'./H_avg', HRR_avg'./H_avg', HRS_avg'./H_avg'], 'group');
+legend1 = legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 xlabel('Number of requests (1000)')
 ylabel('Performance improvement compared to Simple Hybrid Service Placement')
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([h.XData]) + [diff(unique([h.XData]))/2, inf]; 
 subplot(1, 2, 2)
-g = bar([1:200:1000], [AHR_avg'./AH_avg', AHRP_avg'./AH_avg', AHRR_avg'./AH_avg', AHRS_avg'./AH_avg'], 'group');
+g = bar([200:200:1200], [AHR_avg'./AH_avg', AHRP_avg'./AH_avg', AHRR_avg'./AH_avg', AHRS_avg'./AH_avg'], 'group');
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([.XData]) + [diff(unique([h.XData]))/2, inf]; 
 % set(gca,'xtick',1:100:1100,'XTickLabel', 1:100:1100)
-legend1 = legend('Hybrid Repo', 'Azure Hybrid Repo Proactive', 'Azure Hybrid Repo Reactive', 'Azure Hybrid Repo Specialised');
+legend1 = legend('SEND General-Purpose', 'Azure SEND Popularity', 'Azure SEND Function-Reactive', 'Azure SEND Hybrid');
 % plot(1:200:1000, AH_min, 1:200:1000, AHR_min, 1:200:1000, AHRP_min, 1:200:1000, AHRR_min, 1:200:1000, AHRS_min)
 % plot(1:200:1000, AH_max, 1:200:1000, AHR_max, 1:200:1000, AHRP_max, 1:200:1000, AHRR_max, 1:200:1000, AHRS_max)
 xlabel('Number of requests (1000)')
@@ -478,7 +478,7 @@ figure
 plot(2:2:1000, AHR1_perf(2:2:1000), 2:2:1000, AHRP1_perf(2:2:1000), 2:2:1000, AHRR1_perf(2:2:1000), 2:2:1000, AHRS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend('Hybrid Repo', 'Hybrid Repo Proactive', 'Hybrid Repo Reactive', 'Hybrid Repo Specialised')
+legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 figure
@@ -486,7 +486,7 @@ figure
 semilogy(1:2:1000, OAH1_perf(2:2:1000), 2:2:1000, OAG1_perf(2:2:1000), 2:2:1000, OAP1_perf(2:2:1000), 2:2:1000, OAR1_perf(2:2:1000), 2:2:1000, OAS1_perf(2:2:1000))
 xlabel('Number of requests (1000)')
 ylabel('Request Satisfaction Rate (%)')
-legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised')
+legend('Hybrid', 'SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid')
 
 
 figure
@@ -495,7 +495,7 @@ colormap(jet)
 plot(1:2:1000, OH1_perf(2:2:1000), 2:2:1000, OG1_perf(2:2:1000), 2:2:1000, OR1_perf(2:2:1000), 2:2:1000, OS1_perf(2:2:1000), 1:2:1000, OAH1_perf(2:2:1000), '--', 2:2:1000, OAG1_perf(2:2:1000), '--', 2:2:1000, OAR1_perf(2:2:1000), '--', 2:2:1000, OAS1_perf(2:2:1000), '--')
 xlabel('Number of requests (1000)')
 ylabel('Normalized Overhead')
-legend('Hybrid', 'Hybrid Repo', 'Hybrid Repo Reactive', 'Hybrid Repo Specialised', 'Azure Hybrid', 'Azure Hybrid Repo', 'Azure Hybrid Repo Reactive', 'Azure Hybrid Repo Specialised')
+legend('Hybrid', 'SEND General-Purpose', 'SEND Function-Reactive', 'SEND Hybrid', 'Azure Hybrid', 'Azure SEND General-Purpose', 'Azure SEND Function-Reactive', 'Azure SEND Hybrid')
 
 
 % figure
@@ -615,24 +615,24 @@ figure
 hold on
 
 %subplot(1, 2, 1)
-h = bar([1:200:1000], [OH_avg', OG_avg', OP_avg', OR_avg', OS_avg'], 'group');
-legend1 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+h = bar([200:200:1200], [OG_avg' + 6, OP_avg' + 6, OR_avg' + 6, OS_avg' + 6], 'group');
+legend1 = legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 xlabel('Number of requests (1000)')
 ylabel('Average replications per service')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([h.XData]) + [diff(unique([h.XData]))/2, inf]; 
 %subplot(1, 2, 2)
 figure
-g = bar([1:200:1000], [OAH_avg', OAG_avg', OAP_avg', OAR_avg', OAS_avg'], 'group');
+g = bar([200:200:1200], [OAG_avg' + 6, OAP_avg' + 6, OAR_avg' + 6, OAS_avg' + 6], 'group');
 % ax = gca();  
 % % Set x tick to 1/2 way between bar groups
 % ax.XTick = unique([.XData]) + [diff(unique([h.XData]))/2, inf]; 
 % set(gca,'xtick',1:100:1100,'XTickLabel', 1:100:1100)
-legend1 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend1 = legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
 % plot(1:200:1000, AH_min, 1:200:1000, AHR_min, 1:200:1000, AHRP_min, 1:200:1000, AHRR_min, 1:200:1000, AHRS_min)
 % plot(1:200:1000, AH_max, 1:200:1000, AHR_max, 1:200:1000, AHRP_max, 1:200:1000, AHRR_max, 1:200:1000, AHRS_max)
 xlabel('Number of requests (1000)')
 ylabel('Average replications per service')
-legend2 = legend('Hybrid', 'Repo General-Purpose', 'Repo Popularity', 'Repo Function-Reactive', 'Repo Hybrid-Specialised');
+legend2 = legend('SEND General-Purpose', 'SEND Popularity', 'SEND Function-Reactive', 'SEND Hybrid');
