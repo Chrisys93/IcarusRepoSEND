@@ -174,31 +174,31 @@ end
 
 [m, n] = size(AH1);
 
-for i = 1:1100
+for i = 1:1000
 AH1_perf(i) = sum(AH1(i+200,:))/n;
 end
 
 [p, q] = size(AHR1);
 
-for i = 1:1100
+for i = 1:1000
 AHR1_perf(i) = sum(AHR1(i+200, :))/q;
 end
 
 [r, s] = size(AHRP1);
 
-for i = 1:1100
+for i = 1:1000
 AHRP1_perf(i) = sum(AHRP1(i+200,:))/s;
 end
 
 [t, u] = size(AHRR1);
 
-for i = 1:1100
+for i = 1:1000
 AHRR1_perf(i) = sum(AHRR1(i+200, :))/u;
 end
 
 [v, w] = size(AHRS1);
 
-for i = 1:1100
+for i = 1:1000
 AHRS1_perf(i) = sum(AHRS1(i+200, :))/w;
 end
 
@@ -207,41 +207,41 @@ end
 
 [m, n] = size(OAH1);
 
-for i = 1:1100
+for i = 1:1000
 OAH1_perf(i) = mean(OAH1(i+200,:))/5e5;
 end
 
 [p, q] = size(OG1);
 
-for i = 1:1100
+for i = 1:1000
 OAG1_perf(i) = mean(OAG1(i+200+100,:))/5e5;
 end
 
 [r, s] = size(AHRP1);
 
-for i = 1:1100
+for i = 1:1000
 OAP1_perf(i) = mean(OAP1(i+200,:))/5e5;
 end
 
 [t, u] = size(AHRR1);
 
-for i = 1:1100
+for i = 1:1000
 OAR1_perf(i) = mean(OAR1(i+200, :))/5e5;
 end
 
 [v, w] = size(AHRS1);
 
-for i = 1:1100
+for i = 1:1000
 OAS1_perf(i) = mean(OAS1(i+200, :))/5e5;
 end
 
 
 
-fitted_AH1 = polyfit(1:1100, AH1_perf, 1);
-fitted_AHR1 = polyfit(1:1100, AHR1_perf, 1);
-fitted_AHRP1 = polyfit(1:1100, AHRP1_perf, 1);
-fitted_AHRR1 = polyfit(1:1100, AHRR1_perf, 1);
-fitted_AHRS1 = polyfit(1:1100, AHRS1_perf, 1);
+fitted_AH1 = polyfit(1:1000, AH1_perf, 1);
+fitted_AHR1 = polyfit(1:1000, AHR1_perf, 1);
+fitted_AHRP1 = polyfit(1:1000, AHRP1_perf, 1);
+fitted_AHRR1 = polyfit(1:1000, AHRR1_perf, 1);
+fitted_AHRS1 = polyfit(1:1000, AHRS1_perf, 1);
 
 
 for i = 1:5
