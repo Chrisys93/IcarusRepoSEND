@@ -1253,7 +1253,7 @@ class TraceDrivenRepoWorkload(object):
             data = csv.reader(loc)
             for cont_loc in data:
                 for c_loc in cont_loc:
-                    locations.append(int(c_loc))
+                    locations.append(int(float(c_loc)))
         alt = True
         no_contents = 0
         for location in locations:
@@ -1602,7 +1602,7 @@ class BurstyTraceRepoWorkload(object):
             data = csv.reader(loc)
             for cont_loc in data:
                 for c_loc in cont_loc:
-                    locations.append(int(c_loc))
+                    locations.append(int(float(c_loc)))
         for location in locations:
             self.contents.append(contents[location])
             self.labels.append(labels[location])
