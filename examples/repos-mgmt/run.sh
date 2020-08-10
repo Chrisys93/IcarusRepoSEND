@@ -13,7 +13,7 @@ ICARUS_DIR=${CURR_DIR}/../..
 PLOTS_DIR=${CURR_DIR}/plots
 
 # Config file
-CONFIG_FILE=${CURR_DIR}/config2_Google_trace.py
+CONFIG_FILE=${CURR_DIR}/config_parallel.py
 
 # FIle where results will be saved
 RESULTS_FILE=${CURR_DIR}/results.json
