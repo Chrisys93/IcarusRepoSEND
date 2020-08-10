@@ -134,7 +134,7 @@ class GenRepoStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -1074,14 +1074,16 @@ class HServRepoStorApp(Strategy):
             self.controller.add_replication_hops(msg)
             if node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif node in self.view.labels_sources(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             else:
@@ -1099,7 +1101,7 @@ class HServRepoStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -1115,7 +1117,7 @@ class HServRepoStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -1280,9 +1282,10 @@ class HServRepoStorApp(Strategy):
                             else:
                                 compSpot.missed_requests[content] += 1
                         return
-                for n in range(0, 3):
-                    self.controller.add_replication_hops(content)
-                self.controller.replication_overhead_update(content)
+                # for n in range(0, 3):
+                #     self.controller.add_replication_hops(content)
+                # self.controller.replication_overhead_update(content)
+                # self.controller.remove_replication_hops(service)
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
                                                   rtt_delay + cache_delay, self.controller, self.debug)
 
@@ -2700,12 +2703,14 @@ class HServProStorApp(Strategy):
             self.controller.add_replication_hops(msg)
             if node in self.view.storage_nodes() and self.view.all_labels_most_requests(msg["labels"]) and self.view.storage_nodes()[node] is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node is self.view.all_labels_main_source(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
                 if edr and node != edr.node:
@@ -2717,6 +2722,7 @@ class HServProStorApp(Strategy):
                     path = self.view.shortest_path(node, edr.node)
                     if len(path) <= 1 or not path:
                         self.controller.add_message_to_storage(edr, msg)
+                        self.controller.add_replication_hops(msg)
                         self.controller.add_request_labels_to_storage(edr, msg['labels'], True)
                     else:
                         next_node = path[1]
@@ -2725,7 +2731,7 @@ class HServProStorApp(Strategy):
 
                         self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                        print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                        # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -2741,7 +2747,7 @@ class HServProStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -2905,8 +2911,8 @@ class HServProStorApp(Strategy):
                             else:
                                 compSpot.missed_requests[content] += 1
                         return
-                for n in range(0, 3):
-                    self.controller.add_replication_hops(content)
+                # for n in range(0, 3):
+                #     self.controller.add_replication_hops(content)
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
                                                   rtt_delay + cache_delay, self.controller, self.debug)
 
@@ -4336,18 +4342,21 @@ class HServReStorApp(Strategy):
             off_path, node_s = self.view.service_labels_closest_repo(msg['labels'], node, path, on_path)
             if node == node_c and in_path is True:
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]).node:
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
@@ -4359,7 +4368,7 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
@@ -4370,15 +4379,16 @@ class HServReStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
                 if edr and node == edr:
                     self.controller.add_message_to_storage(node, msg)
+                    self.controller.add_replication_hops(msg)
                     self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                    print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                    # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     # if edr and edr.hasMessage(msg['content'], msg['labels']):
@@ -4391,7 +4401,7 @@ class HServReStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -4407,7 +4417,7 @@ class HServReStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -4572,8 +4582,8 @@ class HServReStorApp(Strategy):
                             else:
                                 compSpot.missed_requests[content] += 1
                         return
-                for n in range(0, 3):
-                    self.controller.add_replication_hops(content)
+                # for n in range(0, 3):
+                #     self.controller.add_replication_hops(content)
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
                                                   rtt_delay + cache_delay, self.controller, self.debug)
 
@@ -6005,19 +6015,22 @@ class HServSpecStorApp(Strategy):
             off_path, node_s = self.view.most_services_labels_closest_repo(msg['labels'], node, path, on_path)
             if node == node_c and in_path:
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif self.view.all_labels_most_requests(msg["labels"]) and node is self.view.all_labels_most_requests(msg["labels"]):
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_request_labels_to_storage(node, msg)
                 self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
             elif node == node_s and not off_path:
                 self.controller.add_message_to_storage(node, msg)
+                self.controller.add_replication_hops(msg)
                 self.controller.add_storage_labels_to_node(node, msg)
-                print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 if self.controller.has_request_labels(node, msg['labels']):
                     self.controller.add_request_labels_to_storage(node, msg['labels'], False)
             elif in_path:
@@ -6029,7 +6042,7 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
             elif node_s and not off_path:
                 edr = node_s
@@ -6040,15 +6053,16 @@ class HServSpecStorApp(Strategy):
 
                 self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                 self.controller.replicate(node, edr)
 
             else:
                 edr = self.view.all_labels_most_requests(msg["labels"])
                 if edr and node == edr.node:
                     self.controller.add_message_to_storage(node, msg)
+                    self.controller.add_replication_hops(msg)
                     self.controller.add_request_labels_to_storage(node, msg['labels'], True)
-                    print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
+                    # print "Message: " + str(msg['content']) + " added to the storage of node: " + str(node)
                 elif edr:
                     self.controller.add_request_labels_to_node(node, msg)
                     # if edr and edr.hasMessage(msg['content'], msg['labels']):
@@ -6061,7 +6075,7 @@ class HServSpecStorApp(Strategy):
 
                     self.controller.add_event(curTime + delay, node, msg, msg['labels'], next_node, flow_id,
                                               curTime + msg['shelf_life'], rtt_delay, STORE)
-                    print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+                    # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
                     self.controller.replicate(node, next_node)
 
         else:
@@ -6077,7 +6091,7 @@ class HServSpecStorApp(Strategy):
             rtt_delay += delay * 2
             self.controller.add_event(curTime + delay, receiver, msg, msg['labels'], next_node, flow_id, deadline, rtt_delay,
                                       STORE)
-            print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
+            # print "Message: " + str(msg['content']) + " sent from node " + str(node) + " to node " + str(next_node)
 
         return msg
 
@@ -6241,8 +6255,8 @@ class HServSpecStorApp(Strategy):
                             else:
                                 compSpot.missed_requests[content] += 1
                         return
-                for n in range(0, 3):
-                    self.controller.add_replication_hops(content)
+                # for n in range(0, 3):
+                #     self.controller.add_replication_hops(content)
                 ret, reason = compSpot.admit_task(service['content'], labels, curTime, flow_id, deadline, receiver,
                                                   rtt_delay + cache_delay, self.controller, self.debug)
 

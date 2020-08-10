@@ -23,6 +23,7 @@ from icarus.registry import register_data_collector
 from icarus.tools import cdf
 from icarus.util import Tree, inheritdoc
 from icarus.registry import LOGGING_PARAMETERS
+
 # from icarus.registry import register_log_writer
 
 
@@ -35,7 +36,7 @@ __all__ = [
     'RepoStatsLatencyCollector',
     'PathStretchCollector',
     'DummyCollector'
-           ]
+]
 
 
 class DataCollector(object):
@@ -130,7 +131,7 @@ class DataCollector(object):
             The server node which served the content
         """
         pass
-    
+
     def replacement_interval_over(self, replacement_interval, timestamp):
         """ Reports the end of a replacement interval for services
         """
@@ -142,11 +143,11 @@ class DataCollector(object):
         """
 
         pass
-    
+
     def reassign_vm(self, node, serviceToReplace, serviceToAdd):
-        """ Reports the instantiation of a VM running the service "serviceToAdd", 
+        """ Reports the instantiation of a VM running the service "serviceToAdd",
             optionally replacing a VM which is running the service serviceToReplace.
-        """ 
+        """
 
         pass
 
@@ -206,8 +207,6 @@ class DataCollector(object):
         pass
 
 
-
-
 # Note: The implementation of CollectorProxy could be improved to avoid having
 # to rewrite almost identical methods, for example by playing with __dict__
 # attribute. However, it was implemented this way to make it more readable and
@@ -222,7 +221,7 @@ class CollectorProxy(DataCollector):
     """
 
     EVENTS = ('start_session', 'end_session', 'cache_hit', 'cache_miss', 'server_hit',
-              'request_hop', 'content_hop', 'results', 'replacement_interval_over', 'execute_service'              ,'reassign_vm')
+              'request_hop', 'content_hop', 'results', 'replacement_interval_over', 'execute_service', 'reassign_vm')
 
     def __init__(self, view, collectors):
         """Constructor
@@ -348,16 +347,16 @@ class LinkLoadCollector(DataCollector):
                               for link, load in link_loads.items()
                               if self.view.link_type(*link) == 'external')
         mean_load_int = sum(link_loads_int.values()) / len(link_loads_int) \
-                        if len(link_loads_int) > 0 else 0
+            if len(link_loads_int) > 0 else 0
         mean_load_ext = sum(link_loads_ext.values()) / len(link_loads_ext) \
-                        if len(link_loads_ext) > 0 else 0
-        return Tree({'MEAN_INTERNAL':     mean_load_int,
-                     'MEAN_EXTERNAL':     mean_load_ext,
+            if len(link_loads_ext) > 0 else 0
+        return Tree({'MEAN_INTERNAL': mean_load_int,
+                     'MEAN_EXTERNAL': mean_load_ext,
                      'PER_LINK_INTERNAL': link_loads_int,
                      'PER_LINK_EXTERNAL': link_loads_ext})
 
 
-#@register_log_writer('LATENCY_W_STORAGE')
+# @register_log_writer('LATENCY_W_STORAGE')
 @register_data_collector('LATENCY')
 class LatencyCollector(DataCollector):
     """Data collector measuring latency, i.e. the delay taken to delivery a
@@ -380,7 +379,7 @@ class LatencyCollector(DataCollector):
         self.interval_sess_count = 0
         self.latency_interval = 0.0
         self.deadline_metric_interval = 0.0
-        self.n_satisfied = 0.0 # number of satisfied requests
+        self.n_satisfied = 0.0  # number of satisfied requests
         self.n_satisfied_interval = 0.0
         self.n_sat_cloud_interval = 0
         self.n_instantiations_interval = 0
@@ -392,14 +391,14 @@ class LatencyCollector(DataCollector):
         self.storage_misses = 0
         self.serv_hits = 0
 
-        self.flow_start = {} # flow_id to start time
-        self.flow_cloud = {} # True if flow reched cloud
-        self.flow_service = {} # flow id to service
-        self.flow_deadline = {} # flow id to deadline
-        self.flow_labels = {} # flow id to service-associated labels
-        self.flow_feedback = {} # flow id to service-associated labels
-        self.service_requests = {} #number of requests per service
-        self.service_satisfied = {} #number of satisfied requests per service
+        self.flow_start = {}  # flow_id to start time
+        self.flow_cloud = {}  # True if flow reched cloud
+        self.flow_service = {}  # flow id to service
+        self.flow_deadline = {}  # flow id to deadline
+        self.flow_labels = {}  # flow id to service-associated labels
+        self.flow_feedback = {}  # flow id to service-associated labels
+        self.service_requests = {}  # number of requests per service
+        self.service_satisfied = {}  # number of satisfied requests per service
 
         # Time series for various metrics
         self.satrate_times = {}
@@ -419,8 +418,8 @@ class LatencyCollector(DataCollector):
         if cdf:
             self.latency_data = collections.deque()
         self.css = self.view.service_nodes()
-        #self.n_services = self.css.items()[0][1].numOfVMs
-    
+        # self.n_services = self.css.items()[0][1].numOfVMs
+
     @inheritdoc(DataCollector)
     def execute_service(self, flow_id, service, node, timestamp, is_cloud):
         if is_cloud:
@@ -429,7 +428,7 @@ class LatencyCollector(DataCollector):
             self.flow_cloud[flow_id] = False
 
     @inheritdoc(DataCollector)
-    def reassign_vm(self, node, serviceToReplace, serviceToAdd): 
+    def reassign_vm(self, node, serviceToReplace, serviceToAdd):
         self.n_instantiations_interval += 1
 
     @inheritdoc(DataCollector)
@@ -437,40 +436,40 @@ class LatencyCollector(DataCollector):
         if self.interval_sess_count == 0:
             self.satrate_times[timestamp] = 0.0
         else:
-            self.satrate_times[timestamp] = self.n_satisfied_interval/self.interval_sess_count
+            self.satrate_times[timestamp] = self.n_satisfied_interval / self.interval_sess_count
         print ("Number of requests in interval: " + repr(self.interval_sess_count))
 
         self.instantiations_times[timestamp] = self.n_instantiations_interval
         self.n_instantiations_interval = 0
-        
+
         total_idle_time = 0.0
-        total_cores = 0 # total number of cores in the network
+        total_cores = 0  #  total number of cores in the network
         for node, cs in self.css.items():
             if cs.is_cloud:
                 continue
-            
+
             idle_time = cs.getIdleTime(timestamp)
             idle_time /= cs.numOfCores
             total_idle_time += idle_time
-           
-            total_cores += cs.numOfCores 
+
+            total_cores += cs.numOfCores
 
             if node not in self.node_idle_times.keys():
                 self.node_idle_times[node] = []
 
-            self.node_idle_times[node].append(idle_time) 
+            self.node_idle_times[node].append(idle_time)
 
-        #self.idle_times[timestamp] = total_idle_time
-        self.idle_times[timestamp] = total_idle_time / (total_cores*replacement_interval)
+            # self.idle_times[timestamp] = total_idle_time
+        self.idle_times[timestamp] = total_idle_time / (total_cores * replacement_interval)
         if self.n_satisfied_interval == 0:
             self.latency_times[timestamp] = 0.0
             self.deadline_metric_times[timestamp] = 0.0
             self.cloud_sat_times[timestamp] = 0.0
         else:
-            self.latency_times[timestamp] = self.latency_interval/self.n_satisfied_interval
-            self.deadline_metric_times[timestamp] = self.deadline_metric_interval/self.n_satisfied_interval
-            self.cloud_sat_times[timestamp] = (1.0*self.n_sat_cloud_interval)/self.n_satisfied_interval
-        #self.per_service_idle_times[timestamp] = [avg_idle_times[x]/replacement_interval for x in range(0, self.n_services)]
+            self.latency_times[timestamp] = self.latency_interval / self.n_satisfied_interval
+            self.deadline_metric_times[timestamp] = self.deadline_metric_interval / self.n_satisfied_interval
+            self.cloud_sat_times[timestamp] = (1.0 * self.n_sat_cloud_interval) / self.n_satisfied_interval
+        # self.per_service_idle_times[timestamp] = [avg_idle_times[x]/replacement_interval for x in range(0, self.n_services)]
 
         # Initialise interval counts
         self.n_sat_cloud_interval = 0
@@ -591,39 +590,39 @@ class LatencyCollector(DataCollector):
             overhead_file = "/spec_overheads.txt"
 
         if self.view.model.strategy == 'HYBRID':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
-        results = Tree({'SATISFACTION' : 1.0*self.n_satisfied/self.sess_count})
+        results = Tree({'SATISFACTION': 1.0 * self.n_satisfied / self.sess_count})
 
         # TODO: Possibly create another file, specifically for tracking repo/service-specific performance!!!!!!!!!!!!!!!
 
@@ -634,10 +633,9 @@ class LatencyCollector(DataCollector):
         per_label_node_requests = {}
         # res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():
-            per_service_sats[service] = 1.0*self.service_satisfied[service]/self.service_requests[service]
-            res.write(str(100*self.service_satisfied[service]/self.service_requests[service]) + ", ")
+            per_service_sats[service] = 1.0 * self.service_satisfied[service] / self.service_requests[service]
+            res.write(str(100 * self.service_satisfied[service] / self.service_requests[service]) + ", ")
         res.write("\n")
-
 
         for content in range(0, 1000):
             # overhead.write(str(content) + ": ")
@@ -649,9 +647,13 @@ class LatencyCollector(DataCollector):
                     msg = self.view.storage_nodes()[node].hasMessage(content, [])
                     break
             if msg['content'] in self.view.model.replication_overheads:
-                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_overheads[msg['content']] + self.view.model.replication_hops[msg['content']] * msg['msg_size']
+                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_overheads[
+                                                                            msg['content']] + \
+                                                                        self.view.model.replication_hops[
+                                                                            msg['content']] * msg['msg_size']
             else:
-                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[msg['content']] * msg['msg_size']
+                self.view.model.replication_overheads[msg['content']] = self.view.model.replication_hops[
+                                                                            msg['content']] * msg['msg_size']
             overhead.write(str(self.view.replication_overhead(content)) + ", ")
             self.view.model.replication_hops[msg['content']] = 0
         overhead.write("\n")
@@ -660,10 +662,12 @@ class LatencyCollector(DataCollector):
             for node in self.view.model.storageSize:
                 per_node_r_replicas_requested[node] = self.view.replications_requests(node)
                 r_replicas.write(str(per_node_r_replicas_requested[node]) + ", ")
+                self.view.model.replications_from[node] = 0
             r_replicas.write("\n")
             for node in self.view.model.storageSize:
                 per_node_s_replicas_stored[node] = self.view.replications_destination(node)
                 s_replicas.write(str(per_node_s_replicas_stored[node]) + ", ")
+                self.view.model.replications_to[node] = 0
             s_replicas.write("\n")
 
             # TODO: Modify the following, to include ALL NODES, no matter what!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -672,7 +676,7 @@ class LatencyCollector(DataCollector):
                 # r_labels_dist.write(label + ": ")
                 if label in self.view.model.request_labels_nodes:
                     for node in self.view.model.request_labels_nodes[label]:
-                        per_label_node_requests [node] = self.view.model.request_labels_nodes[label][node]
+                        per_label_node_requests[node] = self.view.model.request_labels_nodes[label][node]
                         r_labels_dist.write(str(per_label_node_requests[node]) + ", ")
                     r_labels_dist.write("\n ")
             # r_labels_dist.write("r\n")
@@ -687,7 +691,7 @@ class LatencyCollector(DataCollector):
         results['PER_SERVICE_REQUESTS'] = self.service_requests
         results['PER_SERVICE_SAT_REQUESTS'] = self.service_satisfied
         results['SAT_TIMES'] = self.satrate_times
-        results['IDLE_TIMES'] = self.idle_times 
+        results['IDLE_TIMES'] = self.idle_times
         results['NODE_IDLE_TIMES'] = self.node_idle_times
         results['LATENCY'] = self.latency_times
         results['DEADLINE_METRIC'] = self.deadline_metric_times
@@ -697,13 +701,13 @@ class LatencyCollector(DataCollector):
         print "Printing Sat. rate times:"
         for key in sorted(self.satrate_times):
             print (repr(key) + " " + repr(self.satrate_times[key]))
-        
+
         print "Printing Idle times:"
         for key in sorted(self.idle_times):
             print (repr(key) + " " + repr(self.idle_times[key]))
-        #results['VMS_PER_SERVICE'] = self.vms_per_service
+        # results['VMS_PER_SERVICE'] = self.vms_per_service
         res.close()
-        
+
         return results
 
 
@@ -942,40 +946,40 @@ class RepoStatsLatencyCollector(DataCollector):
             overhead_file = "/spec_overheads.txt"
 
         if self.view.model.strategy == 'HYBRID':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
-            repo_usage = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/repo_usage.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/repo_usage.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
-            repo_usage = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_usage.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
+            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_usage.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
-            repo_usage = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_usage.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_usage.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
-            repo_usage = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_usage.txt", 'a')
-            r_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
-            s_replicas = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
-            r_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
-            s_labels_dist = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
-            overhead = open("/mnt/d/UCL/ERP-Cluster-Mgmt/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_usage.txt", 'a')
+            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
+            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
+            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
+            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
+            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION': 1.0 * self.n_satisfied / self.sess_count})
@@ -1148,7 +1152,7 @@ class CacheHitRatioCollector(DataCollector):
         if self.cont_hits:
             cont_set = set(list(self.cont_cache_hits.keys()) + list(self.cont_serv_hits.keys()))
             cont_hits = dict((i, (self.cont_cache_hits[i] / (self.cont_cache_hits[i] + self.cont_serv_hits[i])))
-                            for i in cont_set)
+                             for i in cont_set)
             results['PER_CONTENT'] = cont_hits
         if self.per_node:
             for v in self.per_node_cache_hits:

@@ -1238,34 +1238,46 @@ class TraceDrivenRepoWorkload(object):
         contents = []
         with open(self.contents_file, 'r', buffering=self.buffering) as f:
             data = csv.reader(f)
+            first = True
             for content in data:
                 for cont in content:
+                    if first:
+                         first = False
+                         continue
                     contents.append(cont)
         self.labels = []
         labels = []
         with open(self.labels_file, 'r', buffering=self.buffering) as f:
             data = csv.reader(f)
+            first = True
             for label in data:
                 for l in label:
+                    if first:
+                         first = False
+                         continue
                     labels.append(l)
         locations = []
         with open(self.content_locations, 'r', buffering=self.buffering) as loc:
             data = csv.reader(loc)
+            first = True
             for cont_loc in data:
                 for c_loc in cont_loc:
+                    if first:
+                         first = False
+                         continue
                     locations.append(int(float(c_loc)))
         alt = True
         no_contents = 0
         for location in locations:
-            no_contents += 1
-            self.contents.append(contents[location])
+            if no_contents == n_contents:
+                break
+            # self.contents.append(contents[location])
             if alt:
                 self.labels.append(labels[location])
                 alt = False
             else:
                 alt = True
-            if no_contents == n_contents:
-                break
+            no_contents += 1
 
         unique_labels = []
         label_counts = Counter()
@@ -1280,11 +1292,11 @@ class TraceDrivenRepoWorkload(object):
         labels_norm_factor = float(sum(self.labels_weights.values()))
         self.labels_pdf = dict((k, v / labels_norm_factor) for k, v in self.labels_weights.items())
 
-        for number in range(0, len(self.contents)):
-            self.contents[number] = number
+        for number in range(0, self.n_contents):
+            self.contents.append(number)
         self.rates_pdf = {}
         for content in self.contents:
-            for i in range(0, len(self.contents)-1):
+            for i in range(0, self.n_contents):
                 if self.contents[i] == content:
                     self.rates_pdf[content] = self.coeffs[i]
         contents_weights = {}
