@@ -965,7 +965,7 @@ class RepoStatsLatencyCollector(DataCollector):
             s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
             overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
             repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_usage.txt", 'a')
             r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
             s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
@@ -973,7 +973,7 @@ class RepoStatsLatencyCollector(DataCollector):
             s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
             overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
+            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
             repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_usage.txt", 'a')
             r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
             s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
