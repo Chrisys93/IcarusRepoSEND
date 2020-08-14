@@ -16,7 +16,7 @@ LOG_LEVEL = 'INFO'
 
 # If True, executes simulations in parallel using multiple processes
 # to take advantage of multicore CPUs
-PARALLEL_EXECUTION = False
+PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
@@ -28,7 +28,7 @@ CACHING_GRANULARITY = 'OBJECT'
 
 # Warm-up strategy
 #WARMUP_STRATEGY = 'MFU' #'HYBRID'
-WARMUP_STRATEGY = 'HYBRIDS_REPO_APP' #'HYBRID'
+WARMUP_STRATEGY = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP'] #'HYBRID'
 
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
@@ -44,7 +44,7 @@ LOGGING_PARAMETERS = ''
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icaurs/execution/collectors.py
-DATA_COLLECTORS = ['LATENCY']
+DATA_COLLECTORS = ['REPO_STATS_W_LATENCY']
 # DATA_COLLECTORS = [('REPO_STORAGE', LOGGING_PARAMETERS)]
 
 # Range of alpha values of the Zipf distribution using to generate content requests
@@ -66,13 +66,13 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = 250
+N_CONTENTS = 300
 #N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 100.0
+NETWORK_REQUEST_RATE = 300.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50

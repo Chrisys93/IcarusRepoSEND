@@ -212,39 +212,42 @@ class Scheduler(object):
         # In rare cases, a task that is stalled due to insufficient VMs may end up waiting for the VM_START task which will take up CPU
         
         for next_task in task.nextTask:
-            if next_task not in self.upcomingTaskQueue:
-                if next_task not in self._taskQueue:
-                    print ("Error in addVMStartToTaskQ(): next_task not in upcomingTaskQueue or taskQ. task:")
-                    task.print_task()
-                    print ("Printing task queue:")
-                    for aTask in self._taskQueue:
-                        aTask.print_task()
-                    print ("Printing upcoming task queue:")
-                    for aTask in self.upcomingTaskQueue:
-                        aTask.print_task()
-                    raise ValueError ("Error in addVMStartToTaskQ(): next_task is neither in upcomingTaskQueue nor taskQ")
-                if next_task.taskType != Task.TASK_TYPE_VM_START:
-                    raise ValueError ("Error in complete_service_task(): nextTask is expected to be a VM_START task")
-            else: # next_task in self.upcomingTaskQueue
 
-                if arrival_time > curr_time:
-                    next_task.arrivalTime = arrival_time
-                elif arrival_time == curr_time:
-                    self.upcomingTaskQueue.remove(next_task)
-                    # Add the next_task to the taskQ
-                    if len(self._taskQueue) > 0:
-                        if self.sched_policy == 'EDF':
-                            next_task.expiry = self._taskQueue[-1].expiry
-                        elif self.sched_policy == 'FIFO':
-                            next_task.arrivalTime = curr_time
-                        else:
-                            raise ValueError("Invalid scheduling policy")
-                        self.addToTaskQueue(next_task, curr_time, update_arrival_time)
+            # BUG: HOW CAN YOU CHECK FOR next_task IN TASK QUEUE AND EXPECT IT TO BE THERE, IF YOU WANT TO ADD IT?!?!?!
+
+            # if next_task not in self.upcomingTaskQueue:
+            #     if next_task not in self._taskQueue:
+            #         print ("Error in addVMStartToTaskQ(): next_task not in upcomingTaskQueue or taskQ. task:")
+            #         task.print_task()
+            #         print ("Printing task queue:")
+            #         for aTask in self._taskQueue:
+            #             aTask.print_task()
+            #         print ("Printing upcoming task queue:")
+            #         for aTask in self.upcomingTaskQueue:
+            #             aTask.print_task()
+            #         raise ValueError ("Error in addVMStartToTaskQ(): next_task is neither in upcomingTaskQueue nor taskQ")
+            #     if next_task.taskType != Task.TASK_TYPE_VM_START:
+            #         raise ValueError ("Error in complete_service_task(): nextTask is expected to be a VM_START task")
+            # else: # next_task in self.upcomingTaskQueue
+
+            if arrival_time > curr_time:
+                next_task.arrivalTime = arrival_time
+            elif arrival_time == curr_time:
+                self.upcomingTaskQueue.remove(next_task)
+                # Add the next_task to the taskQ
+                if len(self._taskQueue) > 0:
+                    if self.sched_policy == 'EDF':
+                        next_task.expiry = self._taskQueue[-1].expiry
+                    elif self.sched_policy == 'FIFO':
+                        next_task.arrivalTime = curr_time
                     else:
-                        # Run this task (if there is available CPU resources)
-                        self.addToTaskQueue(next_task, curr_time, update_arrival_time)
+                        raise ValueError("Invalid scheduling policy")
+                    self.addToTaskQueue(next_task, curr_time, update_arrival_time)
                 else:
-                    raise ValueError("Error in addVMStartToTaskQ(): arrival_time for the task: " + str(arrival_time) + " should not be smaller than curr_time: " + str(curr_time))
+                    # Run this task (if there is available CPU resources)
+                    self.addToTaskQueue(next_task, curr_time, update_arrival_time)
+            else:
+                raise ValueError("Error in addVMStartToTaskQ(): arrival_time for the task: " + str(arrival_time) + " should not be smaller than curr_time: " + str(curr_time))
 
     def addToTaskQueue(self, aTask, curTime,  update_arrival_time = True):
 

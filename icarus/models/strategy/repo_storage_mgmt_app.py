@@ -914,6 +914,9 @@ class HServRepoStorApp(Strategy):
         self.cloud_lim = cloud_lim
         self.max_stor = max_stor
         self.min_stor = min_stor
+        self.self_calls = {}
+        for node in view.storage_nodes(True):
+            self.self_calls[node] = 0
         self.view = view
 
     # self.processedSize = a.getProcessedSize
@@ -971,6 +974,14 @@ class HServRepoStorApp(Strategy):
                     print("\t Idle: " + str(len(cs.scheduler.idleVMs[service])) + " Busy: " + str(
                         len(cs.scheduler.busyVMs[service])) + " Starting: " + str(
                         len(cs.scheduler.startingVMs[service])))
+                    if cs.numberOfVMInstances[service] > len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        aVM = VM(self, service)
+                        cs.scheduler.idleVMs[service].append(aVM)
+                    elif cs.numberOfVMInstances[service] < len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        cs.numberOfVMInstances[service] = len(cs.scheduler.idleVMs[service]) + len(cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service])
+
                 d_metric = 0.0
                 u_metric = 0.0
                 util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[
@@ -1766,6 +1777,16 @@ class HServRepoStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
+        if source == path[0]:
+            self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 2:
+            source = self.view.content_source_cloud(service, service['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[path[0]] is not None:
+                        source = n
+            self.self_calls[path[0]] = 0
+
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
         aTask = None
@@ -2539,6 +2560,9 @@ class HServProStorApp(Strategy):
         self.cloud_lim = cloud_lim
         self.max_stor = max_stor
         self.min_stor = min_stor
+        self.self_calls = {}
+        for node in view.storage_nodes(True):
+            self.self_calls[node] = 0
         self.view = view
 
 
@@ -2597,6 +2621,14 @@ class HServProStorApp(Strategy):
                     print("\t Idle: " + str(len(cs.scheduler.idleVMs[service])) + " Busy: " + str(
                         len(cs.scheduler.busyVMs[service])) + " Starting: " + str(
                         len(cs.scheduler.startingVMs[service])))
+                    if cs.numberOfVMInstances[service] > len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        aVM = VM(self, service)
+                        cs.scheduler.idleVMs[service].append(aVM)
+                    elif cs.numberOfVMInstances[service] < len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        cs.numberOfVMInstances[service] = len(cs.scheduler.idleVMs[service]) + len(cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service])
+
                 d_metric = 0.0
                 u_metric = 0.0
                 util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[
@@ -3395,6 +3427,15 @@ class HServProStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        if source == path[0]:
+            self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 2:
+            source = self.view.content_source_cloud(service, service['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[path[0]] is not None:
+                        source = n
+            self.self_calls[path[0]] = 0
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
 
@@ -4168,6 +4209,9 @@ class HServReStorApp(Strategy):
         self.cloud_lim = cloud_lim
         self.max_stor = max_stor
         self.min_stor = min_stor
+        self.self_calls = {}
+        for node in view.storage_nodes(True):
+            self.self_calls[node] = 0
         self.view = view
 
 
@@ -4226,6 +4270,14 @@ class HServReStorApp(Strategy):
                     print("\t Idle: " + str(len(cs.scheduler.idleVMs[service])) + " Busy: " + str(
                         len(cs.scheduler.busyVMs[service])) + " Starting: " + str(
                         len(cs.scheduler.startingVMs[service])))
+                    if cs.numberOfVMInstances[service] > len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        aVM = VM(self, service)
+                        cs.scheduler.idleVMs[service].append(aVM)
+                    elif cs.numberOfVMInstances[service] < len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        cs.numberOfVMInstances[service] = len(cs.scheduler.idleVMs[service]) + len(cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service])
+
                 d_metric = 0.0
                 u_metric = 0.0
                 util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[
@@ -5065,6 +5117,15 @@ class HServReStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        if source == path[0]:
+            self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 2:
+            source = self.view.content_source_cloud(service, service['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[path[0]] is not None:
+                        source = n
+            self.self_calls[path[0]] = 0
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
         aTask = None
@@ -5828,6 +5889,9 @@ class HServSpecStorApp(Strategy):
         self.cloud_lim = cloud_lim
         self.max_stor = max_stor
         self.min_stor = min_stor
+        self.self_calls = {}
+        for node in view.storage_nodes(True):
+            self.self_calls[node] = 0
         self.view = view
 
 
@@ -5886,6 +5950,14 @@ class HServSpecStorApp(Strategy):
                     print("\t Idle: " + str(len(cs.scheduler.idleVMs[service])) + " Busy: " + str(
                         len(cs.scheduler.busyVMs[service])) + " Starting: " + str(
                         len(cs.scheduler.startingVMs[service])))
+                    if cs.numberOfVMInstances[service] > len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        aVM = VM(self, service)
+                        cs.scheduler.idleVMs[service].append(aVM)
+                    elif cs.numberOfVMInstances[service] < len(cs.scheduler.idleVMs[service]) + len(
+                        cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service]):
+                        cs.numberOfVMInstances[service] = len(cs.scheduler.idleVMs[service]) + len(cs.scheduler.busyVMs[service]) + len(cs.scheduler.startingVMs[service])
+
                 d_metric = 0.0
                 u_metric = 0.0
                 util.append([service, (cs.missed_requests[service] + cs.running_requests[service]) * cs.services[
@@ -6738,6 +6810,15 @@ class HServSpecStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        if source == path[0]:
+            self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 2:
+            source = self.view.content_source_cloud(service, service['labels'])
+            if not source:
+                for n in self.view.model.comp_size:
+                    if type(self.view.model.comp_size[n]) is not int and self.view.model.comp_size[path[0]] is not None:
+                        source = n
+            self.self_calls[path[0]] = 0
         # start from the upper-most node in the path and check feasibility
         upstream_node = source
         aTask = None

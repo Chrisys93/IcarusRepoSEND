@@ -500,6 +500,10 @@ def topology_repo_mesh(n, m, delay_int=0.02, delay_ext=1, **kwargs):
     receivers = ['rec_%d' % i for i in range(n)]
     sources = ['src_%d' % i for i in range(m)]
     internal_links = zip(routers, receivers)
+    for u in routers:
+        for v in routers:
+            if v != u:
+                internal_links.append(tuple([u, v]))
     external_links = zip(routers[:m], sources)
     for u, v in internal_links:
         topology.add_edge(u, v, type='internal')
@@ -517,15 +521,14 @@ def topology_repo_mesh(n, m, delay_int=0.02, delay_ext=1, **kwargs):
         fnss.add_stack(topology, v, 'router')
         if 'source' not in topology.node[v]['stack']:
             try:
-                if topology.node[v]['type'] == 'leaf':
-                    try:
-                        topology.node[v]['extra_types'].append('source')
+                try:
+                    topology.node[v]['extra_types'].append('source')
+                    topology.node[v]['extra_types'].append('router')
+                except Exception as e:
+                    err_type = str(type(e)).split("'")[1].split(".")[1]
+                    if err_type == "KeyError":
+                        topology.node[v].update(extra_types=['source'])
                         topology.node[v]['extra_types'].append('router')
-                    except Exception as e:
-                        err_type = str(type(e)).split("'")[1].split(".")[1]
-                        if err_type == "KeyError":
-                            topology.node[v].update(extra_types=['source'])
-                            topology.node[v]['extra_types'].append('router')
 
             except Exception as e:
                 err_type = str(type(e)).split("'")[1].split(".")[1]
