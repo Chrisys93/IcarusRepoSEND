@@ -322,8 +322,11 @@ def run_scenario(settings, params, curr_exp, n_exp):
         if any(m not in DATA_COLLECTOR for m in metrics):
             logger.error('There are no implementations for at least one data collector specified')
             return None
-
+        collect_spec = tree['collector_params']
         collectors = {m: {} for m in metrics}
+        # for m in collectors:
+        #     if 'REPO' in m:
+        #         collectors[m] = dict(collect_spec)
 
         logger.info('Experiment %d/%d | Start simulation', curr_exp, n_exp)
         results = exec_experiment(topology, workload, netconf, strategy, cache_policy, repo_policy, collectors, warmup_strategy, sched_policy)

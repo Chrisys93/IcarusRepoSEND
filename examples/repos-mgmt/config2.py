@@ -62,13 +62,13 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = 300
+N_CONTENTS = 150
 #N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 300.0
+NETWORK_REQUEST_RATE = 100.0
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50

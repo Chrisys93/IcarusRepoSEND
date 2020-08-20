@@ -49,8 +49,7 @@ def exec_experiment(topology, workload, netconf, strategy, cache_policy, repo_po
     view = NetworkView(model)
     controller = NetworkController(model)
 
-    collectors_inst = [DATA_COLLECTOR[name](view, **params)
-                       for name, params in collectors.items()]
+    collectors_inst = [DATA_COLLECTOR[name](view, **params) for name, params in collectors.items()]
     collector = CollectorProxy(view, collectors_inst)
     controller.attach_collector(collector)
 

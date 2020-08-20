@@ -1776,10 +1776,11 @@ class HServRepoStorApp(Strategy):
         tasks that require closer comp. spots.
         """
 
-        source = self.view.content_source(service, [])[len(self.view.content_source(service, []))-1]
-        if source == path[0]:
-            self.self_calls[path[0]] += 1
-        if self.self_calls[path[0]] >= 2:
+        source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
+        if len(self.view.content_source(service, [])) > 1:
+            if source == path[0]:
+                self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 3:
             source = self.view.content_source_cloud(service, service['labels'])
             if not source:
                 for n in self.view.model.comp_size:
@@ -3427,9 +3428,10 @@ class HServProStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
-        if source == path[0]:
-            self.self_calls[path[0]] += 1
-        if self.self_calls[path[0]] >= 2:
+        if len(self.view.content_source(service, [])) > 1:
+            if source == path[0]:
+                self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 3:
             source = self.view.content_source_cloud(service, service['labels'])
             if not source:
                 for n in self.view.model.comp_size:
@@ -5117,9 +5119,10 @@ class HServReStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
-        if source == path[0]:
-            self.self_calls[path[0]] += 1
-        if self.self_calls[path[0]] >= 2:
+        if len(self.view.content_source(service, [])) > 1:
+            if source == path[0]:
+                self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 3:
             source = self.view.content_source_cloud(service, service['labels'])
             if not source:
                 for n in self.view.model.comp_size:
@@ -6810,9 +6813,10 @@ class HServSpecStorApp(Strategy):
         """
 
         source = self.view.content_source(service, [])[len(self.view.content_source(service, [])) - 1]
-        if source == path[0]:
-            self.self_calls[path[0]] += 1
-        if self.self_calls[path[0]] >= 2:
+        if len(self.view.content_source(service, [])) > 1:
+            if source == path[0]:
+                self.self_calls[path[0]] += 1
+        if self.self_calls[path[0]] >= 3:
             source = self.view.content_source_cloud(service, service['labels'])
             if not source:
                 for n in self.view.model.comp_size:

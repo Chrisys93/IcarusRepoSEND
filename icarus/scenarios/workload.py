@@ -1279,6 +1279,12 @@ class TraceDrivenRepoWorkload(object):
                 alt = True
             no_contents += 1
 
+        global_unique_labels = []
+        for label in labels:
+            if label not in global_unique_labels:
+                global_unique_labels.append(label)
+
+
         unique_labels = []
         label_counts = Counter()
         for label in self.labels:

@@ -40,12 +40,12 @@ RESULTS_FORMAT = 'TXT'
 N_REPLICATIONS = 1
 
 # Logging parameters and variables
-LOGGING_PARAMETERS = ''
+LOGGING_PARAMETERS = '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt', 500
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icaurs/execution/collectors.py
+#DATA_COLLECTORS = ['REPO_STATS_W_LATENCY']
 DATA_COLLECTORS = ['REPO_STATS_W_LATENCY']
-# DATA_COLLECTORS = [('REPO_STORAGE', LOGGING_PARAMETERS)]
 
 # Range of alpha values of the Zipf distribution using to generate content requests
 # alpha values must be positive. The greater the value the more skewed is the
@@ -217,6 +217,10 @@ default['content_placement'] = {"name":             'WEIGHTED_REPO',
                                 "service_weights":  SERVICE_WEIGHTS,
                                 "max_label_nos" :   MAX_REQUESTED_LABELS
                                 }
+
+# default['collector_params'] = {"logs_path": '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt',
+#                            "sampling_size": 500
+#                             }
 
 default['cache_policy']['name'] = CACHE_POLICY
 default['repo_policy']['name'] = REPO_POLICY
