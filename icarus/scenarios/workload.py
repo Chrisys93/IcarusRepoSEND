@@ -22,6 +22,8 @@ import random
 import csv
 
 import networkx as nx
+import numpy as np
+import math
 import heapq
 
 from fnss.util import random_from_pdf
@@ -988,18 +990,24 @@ class BurstyRepoWorkload(object):
             node = receiver
 
             if self.disrupt_mode == 'RAND':
-                self.receivers_downtime[node] = random.uniform(0, self.max_off)
-                self.receivers_uptime[node] = random.uniform(0, self.max_on)
-                if self.last_event[node] is not None and self.receivers_down[node] is None:
-                    self.receivers_down[node] = self.last_event[node] + self.receivers_downtime[node]
-                elif self.receivers_down[node] and t_event < self.receivers_down[node]:
-                    t_event = self.receivers_down[node]
-                elif self.receivers_down[node] and t_event > self.receivers_down[node] + self.receivers_uptime[node]:
-                    self.receivers_down[node] = None
-                self.last_event[node] = t_event
+                count = 0
+                for n in self.receivers_down:
+                    if n is not None:
+                        count += 1
+                if num_rec_disrupt >= count:
+                    self.receivers_downtime[node] = random.uniform(0, self.max_off)
+                    self.receivers_uptime[node] = random.uniform(0, self.max_on)
+                    if self.last_event[node] is not None and self.receivers_down[node] is None:
+                        self.receivers_down[node] = self.last_event[node] + self.receivers_downtime[node]
+                    elif self.receivers_down[node] is not None:
+                        if t_event < self.receivers_down[node]:
+                            t_event = self.receivers_down[node]
+                        elif t_event > self.receivers_down[node] + self.receivers_uptime[node]:
+                            self.receivers_down[node] = None
+                    self.last_event[node] = t_event
 
 
-            elif self.disrupt_mode == 'WEIGHTED':
+            elif self.disrupt_mode == 'WEIGHTED' or disrupt_mode == "POISSON":
 
                 if self.beta == 0:
                     w_receiver = random.choice(self.receivers)
@@ -1568,8 +1576,17 @@ class BurstyTraceRepoWorkload(object):
         self.max_on = max_on
         self.max_off = max_off
         self.disrupt_mode = disrupt_mode
+
+        if disrupt_mode == 'POISSON':
+            self.disrupt_weights = {}
+            if mu and sigma > 0:
+                for rec in self.receivers:
+                    weight = np.exp(-0.5*np.power(rec-mu, 2)) / (sigma*math.sqrt(2*math.pi))
+                    self.disrupt_weights[rec] = weight
+
         if self.disrupt_mode == 'WEIGHTED':
             self.disrupt_weights = disrupt_weights
+
         if beta != 0:
             degree = nx.degree(self.topology)
             self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.edge[x]).next()], reverse=True)
@@ -1843,7 +1860,7 @@ class BurstyRepoDataAndWorkload(object):
                  beta=0, label_ex=False, alpha_labels=0, rate=100, n_warmup=10 ** 5,
                  n_measured=4 * 10 ** 5, seed=0, n_services=10, topics=None, types=None, max_labels=1, freshness_pers=0,
                  shelf_lives=0, msg_sizes=1000000, data_gen_dist_mode=None, data_gen_dist=None, data_rate=0,
-                 stor_shelf=0, stor_scope=0, n_stor_warmup=0, n_stor_measured=0, **kwargs):
+                 stor_shelf=0, stor_scope=0, n_stor_warmup=0, n_stor_measured=0, mu=0, sigma=0, **kwargs):
         if types is None:
             types = []
         if alpha < 0:
@@ -1911,6 +1928,16 @@ class BurstyRepoDataAndWorkload(object):
         self.receivers_downtime = {}
         self.receivers_uptime = {}
 
+        if disrupt_mode == 'POISSON':
+            self.disrupt_weights = {}
+            if mu and sigma > 0:
+                for rec in self.receivers:
+                    weight = np.exp(-0.5*np.power(rec-mu, 2)) / (sigma*math.sqrt(2*math.pi))
+                    self.disrupt_weights[rec] = weight
+
+        if self.disrupt_mode == 'WEIGHTED':
+            self.disrupt_weights = disrupt_weights
+
         # Continuous data (for storage) generation settings
         self.data_gen_dist_mode = data_gen_dist_mode
         self.data_gen_dist = data_gen_dist
@@ -1922,9 +1949,14 @@ class BurstyRepoDataAndWorkload(object):
         self.data_gen_pdf = {}
         if self.data_gen_dist_mode:
             for node in self.data_gen_dist:
-                for n in range(0, len(self.receivers)):
-                    if self.receivers[n] == node:
-                        self.data_gen_pdf[node] = self.receivers[n]
+                self.data_gen_pdf[node] = self.data_gen_dist[node]
+
+            if data_gen_dist_mode == 'POISSON':
+                self.data_gen_dist = {}
+                if mu and sigma > 0:
+                    for rec in self.receivers:
+                        weight = np.exp(-0.5*np.power(rec-mu, 2)) / (sigma*math.sqrt(2*math.pi))
+                        self.data_weights[rec] = weight
 
         if beta != 0:
             degree = nx.degree(self.topology)
@@ -1992,7 +2024,7 @@ class BurstyRepoDataAndWorkload(object):
                     self.last_event[node] = t_event
 
 
-            elif self.disrupt_mode == 'WEIGHTED':
+            elif self.disrupt_mode == 'WEIGHTED' or disrupt_mode == "POISSON":
 
                 if self.beta == 0:
                     w_receiver = random.choice(self.receivers)
@@ -2149,7 +2181,7 @@ class BurstyRepoDataAndWorkload(object):
                 continue
 
             if self.data_gen_dist_mode:
-                if self.data_gen_dist_mode == "WEIGHTED_DATA_GEN":
+                if self.data_gen_dist_mode == "WEIGHTED_DATA_GEN" or self.data_gen_dist_mode == "POISSON":
                     receiver = random_from_pdf(self.data_gen_pdf)
             else:
                     receiver = random.choice(self.receivers)
