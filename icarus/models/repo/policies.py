@@ -81,6 +81,7 @@ class RepoStorage(object):
             self.processedSize = self.storageSize / processedRatio
         if contents is not None:
             for content in contents:
+                contents[content]['receiveTime'] = time.time()
                 self.addToStoredMessages(contents[content])
 
     def getTotalStorageSpace(self):

@@ -123,8 +123,8 @@ REPO_POLICY = 'REPO_STORAGE'
 # Supported policies are: 'EDF' (Earliest Deadline First), 'FIFO'
 SCHED_POLICY = 'EDF'
 
-FRESHNESS_PER = 0.15
-SHELF_LIFE =5
+FRESHNESS_PER = 0.5
+SHELF_LIFE = 150
 MSG_SIZE = 1000000
 SOURCE_WEIGHTS = {'src_0': 0.25, 0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
@@ -218,9 +218,9 @@ default['content_placement'] = {"name":             'WEIGHTED_REPO',
                                 "max_label_nos" :   MAX_REQUESTED_LABELS
                                 }
 
-# default['collector_params'] = {"logs_path": '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt',
-#                            "sampling_size": 500
-#                             }
+default['collector_params'] = {"logs_path": '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt',
+                           "sampling_interval": 500
+                           }
 
 default['cache_policy']['name'] = CACHE_POLICY
 default['repo_policy']['name'] = REPO_POLICY

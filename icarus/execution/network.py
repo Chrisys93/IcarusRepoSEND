@@ -1733,18 +1733,16 @@ class NetworkController(object):
             *True*
         """
         self.model.repoStorage[s].addToStoredMessages(content)
-        for c in self.model.content_source:
-            if content['content'] == c:
-                if s not in self.model.content_source[content['content']]:
-                    self.model.content_source[content['content']].append(s)
-                if s in self.model.contents:
-                    if content['content'] in self.model.contents[s]:
-                        self.model.contents[s][content['content']].update(content)
-                    else:
-                        self.model.contents[s][content['content']] = content
-                else:
-                    self.model.contents[s] = dict()
-                    self.model.contents[s][content['content']] = content
+        if s not in self.model.content_source[content['content']]:
+            self.model.content_source[content['content']].append(s)
+        if s in self.model.contents:
+            if content['content'] in self.model.contents[s]:
+                self.model.contents[s][content['content']].update(content)
+            else:
+                self.model.contents[s][content['content']] = content
+        else:
+            self.model.contents[s] = dict()
+            self.model.contents[s][content['content']] = content
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.

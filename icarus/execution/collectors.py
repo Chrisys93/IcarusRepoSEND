@@ -768,8 +768,8 @@ class RepoStatsLatencyCollector(DataCollector):
         # self.logs_path = self.view.get_logs_path
         # self.sampling_size = self.view.get_logs_sampling_size
         # if LOGGING_PARAMETERS is not None:
-        # self.logs_path = logs_path
-        # self.sampling_size = sampling_interval
+        self.logs_path = logs_path
+        self.sampling_size = sampling_interval
 
         if cdf:
             self.latency_data = collections.deque()
@@ -923,6 +923,10 @@ class RepoStatsLatencyCollector(DataCollector):
             r_labels_dist_file = "/gen_r_labels.txt"
             s_labels_dist_file = "/gen_s_labels.txt"
             overhead_file = "/gen_overheads.txt"
+            repo_usage_file = "/repo_usage.txt"
+            repo_proc_vs_stor_file = "/repo_proc_vs_stor.txt"
+            repo_overtime_file = "/repo_overtime.txt"
+            repo_incoming_file = "/repo_incoming.txt"
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
             res_file = "/hybrid_pro_repo.txt"
             r_replicas_file = "/pro_r_replicas.txt"
@@ -930,6 +934,10 @@ class RepoStatsLatencyCollector(DataCollector):
             r_labels_dist_file = "/pro_r_labels.txt"
             s_labels_dist_file = "/pro_s_labels.txt"
             overhead_file = "/pro_overheads.txt"
+            repo_usage_file = "/pro_usage.txt"
+            repo_proc_vs_stor_file = "/pro_proc_vs_stor.txt"
+            repo_overtime_file = "/pro_overtime.txt"
+            repo_incoming_file = "/pro_incoming.txt"
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
             res_file = "/hybrid_repo.txt"
             r_replicas_file = "/re_r_replicas.txt"
@@ -937,6 +945,10 @@ class RepoStatsLatencyCollector(DataCollector):
             r_labels_dist_file = "/re_r_labels.txt"
             s_labels_dist_file = "/re_s_labels.txt"
             overhead_file = "/re_overheads.txt"
+            repo_usage_file = "/re_usage.txt"
+            repo_proc_vs_stor_file = "/re_proc_vs_stor.txt"
+            repo_overtime_file = "/re_overtime.txt"
+            repo_incoming_file = "/re_incoming.txt"
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
             res_file = "/hybrid_repo.txt"
             r_replicas_file = "/spec_r_replicas.txt"
@@ -944,54 +956,21 @@ class RepoStatsLatencyCollector(DataCollector):
             r_labels_dist_file = "/spec_r_labels.txt"
             s_labels_dist_file = "/spec_s_labels.txt"
             overhead_file = "/spec_overheads.txt"
+            repo_usage_file = "/spec_usage.txt"
+            repo_proc_vs_stor_file = "/spec_proc_vs_stor.txt"
+            repo_overtime_file = "/spec_overtime.txt"
+            repo_incoming_file = "/spec_incoming.txt"
 
-        if self.view.model.strategy == 'HYBRID':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid.txt", 'a')
-            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_overheads.txt", 'a')
-        elif self.view.model.strategy == 'HYBRIDS_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_repo.txt", 'a')
-            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/repo_usage.txt", 'a')
-            repo_proc_vs_stor = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/repo_proc_vs_stor.txt", 'a')
-            repo_overtime = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/repo_overtime.txt", 'a')
-            repo_incoming_BW = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/repo_incoming.txt", 'a')
-            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_replicas.txt", 'a')
-            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_replicas.txt", 'a')
-            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_r_labels.txt", 'a')
-            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_s_labels.txt", 'a')
-            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/gen_overheads.txt", 'a')
-        elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_pro_repo.txt", 'a')
-            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_usage.txt", 'a')
-            repo_proc_vs_stor = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_proc_vs_stor.txt", 'a')
-            repo_overtime = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overtime.txt", 'a')
-            repo_incoming_BW = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_incoming.txt", 'a')
-            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_replicas.txt", 'a')
-            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_replicas.txt", 'a')
-            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_r_labels.txt", 'a')
-            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_s_labels.txt", 'a')
-            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/pro_overheads.txt", 'a')
-        elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_re_repo.txt", 'a')
-            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_usage.txt", 'a')
-            repo_proc_vs_stor = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_proc_vs_stor.txt", 'a')
-            repo_overtime = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overtime.txt", 'a')
-            repo_incoming_BW = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_incoming.txt", 'a')
-            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_replicas.txt", 'a')
-            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_replicas.txt", 'a')
-            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_r_labels.txt", 'a')
-            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_s_labels.txt", 'a')
-            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/re_overheads.txt", 'a')
-        elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
-            res = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/hybrid_spec_repo.txt", 'a')
-            repo_usage = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_usage.txt", 'a')
-            repo_proc_vs_stor = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_proc_vs_stor.txt", 'a')
-            repo_overtime = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overtime.txt", 'a')
-            repo_incoming_BW = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_incoming.txt", 'a')
-            r_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_replicas.txt", 'a')
-            s_replicas = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_replicas.txt", 'a')
-            r_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_r_labels.txt", 'a')
-            s_labels_dist = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_s_labels.txt", 'a')
-            overhead = open("/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/repos-mgmt/spec_overheads.txt", 'a')
+        res = open(self.logs_path + res_file, 'a')
+        overhead = open(self.logs_path + overhead_file, 'a')
+        repo_usage = open(self.logs_path + repo_usage_file, 'a')
+        repo_proc_vs_stor = open(self.logs_path + repo_proc_vs_stor_file, 'a')
+        repo_overtime = open(self.logs_path + repo_overtime_file, 'a')
+        repo_incoming_BW = open(self.logs_path + repo_incoming_file, 'a')
+        r_replicas = open(self.logs_path + r_replicas_file, 'a')
+        s_replicas = open(self.logs_path + s_replicas_file, 'a')
+        r_labels_dist = open(self.logs_path + r_labels_dist_file, 'a')
+        s_labels_dist = open(self.logs_path + s_labels_dist_file, 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION': 1.0 * self.n_satisfied / self.sess_count})
@@ -1048,9 +1027,13 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_usage.write("\n")
 
             for node in self.view.model.storageSize:
-                if self.view.storage_nodes()[node].getMessagesSize():
+                if self.view.storage_nodes()[node].getMessagesSize() + \
+                        self.view.storage_nodes()[node].getProcMessagesSize() + \
+                        self.view.storage_nodes()[node].getProcessedMessagesSize():
                     per_node_proc_vs_stor_used[node] = 100 * self.view.storage_nodes()[node].getProcessedMessagesSize() / \
-                                                       self.view.storage_nodes()[node].getMessagesSize()
+                                                       (self.view.storage_nodes()[node].getMessagesSize() +
+                                                       self.view.storage_nodes()[node].getProcMessagesSize() +
+                                                       self.view.storage_nodes()[node].getProcessedMessagesSize())
                 else:
                     per_node_proc_vs_stor_used[node] = 0
                 repo_proc_vs_stor.write(str(per_node_proc_vs_stor_used[node]) + ", ")

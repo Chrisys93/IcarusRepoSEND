@@ -1475,6 +1475,11 @@ class HServRepoStorApp(Strategy):
                 delay = self.view.link_delay(node, next_node)
                 if self.view.hasStorageCapability(node):
                     source, in_cache = self.view.closest_source(node, service)
+                    # TODO: BIIIIIG PROBLEM HERE! Need to revise what happens between the following if-elses, because
+                    #  it might see that the content is stored, the stored content might not pe processed, or it might,
+                    #  and the right flags and/or processing of messages might still not be done correctly because of
+                    #  going through one if and/or else, but not going through to the next, so messages might just be
+                    #  skipped, in a VERY BAD manner, rendering some of the storage useless, pretty much...
                     if type(service) is not dict and self.controller.has_message(node, labels, content):
                         cache_delay = 0
                         if not in_cache and self.view.has_cache(node):
@@ -1497,6 +1502,7 @@ class HServRepoStorApp(Strategy):
                                     else:
                                         compSpot.missed_requests[content] += 1
                                 return
+
                         elif in_cache:
                             pc = self.controller.has_message(node, labels, content)
                             if pc['service_type'] == 'processed':
@@ -1597,8 +1603,10 @@ class HServRepoStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     elif self.controller.has_message(node, service['labels'], service['content']) and service['msg_size'] == 500000:
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         self.controller.replication_overhead_update(service)
@@ -1610,8 +1618,11 @@ class HServRepoStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
+
                     else:
                         if service['msg_size'] == 1000000:
                             self.controller.replication_overhead_update(service)
@@ -3248,8 +3259,10 @@ class HServProStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     elif self.controller.has_message(node, service['labels'], service['content']) and service['msg_size'] == 500000:
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         self.controller.replication_overhead_update(service)
@@ -3261,8 +3274,10 @@ class HServProStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     else:
                         if service['msg_size'] == 1000000:
                             self.controller.replication_overhead_update(service)
@@ -4939,8 +4954,10 @@ class HServReStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     elif self.controller.has_message(node, service['labels'], service['content']) and service['msg_size'] == 500000:
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         self.controller.replication_overhead_update(service)
@@ -4952,8 +4969,10 @@ class HServReStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     else:
                         if service['msg_size'] == 1000000:
                             self.controller.replication_overhead_update(service)
@@ -6633,8 +6652,10 @@ class HServSpecStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     elif self.controller.has_message(node, service['labels'], service['content']) and service['msg_size'] == 500000:
                         self.view.storage_nodes()[node].deleteAnyMessage(service['content'])
                         self.controller.replication_overhead_update(service)
@@ -6646,8 +6667,10 @@ class HServSpecStorApp(Strategy):
                                     node]:
                                     all_in += 1
                             if all_in == len(labels):
-                                self.controller.add_message_to_storage(node, service)
                                 self.controller.add_request_labels_to_storage(node, service, True)
+                            else:
+                                self.controller.add_storage_labels_to_node(node, service)
+                        self.controller.add_message_to_storage(node, service)
                     else:
                         if service['msg_size'] == 1000000:
                             self.controller.replication_overhead_update(service)
