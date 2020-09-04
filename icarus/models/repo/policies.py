@@ -174,6 +174,17 @@ class RepoStorage(object):
         if self.mStorTimeMax < sm['storTime']:
             self.mStorTimeMax = sm['storTime']
 
+    def addReceivedMessage(self, sm):
+        self.totalReceivedMessages += 1
+        if type(sm) is not dict:
+            msg = dict()
+            msg['content'] = sm
+            msg['msg_size'] = 1000000
+            self.totalReceivedMessagesSize += msg['msg_size']
+        else:
+            self.totalReceivedMessagesSize += sm['msg_size']
+
+
     def addToDeplProcMessages(self, sm):
         if (sm is not None):
             self.depletedProcMessages += 1

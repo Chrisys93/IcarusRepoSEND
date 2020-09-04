@@ -750,7 +750,7 @@ class StationaryRepoWorkload(object):
                         if labels_zipf < len(self.labels['topics']):
                             labels.append(self.labels['topics'][labels_zipf])
                         elif labels_zipf >= len(self.labels['topics']):
-                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])])
+                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics']) - 1])
                     self.alter = True
                     content = int(self.zipf.rv())
 
@@ -963,6 +963,7 @@ class BurstyRepoWorkload(object):
         if self.first:  # TODO remove this first variable, this is not necessary here
             random.seed(self.seed)
             self.first = False
+            num_rec_disrupt = random.uniform(0, len(self.receivers) - 1)
         # aFile = open('workload.txt', 'w')
         # aFile.write("# Time\tNodeID\tserviceID\n")
         eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
@@ -1007,12 +1008,9 @@ class BurstyRepoWorkload(object):
                     self.last_event[node] = t_event
 
 
-            elif self.disrupt_mode == 'WEIGHTED' or disrupt_mode == "POISSON":
+            elif self.disrupt_mode == 'WEIGHTED' or self.disrupt_mode == "POISSON":
 
-                if self.beta == 0:
-                    w_receiver = random.choice(self.receivers)
-                else:
-                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
                 d_node = w_receiver
                 self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
                 self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
@@ -1037,7 +1035,7 @@ class BurstyRepoWorkload(object):
                     if labels_zipf < len(self.labels['topics']):
                         labels.append(self.labels['topics'][labels_zipf])
                     elif labels_zipf >= len(self.labels['topics']):
-                        labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])-1])
+                        labels.append(self.labels['types'][labels_zipf - len(self.labels['topics']) - 1])
 
             else:
                 if self.alpha_labels == 0 or self.alter is True:
@@ -1052,7 +1050,7 @@ class BurstyRepoWorkload(object):
                         if labels_zipf < len(self.labels['topics']):
                             labels.append(self.labels['topics'][labels_zipf])
                         elif labels_zipf >= len(self.labels['topics']):
-                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])])
+                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'] - 1)])
                     self.alter = True
                     content = int(self.zipf.rv())
 
@@ -1394,7 +1392,7 @@ class TraceDrivenRepoWorkload(object):
             else:
                 if self.alpha_labels == 0 or self.alter is True:
                     content = int(random_from_pdf(self.rates_pdf))  # TODO: THIS is where the content identifier requests are generated!
-
+                    self.alter = False
                 # TODO: Might need to revise this, programming-wise, to account for no content association to selected
                 #  label\/\/\/\/\/\/\/\/
 
@@ -1528,7 +1526,7 @@ class BurstyTraceRepoWorkload(object):
     def __init__(self, topology, rates_file, contents_file, labels_file, content_locations, n_contents,
                  n_warmup, n_measured, max_on=0, max_off=0, disrupt_mode=None, disrupt_weights=None, n_services=10,
                  max_labels=1, msg_sizes=1000000, freshness_pers=0.2, shelf_lives=5, rate=1.0, label_ex=False,
-                 alpha_labels=0, beta=0, seed=0, **kwargs):
+                 alpha_labels=0, beta=0, seed=0, mu=0, sigma=0, **kwargs):
         """Constructor"""
 
         if alpha_labels < 0:
@@ -1726,6 +1724,7 @@ class BurstyTraceRepoWorkload(object):
             else:
                 if self.alpha_labels == 0 or self.alter is True:
                     content = int(random_from_pdf(self.rates_pdf))  # TODO: THIS is where the content identifier requests are generated!
+                    self.alter = False
 
                 # TODO: Might need to revise this, programming-wise, to account for no content association to selected
                 #  label\/\/\/\/\/\/\/\/
@@ -1947,9 +1946,7 @@ class BurstyRepoDataAndWorkload(object):
         self.n_stor_warmup = n_stor_warmup
         self.n_stor_measured = n_stor_measured
         self.data_gen_pdf = {}
-        if self.data_gen_dist_mode:
-            for node in self.data_gen_dist:
-                self.data_gen_pdf[node] = self.data_gen_dist[node]
+        if self.data_gen_dist_mode and self.data_gen_dist_mode != 'RAND':
 
             if data_gen_dist_mode == 'POISSON':
                 self.data_gen_dist = {}
@@ -1957,6 +1954,9 @@ class BurstyRepoDataAndWorkload(object):
                     for rec in self.receivers:
                         weight = np.exp(-0.5*np.power(rec-mu, 2)) / (sigma*math.sqrt(2*math.pi))
                         self.data_weights[rec] = weight
+            else:
+                for node in self.data_gen_dist:
+                    self.data_gen_pdf[node] = self.data_gen_dist[node]
 
         if beta != 0:
             degree = nx.degree(self.topology)
@@ -1971,6 +1971,9 @@ class BurstyRepoDataAndWorkload(object):
         t_event = 0.0
         flow_id = 0
 
+        stor_counter = 0
+        t_data = 0.0
+
         # TODO: Associate requests with labels and other, deadline/freshless period/shelf-life requirements,
         #       rather than just contents (could be either or both, depending on restrictions - maybe create
         #       more strategies in that case, if needed.
@@ -1983,7 +1986,8 @@ class BurstyRepoDataAndWorkload(object):
         # aFile = open('workload.txt', 'w')
         # aFile.write("# Time\tNodeID\tserviceID\n")
         eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
-        while req_counter < self.n_warmup + self.n_measured or len(self.model.eventQ) > 0:
+        while req_counter < self.n_warmup + self.n_measured or len(self.model.eventQ) > 0 and \
+                stor_counter < self.n_stor_warmup + self.n_stor_measured or len(self.model.eventQ) > 0:
             t_event += (random.expovariate(self.rate))
             eventObj = self.model.eventQ[0] if len(self.model.eventQ) > 0 else None
             while eventObj is not None and eventObj.time < t_event:
@@ -2024,12 +2028,9 @@ class BurstyRepoDataAndWorkload(object):
                     self.last_event[node] = t_event
 
 
-            elif self.disrupt_mode == 'WEIGHTED' or disrupt_mode == "POISSON":
+            elif self.disrupt_mode == 'WEIGHTED' or self.disrupt_mode == "POISSON":
 
-                if self.beta == 0:
-                    w_receiver = random.choice(self.receivers)
-                else:
-                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
                 d_node = w_receiver
                 self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
                 self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
@@ -2057,6 +2058,7 @@ class BurstyRepoDataAndWorkload(object):
             else:
                 if self.alpha_labels == 0 or self.alter is True:
                     content = int(self.zipf.rv())  # TODO: THIS is where the content identifier requests are generated!
+                    self.alter = False
 
                 # TODO: Might need to revise this, programming-wise, to account for no content association to selected
                 #  label\/\/\/\/\/\/\/\/
@@ -2067,7 +2069,7 @@ class BurstyRepoDataAndWorkload(object):
                         if labels_zipf < len(self.labels['topics']):
                             labels.append(self.labels['topics'][labels_zipf])
                         elif labels_zipf >= len(self.labels['topics']):
-                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])])
+                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics']) - 1])
                     self.alter = True
                     content = int(self.zipf.rv())
 
@@ -2138,6 +2140,163 @@ class BurstyRepoDataAndWorkload(object):
 
 
 
+            t_data += (random.expovariate(self.data_rate))
+            if stor_counter >= (self.n_stor_warmup + self.n_stor_measured):
+                # skip below if we already sent all the requests
+                continue
+
+            if self.data_gen_dist_mode:
+                if self.data_gen_dist_mode == "WEIGHTED_DATA_GEN" or self.data_gen_dist_mode == "POISSON":
+                    receiver = random_from_pdf(self.data_gen_pdf)
+            else:
+                receiver = random.choice(self.receivers)
+            node = receiver
+
+            if self.disrupt_mode == 'RAND':
+                count = 0
+                for n in self.receivers_down:
+                    if n is not None:
+                        count += 1
+                if num_rec_disrupt >= count:
+                    self.receivers_downtime[node] = random.uniform(0, self.max_off)
+                    self.receivers_uptime[node] = random.uniform(0, self.max_on)
+
+                    if self.last_data[node] is not None and self.receivers_down[node] is None:
+                        self.receivers_down[node] = self.last_data[node] + self.receivers_downtime[node]
+                    elif self.receivers_down[node] is not None:
+                        if t_data < self.receivers_down[node]:
+                            t_data = self.receivers_down[node]
+                        elif t_data > self.receivers_down[node] + self.receivers_uptime[node]:
+                            self.receivers_down[node] = None
+                    self.last_data[node] = t_data
+
+
+            elif self.disrupt_mode == 'WEIGHTED' or self.disrupt_mode == "POISSON":
+
+                if self.beta == 0:
+                    w_receiver = random.choice(self.receivers)
+                else:
+                    w_receiver = self.receivers[self.random_from_pdf(self.disrupt_weights)]
+                d_node = w_receiver
+                self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
+                self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
+
+                if self.last_data[d_node] is not None and self.receivers_down[d_node] is None:
+                    self.receivers_down[d_node] = self.last_data[d_node] + self.receivers_downtime[d_node]
+                elif self.receivers_down[d_node] and t_data < self.receivers_down[d_node]:
+                    t_data = self.receivers_down[d_node]
+                elif self.receivers_down[d_node] and t_data > self.receivers_down[d_node] + self.receivers_uptime[
+                    d_node]:
+                    self.receivers_down[d_node] = None
+                self.last_data[d_node] = t_data
+
+            labels = []
+            content = None
+
+            # TODO: INCLUDE stor_scope AND THEN PASS self.stor_scope (workload.stor_scope) TO THE CONTENT PLACEMENT
+            #  IMPLEMENTATION IN THE ORCHESTRATOR
+            #  Done, but the DATA_SCOPE must be used CAREFULLY, as MAX_REPLICATIONS for content placement
+            #  configuration, as well!
+
+            if self.label_ex is True:
+
+                # TODO: Might need to revise this, programming-wise, to account for no content association to selected
+                #  label\/\/\/\/\/\/\/\/
+                for i in range(0, self.max_labels):
+                    labels_zipf = int(self.labels_zipf.rv())
+                    if labels_zipf < len(self.labels['topics']):
+                        labels.append(self.labels['topics'][labels_zipf])
+                    elif labels_zipf >= len(self.labels['topics']):
+                        labels.append(self.labels['types'][labels_zipf - len(self.labels['topics']) - 1])
+
+            else:
+                if self.alpha_labels == 0 or self.alter is True:
+                    content = int(self.zipf.rv())  # TODO: THIS is where the content identifier requests are generated!
+
+                # TODO: Might need to revise this, programming-wise, to account for no content association to selected
+                #  label\/\/\/\/\/\/\/\/
+
+                elif self.alter is False:
+                    for i in range(0, self.max_labels):
+                        labels_zipf = int(self.labels_zipf.rv())
+                        if labels_zipf < len(self.labels['topics']):
+                            labels.append(self.labels['topics'][labels_zipf])
+                        elif labels_zipf >= len(self.labels['topics']):
+                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics']) - 1])
+                    self.alter = True
+                    content = int(self.zipf.rv())
+
+            log = (stor_counter >= self.n_stor_warmup)
+            flow_id += 1
+            # TODO: Since services are associated with deadlines based on labels as well now, this should be
+            #  accounted for in service placement from now on, as well, the lowest deadline being prioritised
+            #  when instantiated (unless a certain  content/service strategy is implemented, maybe).
+
+            # TODO: CHANGE OF PLANS: This would overcomplicate things - just associating labels to "services"!!!!!!!!!!!
+
+            # if content is None:
+            #     index = int(self.zipf.rv())
+            #     datum = self.data[index]
+            #     datum['content'] = ''
+            #     datum.update(service_type="non-proc")
+            #     datum.update(labels=[])
+            #
+            #     deadline = self.model.services[index].deadline + t_data
+            #     self.model.node_labels[node] = dict()
+            #     self.model.node_labels[node].update(request_labels=labels)
+            #     for label in labels:
+            #         self.model.request_labels_nodes[label] = []
+            #         self.model.request_labels_nodes[label].append(node)
+            #     datum.update(labels=labels)
+            #     event = {'receiver': receiver, 'content': datum, 'labels': labels, 'log': log, 'node': node,
+            #              'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': STORE}
+            # el
+            if labels:
+
+                index = int(self.zipf.rv())
+                datum = self.data[index]
+                datum.update(service_type="non-proc")
+                datum.update(labels=labels)
+                datum.update(shelf_life=self.stor_shelf)
+                datum.update(max_replications=self.stor_scope)
+
+                print "Message: " + str(datum['content']) + " generated at node: " + str(node)
+
+                self.model.node_labels[node] = dict()
+                for c in self.data:
+                    if all(label in labels for label in self.data[c]['labels']):
+                        index = self.data[c]['content']
+                deadline = self.model.services[index].deadline + t_data
+                self.model.node_labels[node] = dict()
+                if node not in self.model.request_labels:
+                    self.model.request_labels[node] = Counter()
+                self.model.request_labels[node].update(labels)
+                for label in labels:
+                    if label not in self.model.request_labels_nodes:
+                        self.model.request_labels_nodes[label] = Counter()
+                    self.model.request_labels_nodes[label].update([node])
+                event = {'receiver': receiver, 'content': datum, 'labels': labels, 'log': log, 'node': node,
+                         'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': STORE}
+            else:
+                index = int(self.zipf.rv())
+                datum = self.data[index]
+                datum.update(service_type="non-proc")
+                deadline = self.model.services[content].deadline + t_data
+                event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
+                         'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': STORE}
+
+            # NOTE: STOPPED HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            neighbors = self.topology.neighbors(receiver)
+            # s = str(t_data) + "\t" + str(neighbors[0]) + "\t" + str(content) + "\n"
+            # aFile.write(s)
+            yield (t_data, event)
+            stor_counter += 1
+
+
+
+
+
         # # Continuous data (for storage) generation settings
         # self.data_gen_dist_mode
         # self.data_gen_dist
@@ -2195,6 +2354,7 @@ class BurstyRepoDataAndWorkload(object):
                 if num_rec_disrupt >= count:
                     self.receivers_downtime[node] = random.uniform(0, self.max_off)
                     self.receivers_uptime[node] = random.uniform(0, self.max_on)
+
                     if self.last_data[node] is not None and self.receivers_down[node] is None:
                         self.receivers_down[node] = self.last_data[node] + self.receivers_downtime[node]
                     elif self.receivers_down[node] is not None:
@@ -2205,7 +2365,7 @@ class BurstyRepoDataAndWorkload(object):
                     self.last_data[node] = t_data
 
 
-            elif self.disrupt_mode == 'WEIGHTED':
+            elif self.disrupt_mode == 'WEIGHTED' or self.disrupt_mode == "POISSON":
 
                 if self.beta == 0:
                     w_receiver = random.choice(self.receivers)
@@ -2214,13 +2374,14 @@ class BurstyRepoDataAndWorkload(object):
                 d_node = w_receiver
                 self.receivers_downtime[d_node] = random.uniform(0, self.max_off)
                 self.receivers_uptime[d_node] = random.uniform(0, self.max_on)
-                if self.last_event[d_node] is not None and self.receivers_down[d_node] is None:
-                    self.receivers_down[d_node] = self.last_event[d_node] + self.receivers_downtime[d_node]
-                elif self.receivers_down[d_node] and t_event < self.receivers_down[d_node]:
-                    t_event = self.receivers_down[d_node]
-                elif self.receivers_down[d_node] and t_event > self.receivers_down[d_node] + self.receivers_uptime[d_node]:
+
+                if self.last_data[d_node] is not None and self.receivers_down[d_node] is None:
+                    self.receivers_down[d_node] = self.last_data[d_node] + self.receivers_downtime[d_node]
+                elif self.receivers_down[d_node] and t_data < self.receivers_down[d_node]:
+                    t_data = self.receivers_down[d_node]
+                elif self.receivers_down[d_node] and t_data > self.receivers_down[d_node] + self.receivers_uptime[d_node]:
                     self.receivers_down[d_node] = None
-                self.last_event[d_node] = t_event
+                self.last_data[d_node] = t_data
 
 
             labels = []
@@ -2255,7 +2416,7 @@ class BurstyRepoDataAndWorkload(object):
                         if labels_zipf < len(self.labels['topics']):
                             labels.append(self.labels['topics'][labels_zipf])
                         elif labels_zipf >= len(self.labels['topics']):
-                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])])
+                            labels.append(self.labels['types'][labels_zipf - len(self.labels['topics'])] - 1)
                     self.alter = True
                     content = int(self.zipf.rv())
 

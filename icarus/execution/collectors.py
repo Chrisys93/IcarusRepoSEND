@@ -963,14 +963,6 @@ class RepoStatsLatencyCollector(DataCollector):
 
         res = open(self.logs_path + res_file, 'a')
         overhead = open(self.logs_path + overhead_file, 'a')
-        repo_usage = open(self.logs_path + repo_usage_file, 'a')
-        repo_proc_vs_stor = open(self.logs_path + repo_proc_vs_stor_file, 'a')
-        repo_overtime = open(self.logs_path + repo_overtime_file, 'a')
-        repo_incoming_BW = open(self.logs_path + repo_incoming_file, 'a')
-        r_replicas = open(self.logs_path + r_replicas_file, 'a')
-        s_replicas = open(self.logs_path + s_replicas_file, 'a')
-        r_labels_dist = open(self.logs_path + r_labels_dist_file, 'a')
-        s_labels_dist = open(self.logs_path + s_labels_dist_file, 'a')
         if self.cdf:
             self.results['CDF'] = cdf(self.latency_data)
         results = Tree({'SATISFACTION': 1.0 * self.n_satisfied / self.sess_count})
@@ -1010,6 +1002,14 @@ class RepoStatsLatencyCollector(DataCollector):
         overhead.write("\n")
 
         if self.view.model.strategy != 'HYBRID':
+            repo_usage = open(self.logs_path + repo_usage_file, 'a')
+            repo_proc_vs_stor = open(self.logs_path + repo_proc_vs_stor_file, 'a')
+            repo_overtime = open(self.logs_path + repo_overtime_file, 'a')
+            repo_incoming_BW = open(self.logs_path + repo_incoming_file, 'a')
+            r_replicas = open(self.logs_path + r_replicas_file, 'a')
+            s_replicas = open(self.logs_path + s_replicas_file, 'a')
+            r_labels_dist = open(self.logs_path + r_labels_dist_file, 'a')
+            s_labels_dist = open(self.logs_path + s_labels_dist_file, 'a')
             for node in self.view.model.storageSize:
                 per_node_r_replicas_requested[node] = self.view.replications_requests(node)
                 r_replicas.write(str(per_node_r_replicas_requested[node]) + ", ")

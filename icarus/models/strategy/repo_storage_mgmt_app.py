@@ -1171,6 +1171,7 @@ class HServRepoStorApp(Strategy):
 
         if self.view.hasStorageCapability(node):
 
+            self.view.storage_nodes()[node].addReceivedMessage(content)
             self.updateCloudBW(node, period)
             self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
             self.updateDeplBW(node, period)
@@ -1194,7 +1195,7 @@ class HServRepoStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and 'shelf_life' in content and 'max_replications' in content:
+        if type(content) is dict and 'shelf_life' in content and 'replications' in content and 'max_replications' in content:
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
@@ -2833,6 +2834,7 @@ class HServProStorApp(Strategy):
 
         if self.view.hasStorageCapability(node):
 
+            self.view.storage_nodes()[node].addReceivedMessage(content)
             self.updateCloudBW(node, period)
             self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
             self.updateDeplBW(node, period)
@@ -2856,7 +2858,7 @@ class HServProStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and 'shelf_life' in content and 'max_replications' in content:
+        if type(content) is dict and 'shelf_life' in content and 'replications' in content and 'max_replications' in content:
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
@@ -4528,6 +4530,7 @@ class HServReStorApp(Strategy):
 
         if self.view.hasStorageCapability(node):
 
+            self.view.storage_nodes()[node].addReceivedMessage(content)
             self.updateCloudBW(node, period)
             self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
             self.updateDeplBW(node, period)
@@ -4551,7 +4554,7 @@ class HServReStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and 'shelf_life' in content and 'max_replications' in content:
+        if type(content) is dict and 'shelf_life' in content and 'replications' in content and 'max_replications' in content:
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
@@ -6227,6 +6230,7 @@ class HServSpecStorApp(Strategy):
 
         if self.view.hasStorageCapability(node):
 
+            self.view.storage_nodes()[node].addReceivedMessage(content)
             self.updateCloudBW(node, period)
             self.deplCloud(node, receiver, content, labels, log, flow_id, deadline, rtt_delay, period)
             self.updateDeplBW(node, period)
@@ -6250,7 +6254,7 @@ class HServSpecStorApp(Strategy):
         # if node == 12:
         #    self.debug = True
         service = None
-        if type(content) is dict and 'shelf_life' in content and 'max_replications' in content:
+        if type(content) is dict and 'shelf_life' in content and 'replications' in content and 'max_replications' in content:
             if content["shelf_life"] and content['replications'] <= content['max_replications']:
                 source, in_cache = self.view.closest_source(node, content)
                 path = self.view.shortest_path(node, source)
