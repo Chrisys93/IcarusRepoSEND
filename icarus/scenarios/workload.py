@@ -2260,7 +2260,7 @@ class BurstyRepoDataAndWorkload(object):
                 datum.update(shelf_life=self.stor_shelf)
                 datum.update(max_replications=self.stor_scope)
 
-                print "Message: " + str(datum['content']) + " generated at node: " + str(node)
+                # print "Message: " + str(datum['content']) + " generated at node: " + str(node)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:

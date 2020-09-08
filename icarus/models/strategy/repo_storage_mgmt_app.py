@@ -62,9 +62,9 @@ class GenRepoStorApp(Strategy):
 
         self.lastDepl = 0
         
-        self.last_period = 0
-        
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
 
         self.cloudEmptyLoop = True
 
@@ -166,8 +166,8 @@ class GenRepoStorApp(Strategy):
         else:
             feedback = False
 
-        if time.time() - self.last_period >= 1:
-            self.last_period = time.time()
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
             period = True
         else:
             period = False
@@ -871,7 +871,9 @@ class HServRepoStorApp(Strategy):
         self.cand_deadline_metric = {x: {} for x in range(0, self.num_nodes)}
         self.replacements_so_far = 0
         self.serviceNodeUtil = [None]*len(self.receivers)
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
         for node in self.compSpots.keys():
             cs = self.compSpots[node]
             if cs.is_cloud:
@@ -894,7 +896,9 @@ class HServRepoStorApp(Strategy):
 
         self.lastDepl = 0
 
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
 
         self.cloudEmptyLoop = True
 
@@ -1163,8 +1167,8 @@ class HServRepoStorApp(Strategy):
         else:
             feedback = False
 
-        if time.time() - self.last_period >= 1:
-            self.last_period = time.time()
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
             period = True
         else:
             period = False
@@ -2553,7 +2557,9 @@ class HServProStorApp(Strategy):
 
         self.lastDepl = 0
 
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
 
         self.cloudEmptyLoop = True
 
@@ -2826,8 +2832,8 @@ class HServProStorApp(Strategy):
         else:
             feedback = False
 
-        if time.time() - self.last_period >= 1:
-            self.last_period = time.time()
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
             period = True
         else:
             period = False
@@ -4208,7 +4214,9 @@ class HServReStorApp(Strategy):
 
         self.lastDepl = 0
 
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
 
         self.cloudEmptyLoop = True
 
@@ -4522,8 +4530,8 @@ class HServReStorApp(Strategy):
         else:
             feedback = False
 
-        if time.time() - self.last_period >= 1:
-            self.last_period = time.time()
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
             period = True
         else:
             period = False
@@ -5894,7 +5902,9 @@ class HServSpecStorApp(Strategy):
 
         self.lastDepl = 0
 
-        self.last_period = 0
+        self.last_period = dict()
+        for node in self.view.model.topology.nodes:
+            self.last_period[node] = 0
 
         self.cloudEmptyLoop = True
 
@@ -6222,8 +6232,8 @@ class HServSpecStorApp(Strategy):
         else:
             feedback = False
 
-        if time.time() - self.last_period >= 1:
-            self.last_period = time.time()
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
             period = True
         else:
             period = False
