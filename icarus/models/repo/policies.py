@@ -398,7 +398,7 @@ class RepoStorage(object):
         for i in range(0, len(self.Messages)-1):
             if (self.Messages[i]["content"] == MessageId):
                 self.Size -= self.Messages[i]['msg_size']
-                self.Messages.remove(i)
+                del self.Messages[i]
                 return True
         return False
 
@@ -437,10 +437,13 @@ class RepoStorage(object):
             if m["service_type"].lower() == "proc" and self.deleteProcMessage(MessageId):
                 return True
 
-            elif m["service_type"].lower() == "nonproc" and self.deleteMessage(MessageId):
+            elif m["service_type"].lower() == "non-proc" and self.deleteMessage(MessageId):
                 return True
 
             elif m["service_type"].lower() == "unprocessed" and self.deleteMessage(MessageId):
+                return True
+
+            elif m["service_type"].lower() == "processed" and self.deleteMessage(MessageId):
                 return True
 
             if not self.model.repoStorage[self.node]:

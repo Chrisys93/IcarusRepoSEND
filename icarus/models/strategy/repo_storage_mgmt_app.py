@@ -57,7 +57,7 @@ class GenRepoStorApp(Strategy):
     """
 
     def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1,
-                 depl_rate=10000000, cloud_lim=20000000, max_stor=9900000000, min_stor=10000000,**kwargs):
+                 depl_rate=10000000, cloud_lim=20000000, max_stor=0.99, min_stor=10000000,**kwargs):
         super(GenRepoStorApp, self).__init__(view, controller)
 
         self.lastDepl = 0
@@ -107,6 +107,28 @@ class GenRepoStorApp(Strategy):
         return ProcApplication(self)
 
     def handle(self, curTime, receiver, msg, node, flow_id, deadline, rtt_delay):
+
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
+            period = True
+        else:
+            period = False
+
+        log = False
+
+        if self.view.hasStorageCapability(node):
+
+            self.view.storage_nodes()[node].addReceivedMessage(msg)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+
         if (self.view.hasStorageCapability(node) and node.hasProcessingCapability):
             self.view.model.repoStorage[node].addToStoredMessages(msg)
 
@@ -854,7 +876,7 @@ class HServRepoStorApp(Strategy):
     """
 
     def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1,
-                 depl_rate=10000000, cloud_lim=20000000, max_stor=9900000000, min_stor=10000000,**kwargs):
+                 depl_rate=10000000, cloud_lim=20000000, max_stor=0.99, min_stor=10000000,**kwargs):
         super(HServRepoStorApp, self).__init__(view, controller)
 
         self.view.model.strategy = 'HYBRIDS_REPO_APP'
@@ -1083,6 +1105,26 @@ class HServRepoStorApp(Strategy):
 
     # @profile
     def handle(self, curTime, receiver, msg, node, log, feedback, flow_id, rtt_delay, deadline):
+
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
+            period = True
+        else:
+            period = False
+
+        if self.view.hasStorageCapability(node):
+
+            self.view.storage_nodes()[node].addReceivedMessage(msg)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+
         # TODO: NEED TO MAKE A COLLECTOR FUNCTION TO UPDATE A HOP COUNTER FOR DATA REPLICATION!!!!!!!!!!!!!!!!!!!!!!!!!!
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
@@ -2518,7 +2560,7 @@ class HServProStorApp(Strategy):
     """
 
     def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1,
-                 depl_rate=10000000, cloud_lim=20000000, max_stor=9900000000, min_stor=10000000,**kwargs):
+                 depl_rate=10000000, cloud_lim=20000000, max_stor=0.99, min_stor=10000000,**kwargs):
         super(HServProStorApp, self).__init__(view, controller)
 
         self.view.model.strategy = 'HYBRIDS_PRO_REPO_APP'
@@ -2748,7 +2790,30 @@ class HServProStorApp(Strategy):
 
     # TODO: ADAPT FOR POPULARITY PLACEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #@profile
-    def handle(self, curTime, receiver, msg, node, log, feedback, flow_id, rtt_delay, deadline):
+    def handle(self, curTime, receiver, msg, node, flow_id, deadline, rtt_delay):
+
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
+            period = True
+        else:
+            period = False
+
+        log = False
+
+
+        if self.view.hasStorageCapability(node):
+
+            self.view.storage_nodes()[node].addReceivedMessage(msg)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
             self.controller.add_replication_hops(msg)
@@ -4175,7 +4240,7 @@ class HServReStorApp(Strategy):
     """
 
     def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1,
-                 depl_rate=10000000, cloud_lim=20000000, max_stor=9900000000, min_stor=10000000,**kwargs):
+                 depl_rate=10000000, cloud_lim=20000000, max_stor=0.99, min_stor=10000000,**kwargs):
         super(HServReStorApp, self).__init__(view, controller)
 
         self.view.model.strategy = 'HYBRIDS_RE_REPO_APP'
@@ -4411,6 +4476,28 @@ class HServReStorApp(Strategy):
 
         :return:
         """
+
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
+            period = True
+        else:
+            period = False
+
+        log = False
+
+        if self.view.hasStorageCapability(node):
+
+            self.view.storage_nodes()[node].addReceivedMessage(msg)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
             self.controller.add_replication_hops(msg)
@@ -5863,7 +5950,7 @@ class HServSpecStorApp(Strategy):
     """
 
     def __init__(self, view, controller, replacement_interval=10, debug=False, n_replacements=1,
-                 depl_rate=10000000, cloud_lim=20000000, max_stor=9900000000, min_stor=10000000,**kwargs):
+                 depl_rate=10000000, cloud_lim=20000000, max_stor=0.99, min_stor=10000000,**kwargs):
         super(HServSpecStorApp, self).__init__(view, controller)
 
         self.view.model.strategy = 'HYBRIDS_SPEC_REPO_APP'
@@ -6112,6 +6199,28 @@ class HServSpecStorApp(Strategy):
 
         :return:
         """
+
+        if time.time() - self.last_period[node] >= 1:
+            self.last_period[node] = time.time()
+            period = True
+        else:
+            period = False
+
+        log = False
+
+        if self.view.hasStorageCapability(node):
+
+            self.view.storage_nodes()[node].addReceivedMessage(msg)
+            self.updateCloudBW(node, period)
+            self.deplCloud(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+            self.updateDeplBW(node, period)
+            self.deplStorage(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+        elif not self.view.hasStorageCapability(node) and self.view.has_computationalSpot(node):
+            self.updateUpBW(node, period)
+            self.deplUp(node, receiver, msg, msg['labels'], log, flow_id, deadline, rtt_delay, period)
+
+
         msg['receiveTime'] = time.time()
         if self.view.hasStorageCapability(node) and 'satisfied' not in msg or ('Shelf' not in msg or msg['Shelf']):
             self.controller.add_replication_hops(msg)

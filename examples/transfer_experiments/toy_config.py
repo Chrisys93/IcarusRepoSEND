@@ -273,6 +273,7 @@ for contents in N_CONTENTS:
             default['workload']['n_services'] = contents
             default['workload']['rate'] = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]
             default['computation_placement']['storage_budget'] = storage
+            default['strategy']['max_stor'] = 0.95
             experiment = copy.deepcopy(default)
             experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
             experiment['strategy']['name'] = strategy

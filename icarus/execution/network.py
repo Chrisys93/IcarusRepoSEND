@@ -1732,6 +1732,8 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
+        if type(content) is dict and content['service_type'].lower() == 'proc':
+            content['service_type'] = 'processed'
         self.model.repoStorage[s].addToStoredMessages(content)
         if s not in self.model.content_source[content['content']]:
             self.model.content_source[content['content']].append(s)
@@ -1743,6 +1745,7 @@ class NetworkController(object):
         else:
             self.model.contents[s] = dict()
             self.model.contents[s][content['content']] = content
+
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.
