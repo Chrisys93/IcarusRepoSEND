@@ -509,10 +509,10 @@ class Scheduler(object):
                 else:
                     if debug:
                         print("No idle VMs for service: " + str(aTask.service))
-                    if (len(self.idleVMs[aTask.service]) + len(self.busyVMs[aTask.service])) <= 0:
-                        print ("This should not happen in scheduler: no instances, task:")
-                        aTask.print_task()
-#                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
+#                     if (len(self.idleVMs[aTask.service]) + len(self.busyVMs[aTask.service])) <= 0:
+#                         print ("This should not happen in scheduler: no instances, task:")
+#                         aTask.print_task()
+# #                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
                     self.cs.insufficientVMEvents[aTask.service] += 1
         return None
 

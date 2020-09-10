@@ -416,7 +416,7 @@ class RepoStorage(object):
         for i in (0, len(self.processMessages)-1):
             if (self.processMessages[i]['content'] == MessageId):
                 self.processSize -= self.processMessages[i]['msg_size']
-                self.processMessages.remove(self.processMessages[i])
+                del self.processMessages[i]
                 return True
 
         return False
@@ -820,9 +820,9 @@ class RepoStorage(object):
                     if not (m["service_type"]).lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
                         oldest = m
 
-                elif oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m['Fresh'] is None:
-                    if not m["service_type"].lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
-                        oldest = m
+            elif oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m['Fresh'] is None:
+                if not m["service_type"].lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
+                    oldest = m
 
         return oldest
 
@@ -837,11 +837,11 @@ class RepoStorage(object):
                             m['shelf_life']) <= curTime - m['receiveTime']):
                         oldest = m
 
-                elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m.getProperty(
-                        "shelfLife") is not None):
-                    if ((m["service_type"]).lower() == "proc" and (
-                            m['shelf_life']) <= curTime - m['receiveTime']):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m.getProperty(
+                    "shelfLife") is not None):
+                if ((m["service_type"]).lower() == "proc" and (
+                        m['shelf_life']) <= curTime - m['receiveTime']):
+                    oldest = m
 
         return oldest
 
@@ -853,9 +853,9 @@ class RepoStorage(object):
                 if (m["service_type"] is not None):
                     if ((m["service_type"]).lower() == "unprocessed"):
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None):
-                    if ((m["service_type"]).lower() == "unprocessed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None):
+                if ((m["service_type"]).lower() == "unprocessed"):
+                    oldest = m
 
         return oldest
 
@@ -867,10 +867,10 @@ class RepoStorage(object):
                 if (m["service_type"] is not None and m['Fresh'] is None):
                     if ((m["service_type"]).lower() == "proc"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m["service_type"] is not None and m[
-                    'Fresh'] is None):
-                    if ((m["service_type"]).lower() == "proc"):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and m["service_type"] is not None and m[
+                'Fresh'] is None):
+                if ((m["service_type"]).lower() == "proc"):
+                    newest = m
 
         return newest
 
@@ -895,10 +895,10 @@ class RepoStorage(object):
                 if (m['Fresh'] is not None and m["service_type"] is not None):
                     if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
+                "service_type"] is not None):
+                if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    oldest = m
 
         return oldest
 
@@ -911,10 +911,10 @@ class RepoStorage(object):
                 if (m['Fresh'] is not None and m["service_type"] is not None):
                     if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
+                "service_type"] is not None):
+                if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    newest = m
 
         return newest
 
@@ -927,10 +927,10 @@ class RepoStorage(object):
                 if (m['Fresh'] is not None and m["service_type"] is not None):
                     if not (m['Fresh']) and (m["service_type"]).lower() == "processed":
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
+                "service_type"] is not None):
+                if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    oldest = m
 
         return oldest
 
@@ -943,10 +943,10 @@ class RepoStorage(object):
                 if (m['Fresh'] is not None and m["service_type"] is not None):
                     if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if (not (m['Fresh'] and (m["service_type"]).lower() == "processed")):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
+                "service_type"] is not None):
+                if (not (m['Fresh'] and (m["service_type"]).lower() == "processed")):
+                    newest = m
 
         return newest
 
@@ -1040,9 +1040,9 @@ class RepoStorage(object):
                     if ((m['shelf_life']) <= curTime - m['receiveTime']):
                         oldest = m
 
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['shelf_life'] is not None):
-                    if ((m['shelf_life']) <= curTime - m['receiveTime']):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and m['shelf_life'] is not None):
+                if ((m['shelf_life']) <= curTime - m['receiveTime']):
+                    oldest = m
 
         return oldest
 

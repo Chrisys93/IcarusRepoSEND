@@ -133,7 +133,7 @@ class GenRepoStorApp(Strategy):
             self.view.model.repoStorage[node].addToStoredMessages(msg)
 
         elif not self.view.hasStorageCapability(node) and node.hasProcessingCapability and (
-        msg['type']).equalsIgnoreCase("nonproc"):
+        msg['service_type'].lower() == "nonproc"):
             curTime = time.time()
             self.view.model.repoStorage[node].deleteAnyMessage(msg['content'])
             storTime = curTime - msg['receiveTime']
@@ -239,7 +239,9 @@ class GenRepoStorApp(Strategy):
             *Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
             """
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
                 """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
@@ -261,7 +263,7 @@ class GenRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -280,7 +282,7 @@ class GenRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -318,11 +320,13 @@ class GenRepoStorApp(Strategy):
               self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
+                if (self.view.model.repoStorage[node].getOldestStaleMessage is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -345,7 +349,7 @@ class GenRepoStorApp(Strategy):
                     * at a certain po.
                     """
 
-                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -407,7 +411,9 @@ class GenRepoStorApp(Strategy):
 
             self.cloudEmptyLoop = True
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """
 
@@ -434,7 +440,7 @@ class GenRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -451,7 +457,7 @@ class GenRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -487,8 +493,10 @@ class GenRepoStorApp(Strategy):
             # System.out.prln("Depleted  messages : "+ sdepleted)
 
             self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
+        for i in range(0, 50):
+            if not (self.cloudBW > self.cloud_lim and
+                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop):
+                break
             if (not self.view.model.repoStorage[node].isProcessedEmpty):
                 self.processedDepletion(node)
 
@@ -506,8 +514,10 @@ class GenRepoStorApp(Strategy):
                 self.view.model.repoStorage[node].getMessagesSize() >
                 self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+            for i in range(0, 50):
+                if not (self.deplBW < self.depl_rate and self.deplEmptyLoop):
+                    break
+                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -527,7 +537,7 @@ class GenRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestStaleMessage is not None):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -547,7 +557,7 @@ class GenRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage is not None):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -567,15 +577,15 @@ class GenRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getOldestMessage()
+                elif (self.view.model.repoStorage[node].getOldestMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getOldestMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     ctemp['overtime'] = False
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
@@ -594,8 +604,8 @@ class GenRepoStorApp(Strategy):
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
-                elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
+                elif (self.view.model.repoStorage[node].getNewestProcessMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
@@ -621,7 +631,7 @@ class GenRepoStorApp(Strategy):
                     elif (storTime > ctemp['shelfLife'] + 1):
                         ctemp['overtime'] = True
 
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
@@ -664,9 +674,9 @@ class GenRepoStorApp(Strategy):
 
     def processedDepletion(self, node):
         curTime = time.time()
-        if (self.view.model.repoStorage[node].getOldestFreshMessage() is not None):
-            if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
-                temp = self.view.model.repoStorage[node].getOldestFreshMessage()
+        if (self.view.model.repoStorage[node].getOldestFreshMessage is not None):
+            if (self.view.model.repoStorage[node].getOldestFreshMessage.getProperty("procTime") is None):
+                temp = self.view.model.repoStorage[node].getOldestFreshMessage
                 report = False
                 self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
@@ -679,9 +689,9 @@ class GenRepoStorApp(Strategy):
 
 
 
-            elif (self.view.model.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
-                    temp = self.view.model.repoStorage[node].getOldestShelfMessage()
+            elif (self.view.model.repoStorage[node].getOldestShelfMessage is not None):
+                if (self.view.model.repoStorage[node].getOldestShelfMessage.getProperty("procTime") is None):
+                    temp = self.view.model.repoStorage[node].getOldestShelfMessage
                     report = False
                     self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
@@ -703,11 +713,13 @@ class GenRepoStorApp(Strategy):
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
-        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
+        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage
         self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -718,6 +730,8 @@ class GenRepoStorApp(Strategy):
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -729,7 +743,7 @@ class GenRepoStorApp(Strategy):
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
+        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
@@ -760,7 +774,7 @@ class GenRepoStorApp(Strategy):
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
+        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
         return temp
@@ -1302,9 +1316,9 @@ class HServRepoStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1324,9 +1338,9 @@ class HServRepoStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1384,9 +1398,9 @@ class HServRepoStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1406,9 +1420,9 @@ class HServRepoStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -1579,9 +1593,9 @@ class HServRepoStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1601,9 +1615,9 @@ class HServRepoStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1723,9 +1737,9 @@ class HServRepoStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1746,9 +1760,9 @@ class HServRepoStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -1923,7 +1937,9 @@ class HServRepoStorApp(Strategy):
             *Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
             """
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
                 """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
@@ -1946,7 +1962,7 @@ class HServRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -1964,7 +1980,7 @@ class HServRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2003,12 +2019,13 @@ class HServRepoStorApp(Strategy):
               self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
-                        self.cloudBW < self.cloud_lim):
+                if self.view.storage_nodes()[node].getOldestStaleMessage and self.cloudBW < self.cloud_lim:
                     msg = self.oldestSatisfiedDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2031,7 +2048,7 @@ class HServRepoStorApp(Strategy):
                     * at a certain po.
                     """
 
-                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2095,7 +2112,9 @@ class HServRepoStorApp(Strategy):
 
             self.cloudEmptyLoop = True
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """
 
@@ -2123,7 +2142,7 @@ class HServRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None:
                     msg = self.oldestUnProcDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2141,7 +2160,7 @@ class HServRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage is not None:
                     msg = self.oldestSatisfiedDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2178,8 +2197,10 @@ class HServRepoStorApp(Strategy):
             # System.out.prln("Depleted  messages : "+ sdepleted)
 
             self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
+        for i in range(0, 50):
+            if not (self.cloudBW > self.cloud_lim and
+                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop):
+                break
             if (not self.view.model.repoStorage[node].isProcessedEmpty):
                 self.processedDepletion(node)
 
@@ -2197,8 +2218,10 @@ class HServRepoStorApp(Strategy):
                 self.view.model.repoStorage[node].getMessagesSize() >
                 self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+            for i in range(0, 50):
+                if not (self.deplBW < self.depl_rate and self.deplEmptyLoop):
+                    break
+                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2219,7 +2242,7 @@ class HServRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestStaleMessage is not None):
                     msg = self.oldestSatisfiedDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2240,7 +2263,7 @@ class HServRepoStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage is not None):
                     msg = self.oldestInvalidProcDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -2260,15 +2283,15 @@ class HServRepoStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getOldestMessage()
+                elif (self.view.model.repoStorage[node].getOldestMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getOldestMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     ctemp['overtime'] = False
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ctemp['service_type'].lower() == "unprocessed":
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
@@ -2285,8 +2308,8 @@ class HServRepoStorApp(Strategy):
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
-                elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
+                elif (self.view.model.repoStorage[node].getNewestProcessMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
@@ -2309,7 +2332,7 @@ class HServRepoStorApp(Strategy):
                     elif (storTime > ctemp['shelfLife'] + 1):
                         ctemp['overtime'] = True
 
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
@@ -2346,9 +2369,9 @@ class HServRepoStorApp(Strategy):
 
     def processedDepletion(self, node):
         curTime = time.time()
-        if (self.view.model.repoStorage[node].getOldestFreshMessage() is not None):
-            if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
-                temp = self.view.model.repoStorage[node].getOldestFreshMessage()
+        if (self.view.model.repoStorage[node].getOldestFreshMessage is not None):
+            if (self.view.model.repoStorage[node].getOldestFreshMessage.getProperty("procTime") is None):
+                temp = self.view.model.repoStorage[node].getOldestFreshMessage
                 report = False
                 self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
@@ -2362,9 +2385,9 @@ class HServRepoStorApp(Strategy):
 
 
 
-            elif (self.view.model.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
-                    temp = self.view.model.repoStorage[node].getOldestShelfMessage()
+            elif (self.view.model.repoStorage[node].getOldestShelfMessage is not None):
+                if (self.view.model.repoStorage[node].getOldestShelfMessage.getProperty("procTime") is None):
+                    temp = self.view.model.repoStorage[node].getOldestShelfMessage
                     report = False
                     self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
@@ -2386,11 +2409,13 @@ class HServRepoStorApp(Strategy):
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
-        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
+        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage
         self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -2401,6 +2426,8 @@ class HServRepoStorApp(Strategy):
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -2413,7 +2440,7 @@ class HServRepoStorApp(Strategy):
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
+        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
@@ -2444,7 +2471,7 @@ class HServRepoStorApp(Strategy):
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
+        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
         return temp
@@ -2990,9 +3017,9 @@ class HServProStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -3012,9 +3039,9 @@ class HServProStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -3070,9 +3097,9 @@ class HServProStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -3092,9 +3119,9 @@ class HServProStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -3260,9 +3287,9 @@ class HServProStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -3283,9 +3310,9 @@ class HServProStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -3404,9 +3431,9 @@ class HServProStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -3427,9 +3454,9 @@ class HServProStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -3607,7 +3634,9 @@ class HServProStorApp(Strategy):
             *Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
             """
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
                 """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
@@ -3631,7 +3660,7 @@ class HServProStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
 
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -3650,7 +3679,7 @@ class HServProStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3688,11 +3717,13 @@ class HServProStorApp(Strategy):
                 self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
+                if (self.view.model.repoStorage[node].getOldestStaleMessage is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -3715,7 +3746,7 @@ class HServProStorApp(Strategy):
                     * at a certain po.
                     """
 
-                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3777,7 +3808,9 @@ class HServProStorApp(Strategy):
 
             self.cloudEmptyLoop = True
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """
 
@@ -3804,7 +3837,7 @@ class HServProStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3821,7 +3854,7 @@ class HServProStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3857,8 +3890,10 @@ class HServProStorApp(Strategy):
             # System.out.prln("Depleted  messages : "+ sdepleted)
 
             self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
+        for i in range(0, 50):
+            if not (self.cloudBW > self.cloud_lim and
+                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop):
+                break
             if (not self.view.model.repoStorage[node].isProcessedEmpty):
                 self.processedDepletion(node)
 
@@ -3875,8 +3910,10 @@ class HServProStorApp(Strategy):
                 self.view.model.repoStorage[node].getMessagesSize() >
                 self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+            for i in range(0, 50):
+                if not (self.deplBW < self.depl_rate and self.deplEmptyLoop):
+                    break
+                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3896,7 +3933,7 @@ class HServProStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestStaleMessage is not None):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3916,7 +3953,7 @@ class HServProStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage is not None):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -3935,15 +3972,15 @@ class HServProStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getOldestMessage()
+                elif (self.view.model.repoStorage[node].getOldestMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getOldestMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     ctemp['overtime'] = False
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
@@ -3962,8 +3999,8 @@ class HServProStorApp(Strategy):
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
-                elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
+                elif (self.view.model.repoStorage[node].getNewestProcessMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
@@ -3988,7 +4025,7 @@ class HServProStorApp(Strategy):
                     elif (storTime > ctemp['shelfLife'] + 1):
                         ctemp['overtime'] = True
 
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
@@ -4025,9 +4062,9 @@ class HServProStorApp(Strategy):
 
     def processedDepletion(self, node):
         curTime = time.time()
-        if (self.view.model.repoStorage[node].getOldestFreshMessage() is not None):
-            if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
-                temp = self.view.model.repoStorage[node].getOldestFreshMessage()
+        if (self.view.model.repoStorage[node].getOldestFreshMessage is not None):
+            if (self.view.model.repoStorage[node].getOldestFreshMessage.getProperty("procTime") is None):
+                temp = self.view.model.repoStorage[node].getOldestFreshMessage
                 report = False
                 self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
@@ -4041,9 +4078,9 @@ class HServProStorApp(Strategy):
 
 
 
-            elif (self.view.model.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
-                    temp = self.view.model.repoStorage[node].getOldestShelfMessage()
+            elif (self.view.model.repoStorage[node].getOldestShelfMessage is not None):
+                if (self.view.model.repoStorage[node].getOldestShelfMessage.getProperty("procTime") is None):
+                    temp = self.view.model.repoStorage[node].getOldestShelfMessage
                     report = False
                     self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
@@ -4065,11 +4102,13 @@ class HServProStorApp(Strategy):
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
-        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
+        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage
         self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -4080,6 +4119,8 @@ class HServProStorApp(Strategy):
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -4092,7 +4133,7 @@ class HServProStorApp(Strategy):
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
+        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
@@ -4124,7 +4165,7 @@ class HServProStorApp(Strategy):
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
+        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
         return temp
@@ -4711,9 +4752,9 @@ class HServReStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4733,9 +4774,9 @@ class HServReStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4791,9 +4832,9 @@ class HServReStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4813,9 +4854,9 @@ class HServReStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -4980,9 +5021,9 @@ class HServReStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5003,9 +5044,9 @@ class HServReStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5124,9 +5165,9 @@ class HServReStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5147,9 +5188,9 @@ class HServReStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -5326,7 +5367,9 @@ class HServReStorApp(Strategy):
             *Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
             """
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
                 """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
@@ -5349,7 +5392,7 @@ class HServReStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5367,7 +5410,7 @@ class HServReStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5405,11 +5448,13 @@ class HServReStorApp(Strategy):
               self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
+                if (self.view.model.repoStorage[node].getOldestStaleMessage is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -5432,7 +5477,7 @@ class HServReStorApp(Strategy):
                     * at a certain po.
                     """
 
-                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5494,7 +5539,9 @@ class HServReStorApp(Strategy):
 
             self.cloudEmptyLoop = True
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """
 
@@ -5521,7 +5568,7 @@ class HServReStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5538,7 +5585,7 @@ class HServReStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5574,8 +5621,10 @@ class HServReStorApp(Strategy):
             # System.out.prln("Depleted  messages : "+ sdepleted)
 
             self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
+        for i in range(0, 50):
+            if not (self.cloudBW > self.cloud_lim and
+                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop):
+                break
             if (not self.view.model.repoStorage[node].isProcessedEmpty):
                 self.processedDepletion(node)
 
@@ -5593,8 +5642,10 @@ class HServReStorApp(Strategy):
                 self.view.model.repoStorage[node].getMessagesSize() >
                 self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+            for i in range(0, 50):
+                if not (self.deplBW < self.depl_rate and self.deplEmptyLoop):
+                    break
+                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     content = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(content, content['labels'])
                     if not source:
@@ -5609,7 +5660,7 @@ class HServReStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestStaleMessage is not None):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5629,7 +5680,7 @@ class HServReStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage is not None):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -5648,15 +5699,15 @@ class HServReStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getOldestMessage()
+                elif (self.view.model.repoStorage[node].getOldestMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getOldestMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     ctemp['overtime'] = False
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
@@ -5675,8 +5726,8 @@ class HServReStorApp(Strategy):
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
-                elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
+                elif (self.view.model.repoStorage[node].getNewestProcessMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
@@ -5701,7 +5752,7 @@ class HServReStorApp(Strategy):
                     elif (storTime > ctemp['shelfLife'] + 1):
                         ctemp['overtime'] = True
 
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
@@ -5738,9 +5789,9 @@ class HServReStorApp(Strategy):
 
     def processedDepletion(self, node):
         curTime = time.time()
-        if (self.view.model.repoStorage[node].getOldestFreshMessage() is not None):
-            if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
-                temp = self.view.model.repoStorage[node].getOldestFreshMessage()
+        if (self.view.model.repoStorage[node].getOldestFreshMessage is not None):
+            if (self.view.model.repoStorage[node].getOldestFreshMessage.getProperty("procTime") is None):
+                temp = self.view.model.repoStorage[node].getOldestFreshMessage
                 report = False
                 self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
@@ -5754,9 +5805,9 @@ class HServReStorApp(Strategy):
 
 
 
-            elif (self.view.model.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
-                    temp = self.view.model.repoStorage[node].getOldestShelfMessage()
+            elif (self.view.model.repoStorage[node].getOldestShelfMessage is not None):
+                if (self.view.model.repoStorage[node].getOldestShelfMessage.getProperty("procTime") is None):
+                    temp = self.view.model.repoStorage[node].getOldestShelfMessage
                     report = False
                     self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
@@ -5778,11 +5829,13 @@ class HServReStorApp(Strategy):
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
-        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
+        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage
         self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -5793,6 +5846,8 @@ class HServReStorApp(Strategy):
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -5805,7 +5860,7 @@ class HServReStorApp(Strategy):
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
+        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
@@ -5836,7 +5891,7 @@ class HServReStorApp(Strategy):
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
+        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
         return temp
@@ -6434,9 +6489,9 @@ class HServSpecStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -6456,9 +6511,9 @@ class HServSpecStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -6514,9 +6569,9 @@ class HServSpecStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -6536,9 +6591,9 @@ class HServSpecStorApp(Strategy):
                         source, in_cache = self.view.closest_source(node, service)
                         pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                         if type(pc) != dict:
-                            for n in self.content_source(content, content['labels']):
+                            for n in self.view.content_source(content, content['labels']):
                                 if n == source:
-                                    pc = self.model.contents[n][content['content']]
+                                    pc = self.view.model.contents[n][content['content']]
                     if pc['service_type'] == 'processed':
                         path = self.view.shortest_path(node, receiver)
                         next_node = path[1]
@@ -6703,9 +6758,9 @@ class HServSpecStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -6726,9 +6781,9 @@ class HServSpecStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -6847,9 +6902,9 @@ class HServSpecStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -6870,9 +6925,9 @@ class HServSpecStorApp(Strategy):
                                 source, in_cache = self.view.closest_source(node, service)
                                 pc = self.view.model.repoStorage[source].hasMessage(content['content'], labels)
                                 if type(pc) != dict:
-                                    for n in self.content_source(content, content['labels']):
+                                    for n in self.view.content_source(content, content['labels']):
                                         if n == source:
-                                            pc = self.model.contents[n][content['content']]
+                                            pc = self.view.model.contents[n][content['content']]
                             if pc['service_type'] == 'processed':
                                 path = self.view.shortest_path(node, receiver)
                                 next_node = path[1]
@@ -7049,7 +7104,9 @@ class HServSpecStorApp(Strategy):
             *Well...it actually doesn't influence it that much, so it would mostly be just for correctness, really...
             """
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
                 """
                 * Oldest processed message is depleted (as a FIFO type of storage,
                 * and a  message for processing is processed
@@ -7072,7 +7129,7 @@ class HServSpecStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7090,7 +7147,7 @@ class HServSpecStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage()() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7128,11 +7185,13 @@ class HServSpecStorApp(Strategy):
               self.view.model.repoStorage[node].getStaleMessagesSize()) > \
                 (self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.cloudEmptyLoop = True
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                if (self.view.model.repoStorage[node].getOldestStaleMessage() is not None and
+                if (self.view.model.repoStorage[node].getOldestStaleMessage is not None and
                         self.cloudBW < self.cloud_lim):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
@@ -7155,7 +7214,7 @@ class HServSpecStorApp(Strategy):
                     * at a certain po.
                     """
 
-                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7217,7 +7276,9 @@ class HServSpecStorApp(Strategy):
 
             self.cloudEmptyLoop = True
 
-            for i in range(0, 50) and self.cloudBW < self.cloud_lim and self.cloudEmptyLoop:
+            for i in range(0, 50):
+                if not (self.cloudBW < self.cloud_lim and self.cloudEmptyLoop):
+                    break
 
                 """
 
@@ -7244,7 +7305,7 @@ class HServSpecStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
-                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None:
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7261,7 +7322,7 @@ class HServSpecStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif self.view.model.repoStorage[node].getOldestStaleMessage() is not None:
+                elif self.view.model.repoStorage[node].getOldestStaleMessage is not None:
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7297,8 +7358,10 @@ class HServSpecStorApp(Strategy):
             # System.out.prln("Depleted  messages : "+ sdepleted)
 
             self.upEmptyLoop = True
-        for i in range(0, 50) and self.cloudBW > self.cloud_lim and \
-                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop:
+        for i in range(0, 50):
+            if not (self.cloudBW > self.cloud_lim and
+                 not self.view.model.repoStorage[node].isProcessingEmpty() and self.upEmptyLoop):
+                break
             if (not self.view.model.repoStorage[node].isProcessedEmpty):
                 self.processedDepletion(node)
 
@@ -7316,8 +7379,10 @@ class HServSpecStorApp(Strategy):
                 self.view.model.repoStorage[node].getMessagesSize() >
                 self.view.model.repoStorage[node].getTotalStorageSpace() * self.max_stor):
             self.deplEmptyLoop = True
-            for i in range(0, 50) and self.deplBW < self.depl_rate and self.deplEmptyLoop:
-                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage() is not None):
+            for i in range(0, 50):
+                if not (self.deplBW < self.depl_rate and self.deplEmptyLoop):
+                    break
+                if (self.view.model.repoStorage[node].getOldestDeplUnProcMessage is not None):
                     msg = self.oldestUnProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7337,7 +7402,7 @@ class HServSpecStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
                     """ Oldest unprocessed message is depleted (as a FIFO type of storage) """
 
-                elif (self.view.model.repoStorage[node].getOldestStaleMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestStaleMessage is not None):
                     msg = self.oldestSatisfiedDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7357,7 +7422,7 @@ class HServSpecStorApp(Strategy):
                         print("Message is scheduled to be stored in the CLOUD")
 
 
-                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage() is not None):
+                elif (self.view.model.repoStorage[node].getOldestInvalidProcessMessage is not None):
                     msg = self.oldestInvalidProcDepletion(node)
                     source = self.view.content_source_cloud(msg, msg['labels'])
                     if not source:
@@ -7376,15 +7441,15 @@ class HServSpecStorApp(Strategy):
                     if self.debug:
                         print("Message is scheduled to be stored in the CLOUD")
 
-                elif (self.view.model.repoStorage[node].getOldestMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getOldestMessage()
+                elif (self.view.model.repoStorage[node].getOldestMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getOldestMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp["receiveTime"]
                     ctemp['storTime'] = storTime
                     ctemp['satisfied'] = False
                     ctemp['overtime'] = False
                     self.view.model.repoStorage[node].addToDeplMessages(ctemp)
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                     source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                     if not source:
@@ -7403,8 +7468,8 @@ class HServSpecStorApp(Strategy):
                         self.view.model.repoStorage[node].addToDeplMessages(ctemp)
 
 
-                elif (self.view.model.repoStorage[node].getNewestProcessMessage() is not None):
-                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage()
+                elif (self.view.model.repoStorage[node].getNewestProcessMessage is not None):
+                    ctemp = self.view.model.repoStorage[node].getNewestProcessMessage
                     self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
                     storTime = curTime - ctemp['receiveTime']
                     ctemp['storTime'] = storTime
@@ -7429,7 +7494,7 @@ class HServSpecStorApp(Strategy):
                     elif (storTime > ctemp['shelfLife'] + 1):
                         ctemp['overtime'] = True
 
-                    if ((ctemp['type']).equalsIgnoreCase("unprocessed")):
+                    if ((ctemp['service_type'].lower() == "unprocessed")):
                         self.view.model.repoStorage[node].addToDepletedUnProcMessages(ctemp)
                         source = self.view.content_source_cloud(ctemp, ctemp['labels'])
                         if not source:
@@ -7466,9 +7531,9 @@ class HServSpecStorApp(Strategy):
 
     def processedDepletion(self, node):
         curTime = time.time()
-        if (self.view.model.repoStorage[node].getOldestFreshMessage() is not None):
-            if (self.view.model.repoStorage[node].getOldestFreshMessage().getProperty("procTime") is None):
-                temp = self.view.model.repoStorage[node].getOldestFreshMessage()
+        if (self.view.model.repoStorage[node].getOldestFreshMessage is not None):
+            if (self.view.model.repoStorage[node].getOldestFreshMessage.getProperty("procTime") is None):
+                temp = self.view.model.repoStorage[node].getOldestFreshMessage
                 report = False
                 self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                 """
@@ -7482,9 +7547,9 @@ class HServSpecStorApp(Strategy):
 
 
 
-            elif (self.view.model.repoStorage[node].getOldestShelfMessage() is not None):
-                if (self.view.model.repoStorage[node].getOldestShelfMessage().getProperty("procTime") is None):
-                    temp = self.view.model.repoStorage[node].getOldestShelfMessage()
+            elif (self.view.model.repoStorage[node].getOldestShelfMessage is not None):
+                if (self.view.model.repoStorage[node].getOldestShelfMessage.getProperty("procTime") is None):
+                    temp = self.view.model.repoStorage[node].getOldestShelfMessage
                     report = False
                     self.view.model.repoStorage[node].deleteProcessedMessage(temp['content'], report)
                     """
@@ -7506,11 +7571,13 @@ class HServSpecStorApp(Strategy):
 
     def oldestSatisfiedDepletion(self, node):
         curTime = time.time()
-        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage()
+        ctemp = self.view.model.repoStorage[node].getOldestStaleMessage
         self.view.model.repoStorage[node].deleteAnyMessage(ctemp['content'])
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -7521,6 +7588,8 @@ class HServSpecStorApp(Strategy):
         storTime = curTime - ctemp['receiveTime']
         ctemp['storTime'] = storTime
         ctemp['satisfied'] = True
+        if 'shelfLife' not in ctemp:
+            ctemp['shelfLife'] = 150
         if (storTime <= ctemp['shelfLife'] + 1):
             ctemp['overtime'] = False
         elif (storTime > ctemp['shelfLife'] + 1):
@@ -7533,7 +7602,7 @@ class HServSpecStorApp(Strategy):
 
     def oldestInvalidProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage()
+        temp = self.view.model.repoStorage[node].getOldestInvalidProcessMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         if (temp['comp'] is not None):
             if (temp['comp']):
@@ -7564,7 +7633,7 @@ class HServSpecStorApp(Strategy):
 
     def oldestUnProcDepletion(self, node):
         curTime = time.time()
-        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage()
+        temp = self.view.model.repoStorage[node].getOldestDeplUnProcMessage
         self.view.model.repoStorage[node].deleteAnyMessage(temp['content'])
         self.view.model.repoStorage[node].addToDepletedUnProcMessages(temp)
         return temp

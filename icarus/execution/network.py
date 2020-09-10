@@ -326,6 +326,7 @@ class NetworkView(object):
             The node persistently storing the given content or None if the
             source is unavailable
         """
+        cache = False
         if type(k) is dict:
             hops = 100
             if node in self.content_source(k, k['labels']):
@@ -343,10 +344,11 @@ class NetworkView(object):
                     hops = len(self.shortest_path(node, n))
                     res = n
             if self.has_cache(res):
-                if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
-                    cache = True
-                else:
-                    cache = False
+                if content is not None:
+                    if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
+                        cache = True
+                    else:
+                        cache = False
             else:
                 cache = False
         else:
@@ -1733,6 +1735,8 @@ class NetworkController(object):
             *True*
         """
         if type(content) is dict and content['service_type'].lower() == 'proc':
+            content['service_type'] = 'processed'
+        elif type(content) is dict and (not content['service_type'] or content['service_type'].lower() == 'non-proc'):
             content['service_type'] = 'processed'
         self.model.repoStorage[s].addToStoredMessages(content)
         if s not in self.model.content_source[content['content']]:
