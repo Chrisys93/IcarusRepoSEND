@@ -658,6 +658,7 @@ class StationaryRepoWorkload(object):
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
             datum.update(freshness_per=freshness_pers)
+            datum.update(replicas=0)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,
@@ -785,6 +786,7 @@ class StationaryRepoWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                datum.update(replicas=0)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -805,6 +807,7 @@ class StationaryRepoWorkload(object):
                 index = int(self.zipf.rv())
                 datum = self.data[index]
                 datum.update(service_type="proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_event
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
@@ -911,6 +914,7 @@ class BurstyRepoWorkload(object):
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
             datum.update(freshness_per=freshness_pers)
+            datum.update(replicas=0)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,
@@ -1085,6 +1089,7 @@ class BurstyRepoWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                datum.update(replicas=0)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -1105,6 +1110,7 @@ class BurstyRepoWorkload(object):
                 index = int(self.zipf.rv())
                 datum = self.data[index]
                 datum.update(service_type="proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_event
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
@@ -1331,6 +1337,7 @@ class TraceDrivenRepoWorkload(object):
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
             datum.update(freshness_per=freshness_pers)
+            datum.update(replicas=0)
             self.data[content] = datum
 
 
@@ -1433,6 +1440,7 @@ class TraceDrivenRepoWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                datum.update(replicas=0)
                 self.data[index] = datum
 
                 self.model.node_labels[node] = dict()
@@ -1454,6 +1462,7 @@ class TraceDrivenRepoWorkload(object):
                 index = int(random_from_pdf(self.rates_pdf))
                 datum = self.data[index]
                 datum.update(service_type="proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_event
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
@@ -1555,6 +1564,7 @@ class BurstyTraceRepoWorkload(object):
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
             datum.update(freshness_per=freshness_pers)
+            datum.update(replicas=0)
             self.data[content] = datum
 
         self.freshness_pers = freshness_pers
@@ -1766,6 +1776,7 @@ class BurstyTraceRepoWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                datum.update(replicas=0)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -1786,6 +1797,7 @@ class BurstyTraceRepoWorkload(object):
                 index = int(random_from_pdf(self.rates_pdf))
                 datum = self.data[index]
                 datum.update(service_type="proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_event
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
@@ -1893,6 +1905,7 @@ class BurstyRepoDataAndWorkload(object):
             datum.update(msg_size=msg_sizes)
             datum.update(shelf_life=[])
             datum.update(freshness_per=freshness_pers)
+            datum.update(replicas=0)
             self.data[content] = datum
 
         self.labels = dict(topics=topics,
@@ -2104,6 +2117,7 @@ class BurstyRepoDataAndWorkload(object):
                 datum = self.data[index]
                 datum.update(service_type="proc")
                 datum.update(labels=labels)
+                datum.update(replicas=0)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -2124,6 +2138,7 @@ class BurstyRepoDataAndWorkload(object):
                 index = int(self.zipf.rv())
                 datum = self.data[index]
                 datum.update(service_type="proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_event
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': REQUEST}
@@ -2259,6 +2274,7 @@ class BurstyRepoDataAndWorkload(object):
                 datum.update(labels=labels)
                 datum.update(shelf_life=self.stor_shelf)
                 datum.update(max_replications=self.stor_scope)
+                datum.update(replicas=0)
 
                 # print "Message: " + str(datum['content']) + " generated at node: " + str(node)
 
@@ -2281,6 +2297,7 @@ class BurstyRepoDataAndWorkload(object):
                 index = int(self.zipf.rv())
                 datum = self.data[index]
                 datum.update(service_type="non-proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_data
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': STORE}
@@ -2453,6 +2470,7 @@ class BurstyRepoDataAndWorkload(object):
                 datum.update(labels=labels)
                 datum.update(shelf_life=self.stor_shelf)
                 datum.update(max_replications=self.stor_scope)
+                datum.update(replicas=0)
 
                 self.model.node_labels[node] = dict()
                 for c in self.data:
@@ -2473,6 +2491,7 @@ class BurstyRepoDataAndWorkload(object):
                 index = int(self.zipf.rv())
                 datum = self.data[index]
                 datum.update(service_type="non-proc")
+                datum.update(replicas=0)
                 deadline = self.model.services[content].deadline + t_data
                 event = {'receiver': receiver, 'content': datum, 'labels': [], 'log': log, 'node': node,
                          'flow_id': flow_id, 'rtt_delay': 0, 'deadline': deadline, 'status': STORE}

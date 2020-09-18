@@ -1032,8 +1032,7 @@ class RepoStatsLatencyCollector(DataCollector):
                         self.view.storage_nodes()[node].getProcessedMessagesSize():
                     per_node_proc_vs_stor_used[node] = 100 * self.view.storage_nodes()[node].getProcessedMessagesSize() / \
                                                        (self.view.storage_nodes()[node].getMessagesSize() +
-                                                       self.view.storage_nodes()[node].getProcMessagesSize() +
-                                                       self.view.storage_nodes()[node].getProcessedMessagesSize())
+                                                       self.view.storage_nodes()[node].getProcMessagesSize())
                 else:
                     per_node_proc_vs_stor_used[node] = 0
                 repo_proc_vs_stor.write(str(per_node_proc_vs_stor_used[node]) + ", ")

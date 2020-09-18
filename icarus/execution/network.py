@@ -22,6 +22,7 @@ of all relevant events.
 import random
 import logging
 import sys
+import time
 
 import networkx as nx
 import fnss
@@ -1059,6 +1060,9 @@ class NetworkModel(object):
         shortest_path : dict of dict, optional
             The all-pair shortest paths of the network
         """
+
+        #Starting time
+        self.start_time = time.time()
         # Filter inputs
         if not isinstance(topology, fnss.Topology):
             raise ValueError('The topology argument must be an instance of '
@@ -1734,10 +1738,39 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        if type(content) is dict and content['service_type'].lower() == 'proc':
-            content['service_type'] = 'processed'
-        elif type(content) is dict and (not content['service_type'] or content['service_type'].lower() == 'non-proc'):
-            content['service_type'] = 'processed'
+        curTime = time.time()
+        if type(content) is dict and content['service_type'].lower() == 'processed':
+            if 'freshness_per' in content and 'shelf_life' in content:
+                if content['freshness_per'] > curTime - content['receiveTime']:
+                    content['Fresh'] = True
+                    content['Shelf'] = True
+                elif content['shelf_life'] > curTime - content['receiveTime']:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+                else:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+            else:
+                content['Fresh'] = False
+                content['Shelf'] = True
+            content['receiveTime'] = curTime
+            content['service_type'] = "processed"
+        elif type(content) is dict and not content['service_type'].lower() == 'non-proc' and not content['service_type'].lower() == 'proc':
+            if 'freshness_per' in content and 'shelf_life' in content:
+                if content['freshness_per'] > curTime - content['receiveTime']:
+                    content['Fresh'] = True
+                    content['Shelf'] = True
+                elif content['shelf_life'] > curTime - content['receiveTime']:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+                else:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+            else:
+                content['Fresh'] = False
+                content['Shelf'] = True
+            content['receiveTime'] = curTime
+            content['service_type'] = "processed"
         self.model.repoStorage[s].addToStoredMessages(content)
         if s not in self.model.content_source[content['content']]:
             self.model.content_source[content['content']].append(s)

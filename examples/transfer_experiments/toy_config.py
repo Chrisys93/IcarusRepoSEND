@@ -78,7 +78,7 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = [300, 500]
+N_CONTENTS = [100, 1500]
 #N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
@@ -118,7 +118,7 @@ WORKLOAD = 'BURSTY_MORE_LABEL_REQS_DATA'
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['HYBRID', 'HYBRIDS_REPO_APP']
+STRATEGIES = ['HYBRIDS_REPO_APP']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -159,7 +159,7 @@ CONTENT_LOCATIONS = dir_path + 'content_locations.csv'
 # Storage data parameters for workload:
 DATA_GEN_DIST_MODE = "RAND"
 DATA_GEN_DIST = None
-DATA_RATE = 100
+DATA_RATE = 50
 STOR_SHELF = 150
 STOR_SCOPE = 2
 N_STOR_WARMUP = 0
@@ -186,7 +186,7 @@ default['computation_placement']['name'] = 'UNIFORM_REPO'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
 default['computation_placement']['storage_budget'] = 10000000000
-STORAGE_BUDGETS = [5000000000, 10000000000]
+STORAGE_BUDGETS = [1000000000, 5000000000]
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
 #default['content_placement']['name'] = 'WEIGHTED_REPO'
@@ -233,7 +233,7 @@ i = 0
 for contents in N_CONTENTS:
     for storage in STORAGE_BUDGETS:
         default['collector_params'] = {
-                "logs_path": LOGGING_PATHS[i],
+                "logs_path": LOGGING_PATHS[int(i/2)],
                 "sampling_interval": 500
                 }
         for strategy in STRATEGIES:
@@ -273,7 +273,8 @@ for contents in N_CONTENTS:
             default['workload']['n_services'] = contents
             default['workload']['rate'] = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]
             default['computation_placement']['storage_budget'] = storage
-            default['strategy']['max_stor'] = 0.95
+            default['strategy']['max_stor'] = 0.85
+            default['strategy']['proc_max_rep'] = 5
             experiment = copy.deepcopy(default)
             experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
             experiment['strategy']['name'] = strategy
