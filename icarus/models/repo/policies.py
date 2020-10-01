@@ -73,6 +73,8 @@ class RepoStorage(object):
         self.depletedCloudMessages = 0
         self.oldDepletedCloudMessagesSize = 0
         self.depletedCloudMessagesSize = 0
+        self.StorageUploadSize = 0
+        self.oldStorageUploadSize = 0
         self.cachedMessages = 0
         if self.model.comp_size[node]:
             # self.processSize = processSize
@@ -252,6 +254,14 @@ class RepoStorage(object):
                 self.depletedUnProcMessages += 1
             self.depletedUnProcMessagesSize += sm['msg_size']
             self.mUnProcessed += 1
+
+    def addToStorageUploadSize(self, sm):
+        """
+        Add the size of a message to be accounted for in the logs,
+        when checking storage exhange BW
+        """
+        if sm and type(sm) is dict:
+            self.StorageUploadSize += sm['msg_size']
 
     def getMessage(self, MessageId):
         Message = None
@@ -450,6 +460,13 @@ class RepoStorage(object):
             if not self.model.repoStorage[self.node]:
                 self.nrofDeletedMessages += 1
                 self.deletedMessagesSize += m['msg_size']
+            for message in self.Messages:
+                if MessageId == message['content']:
+                    break
+            else:
+                if MessageId in self.model.source_node[self.node] and self.node in self.model.content_source[MessageId]:
+                    self.model.source_node[self.node].remove(MessageId)
+                    self.model.content_source[MessageId].remove(self.node)
 
         return False
 
@@ -607,6 +624,30 @@ class RepoStorage(object):
         if (reporting):
             self.oldDepletedUnProcMessagesSize = self.depletedUnProcMessagesSize
         return (procBW)
+
+
+
+
+    def getStorageUploadBW(self, reporting):
+        """
+        Get BW for messages sent to other repositories for storage.
+
+        reporting : flag for updating old storage upload
+        """
+
+        storageBW = self.StorageUploadSize - self.oldStorageUploadSize
+        if (reporting):
+            self.oldStorageUploadSize = self.StorageUploadSize
+        return (storageBW)
+
+
+    def getMeanStorageUploadBW(self):
+        """
+        Get BW for messages sent to other repositories for storage.
+
+        reporting : flag for updating old storage upload
+        """
+        return self.StorageUploadSize/(time.time()-self.model.start_time)
 
     """
 	*Method

@@ -31,6 +31,11 @@ from icarus.tools import TruncatedZipfDist
 from icarus.registry import register_workload
 from collections import Counter
 
+
+# TODO: BIG NOTE! Might have used the time module erroneously, which is why the functions actually don't return proper
+#  results with regards to satisfacttion rates...MIGHT NEED TO RETURN TO A RELATIVE TIME REFERENCE AND SEE HOW THE TIME
+#  ADVANCES WITHOUT THE TIME MODULE, OR OTHERWISE HOW IT IS IMPLEMENTED ORIGINALLY!
+
 __all__ = [
     'StationaryWorkload',
     'RepoStationaryWorkload',

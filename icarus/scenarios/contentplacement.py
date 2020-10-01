@@ -263,7 +263,7 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
             placed_data[contents[c]['content']].update(shelf_life=shelf_life)
         if max_replications:
             placed_data[contents[c]['content']].update(max_replications=max_replications)
-            placed_data[contents[c]['content']].update(replications=0)
+            placed_data[contents[c]['content']].update(replicas=0)
         service_association[random_from_pdf(service_labels_pdf)].add(c)
         placed_data[contents[c]['content']].update(content=c)
         placed_data[contents[c]['content']].update(msg_size=msg_size)

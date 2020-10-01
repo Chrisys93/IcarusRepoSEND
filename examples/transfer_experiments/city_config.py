@@ -20,7 +20,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 10 #cpu_count()
+N_PROCESSES = 8 #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -28,7 +28,7 @@ CACHING_GRANULARITY = 'OBJECT'
 
 # Warm-up strategy
 #WARMUP_STRATEGY = 'MFU' #'HYBRID'
-WARMUP_STRATEGY = 'HYBRID' #'HYBRID'
+WARMUP_STRATEGY = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP'] #'HYBRID'
 
 # Format in which results are saved.
 # Result readers and writers are located in module ./icarus/results/readwrite.py
@@ -37,11 +37,27 @@ RESULTS_FORMAT = 'TXT'
 
 # Number of times each experiment is replicated
 # This is necessary for extracting confidence interval of selected metrics
-N_REPLICATIONS = 1
+N_REPLICATIONS = 3
+
+# Logging parameters and variables
+LOGGING_PATHS = ['/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city1',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city2',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city3',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city4',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city5',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city6',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city7',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city8',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city9']
+
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icaurs/execution/collectors.py
-DATA_COLLECTORS = ['LATENCY']
+#DATA_COLLECTORS = ['REPO_STATS_W_LATENCY']
+# TODO: MAKE "RECEIVERS" BECOME "PRODUCERS"! Meaning - get receivers to make data for storage - test the system to
+#  its limits by doing different settings!
+DATA_COLLECTORS = ['REPO_STATS_W_LATENCY']
 
 # Range of alpha values of the Zipf distribution using to generate content requests
 # alpha values must be positive. The greater the value the more skewed is the
@@ -62,15 +78,15 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = 500
+N_CONTENTS = [1500, 3000]
 #N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 100.0
+NETWORK_REQUEST_RATE = [300, 500, 1000]
 
-# Number of cores for each node in the experiment
+# Number of cores for each node in the experiment
 NUM_CORES = 50
 
 # Number of content requests generated to prepopulate the caches
@@ -83,14 +99,14 @@ N_WARMUP_REQUESTS = 0 #30000
 
 SECS = 60 #do not change
 MINS = 5.5 #5.5
-N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
+#N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE*SECS*MINS
 
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
-TOPOLOGIES =  ['TREE']
-TREE_DEPTH = 3
-BRANCH_FACTOR = 2
-NUM_NODES = int(pow(BRANCH_FACTOR, TREE_DEPTH+1) -1)
+TOPOLOGIES = ['REPO_TREE']
+REC_ROUTE = 5  # (of each, receivers and routers)
+SOURCES = 1
+NUM_NODES = int(REC_ROUTE+SOURCES)
 
 # Replacement Interval in seconds
 REPLACEMENT_INTERVAL = 30.0
@@ -98,11 +114,11 @@ NUM_REPLACEMENTS = 5000
 
 # List of workloads that generate the request rates
 # The code is located in ./icarus/scenatios
-WORKLOAD = 'STATIONARY_MORE_LABEL_REQS'
+WORKLOAD = 'BURSTY_MORE_LABEL_REQS_DATA'
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
-STRATEGIES = ['HYBRIDS_REPO_APP', 'HYBRIDS_PRO_REPO_APP']
+STRATEGIES = ['HYBRIDS_REPO_APP']
 #STRATEGIES = ['COORDINATED']  # service-based routing
 
 # Cache replacement policy used by the network caches.
@@ -119,20 +135,15 @@ REPO_POLICY = 'REPO_STORAGE'
 # Supported policies are: 'EDF' (Earliest Deadline First), 'FIFO'
 SCHED_POLICY = 'EDF'
 
-FRESHNESS_PER = 0.15
-SHELF_LIFE =5
+FRESHNESS_PER = 0.5
+SHELF_LIFE = 150
 MSG_SIZE = 1000000
-SOURCE_WEIGHTS = {'src_0': 0.2, 7: 0.1, 8: 0.1, 10: 0.2, 11: 0.2, 13: 0.1, 14: 0.1}
+SOURCE_WEIGHTS = {'src_0': 0.25, 0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25}
 SERVICE_WEIGHTS = {"proc": 0.7, "non-proc": 0.3}
 TYPES_WEIGHTS = {"value": 0.3, "video": 0.2, "control": 0.1, "photo": 0.2, "audio": 0.2}
 TOPICS_WEIGHTS = {"traffic": 0.3, "home_IoT": 0.3, "office_IoT": 0.2, "security": 0.2}
 MAX_REQUESTED_LABELS = 3
-
-# MAX_REPLICATIONS defines the maximum number of times a content should be replicated within the repository system,
-# before it is not deemed safe/efficient to do so, anymore.
-# Note: MAX REPLICATIONS should be used for both the WORKLOAD and CONTENT_PLACEMENT definitions
 MAX_REPLICATIONS = 5
-
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
 DATA_TYPES = ["value", "video", "control", "photo", "audio"]
@@ -145,34 +156,28 @@ CONTENTS_FILE = dir_path + 'contents.csv'
 LABELS_FILE = dir_path + 'labels.csv'
 CONTENT_LOCATIONS = dir_path + 'content_locations.csv'
 
+# Storage data parameters for workload:
+DATA_GEN_DIST_MODE = "RAND"
+DATA_GEN_DIST = None
+DATA_RATE = [100, 200, 500]
+STOR_SHELF = 150
+STOR_SCOPE = 2
+N_STOR_WARMUP = 0
+MAX_PROC_REP = 5
+
+# Bursty workload settings:
+# Maximum times for online and offline request generation
+# MAX_ON = NETWORK_REQUEST_RATE/2
+# MAX_OFF = NETWORK_REQUEST_RATE
+# Mode of receiver network connection disruption (Available: None, 'RAND', 'WEIGHTED')
+DISRUPT_MODE = 'RAND'
+# Only for WEIGHTED mode, above, otherwise None - weights of receivers' off-time distribution
+DISRUPTION_WEIGHTS = None # {'rec_0': 0.2, rec_1: 0.1, rec_2: 0.1, rec_4: 0.2, rec_5: 0.2, rec_6: 0.1, rec_7: 0.1}
+
 
 # Queue of experiments
 EXPERIMENT_QUEUE = deque()
 default = Tree()
-
-
-
-default['workload'] = {'name': WORKLOAD,
-                       'n_contents': N_CONTENTS,
-                       'n_warmup': N_WARMUP_REQUESTS,
-                       'n_measured': N_MEASURED_REQUESTS,
-                       'rate': NETWORK_REQUEST_RATE,
-                       'seed': 0,
-                       'n_services': N_SERVICES,
-                       'alpha': ALPHA,
-                       'alpha_labels': ALPHA_LABELS,
-                       'topics': DATA_TOPICS,
-                       'label_ex': LABEL_EXCL,
-                       'types': DATA_TYPES,
-                       'max_labels': MAX_REQUESTED_LABELS,
-                       'freshness_pers': FRESHNESS_PER,
-                       'shelf_lives': SHELF_LIFE,
-                       'msg_sizes': MSG_SIZE,
-                       'rates_file': RATES_FILE,
-                       'contents_file': CONTENTS_FILE,
-                       'labels_file': LABELS_FILE,
-                       'content_locations': CONTENT_LOCATIONS
-                       }
 
 default['cache_placement']['name'] = 'CONSOLIDATED_REPO_CACHE'
 default['cache_placement']['storage_budget'] = 10000000000
@@ -181,6 +186,7 @@ default['computation_placement']['name'] = 'UNIFORM_REPO'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
 default['computation_placement']['storage_budget'] = 10000000000
+STORAGE_BUDGETS = [700000000, 7000000000, 1000000000]
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
 #default['content_placement']['name'] = 'WEIGHTED_REPO'
@@ -194,18 +200,20 @@ default['content_placement'] = {"name":             'WEIGHTED_REPO',
                                 "max_label_nos" :   MAX_REQUESTED_LABELS
                                 }
 
+default['collector_params'] = {"logs_path": '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments',
+                           "sampling_interval": 500
+                           }
+
 default['cache_policy']['name'] = CACHE_POLICY
 default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
 default['strategy']['replacement_interval'] = REPLACEMENT_INTERVAL
 default['strategy']['n_replacements'] = NUM_REPLACEMENTS
-default['strategy']['max_stor'] = 0.85
-default['strategy']['proc_max_rep'] = 5
-default['topology']['name'] = 'REPO_TREE'
-default['topology']['k'] = BRANCH_FACTOR
-default['topology']['h'] = TREE_DEPTH
+default['strategy']['proc_max_rep'] = MAX_PROC_REP
+default['topology']['name'] = 'REPO_MESH'
+default['topology']['n']=REC_ROUTE
+default['topology']['m']= SOURCES
 default['warmup_strategy']['name'] = WARMUP_STRATEGY
-
 # Create experiments multiplexing all desired parameters
 """
 for strategy in ['LRU']: # STRATEGIES:
@@ -222,14 +230,60 @@ for strategy in ['LRU']: # STRATEGIES:
 #"""
 # TODO: Add workloads - Furthermore, we don't need service budget variations here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SERVICE_BUDGET = NUM_CORES*NUM_NODES*3
-for strategy in STRATEGIES:
-    experiment = copy.deepcopy(default)
-    experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
-    experiment['strategy']['name'] = strategy
-    experiment['warmup_strategy']['name'] = strategy
-    experiment['desc'] = "strategy: %s" \
-                     % (strategy)
-    EXPERIMENT_QUEUE.append(experiment)
+i = 0
+for contents in N_CONTENTS:
+    for storage in STORAGE_BUDGETS:
+        default['collector_params'] = {
+                "logs_path": LOGGING_PATHS[int(i)],
+                "sampling_interval": 500
+                }
+        for strategy in STRATEGIES:
+
+            N_MEASURED_REQUESTS = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]*SECS*MINS
+            MAX_ON = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]
+            MAX_OFF = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]
+            N_STOR_MEASURED = DATA_RATE[i % len(DATA_RATE)]*SECS*MINS
+            default['workload'] = {'name': WORKLOAD,
+                                   #'n_contents': N_CONTENTS,
+                                   'alpha': ALPHA,
+                                   'max_on': MAX_ON,
+                                   'max_off': MAX_OFF,
+                                   'disrupt_mode': DISRUPT_MODE,
+                                   'disrupt_weights': DISRUPTION_WEIGHTS,
+                                   'n_warmup': N_WARMUP_REQUESTS,
+                                   'n_measured': N_MEASURED_REQUESTS,
+                                   'rate': NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)],
+                                   'seed': 0,
+                                   'n_services': N_SERVICES,
+                                   'alpha_labels': ALPHA_LABELS,
+                                   'topics': DATA_TOPICS,
+                                   'label_ex': LABEL_EXCL,
+                                   'types': DATA_TYPES,
+                                   'max_labels': MAX_REQUESTED_LABELS,
+                                   'freshness_pers': FRESHNESS_PER,
+                                   'shelf_lives': SHELF_LIFE,
+                                   'msg_sizes': MSG_SIZE,
+                                   'data_gen_dist_mode': DATA_GEN_DIST_MODE,
+                                   'data_gen_dist': DATA_GEN_DIST,
+                                   'data_rate': DATA_RATE[i % len(DATA_RATE)],
+                                   'stor_shelf': STOR_SHELF,
+                                   'stor_scope': STOR_SCOPE,
+                                   'n_stor_warmup': 0,
+                                   'n_stor_measured': N_STOR_MEASURED
+                                }
+            default['workload']['n_contents'] = contents
+            default['workload']['n_services'] = contents
+            default['workload']['rate'] = NETWORK_REQUEST_RATE[i % len(NETWORK_REQUEST_RATE)]
+            default['computation_placement']['storage_budget'] = storage
+            default['strategy']['max_stor'] = 0.85
+            default['strategy']['proc_max_rep'] = 5
+            experiment = copy.deepcopy(default)
+            experiment['computation_placement']['service_budget'] = SERVICE_BUDGET
+            experiment['strategy']['name'] = strategy
+            experiment['warmup_strategy']['name'] = strategy
+            experiment['desc'] = "strategy: %s" % (strategy)
+            EXPERIMENT_QUEUE.append(experiment)
+    	i += 1
 #"""
 # Experiment with different budgets
 """
