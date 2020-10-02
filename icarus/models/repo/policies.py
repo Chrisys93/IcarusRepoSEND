@@ -711,6 +711,21 @@ class RepoStorage(object):
 
         return (statBW)
 
+
+
+
+    def getMeanCloudUploadBW(self):
+        """
+        Provides the mean overall BW, to the point of reading, upstream of the repo.
+
+        Returns
+        -------
+        The overall mean Cloud-bound BW up to this point : float
+            List of contents currently in the cache
+        """
+        statBW = (self.depletedCloudMessagesSize + self.depletedCloudProcMessagesSize)/(time.time() - self.model.start_time)
+        return (statBW)
+
     """
 	*Method
 	that

@@ -20,7 +20,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 8 #cpu_count()
+N_PROCESSES = 6 #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported

@@ -928,6 +928,7 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_overtime_file = "/repo_overtime.txt"
             repo_outgoing_file = "/repo_outgoing.txt"
             repo_incoming_file = "/repo_incoming.txt"
+            repo_cloud_file = "/repo_cloud.txt"
         elif self.view.model.strategy == 'HYBRIDS_PRO_REPO_APP':
             res_file = "/hybrid_pro_repo.txt"
             r_replicas_file = "/pro_r_replicas.txt"
@@ -940,6 +941,7 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_overtime_file = "/pro_overtime.txt"
             repo_incoming_file = "/pro_incoming.txt"
             repo_outgoing_file = "/pro_outgoing.txt"
+            repo_cloud_file = "/pro_cloud.txt"
         elif self.view.model.strategy == 'HYBRIDS_RE_REPO_APP':
             res_file = "/hybrid_repo.txt"
             r_replicas_file = "/re_r_replicas.txt"
@@ -952,6 +954,7 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_overtime_file = "/re_overtime.txt"
             repo_incoming_file = "/re_incoming.txt"
             repo_outgoing_file = "/re_outgoing.txt"
+            repo_cloud_file = "/re_cloud.txt"
         elif self.view.model.strategy == 'HYBRIDS_SPEC_REPO_APP':
             res_file = "/hybrid_repo.txt"
             r_replicas_file = "/spec_r_replicas.txt"
@@ -964,6 +967,7 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_overtime_file = "/spec_overtime.txt"
             repo_incoming_file = "/spec_incoming.txt"
             repo_outgoing_file = "/spec_outgoing.txt"
+            repo_cloud_file = "/spec_cloud.txt"
 
         res = open(self.logs_path + res_file, 'a')
         overhead = open(self.logs_path + overhead_file, 'a')
@@ -983,6 +987,7 @@ class RepoStatsLatencyCollector(DataCollector):
         per_node_overtime= {}
         incoming_bw = {}
         outgoing_bw = {}
+        cloud_bw = {}
         # res.write(str(100*self.n_satisfied/self.sess_count) + " " + str(self.n_satisfied) + " " + str(self.sess_count) + ": \n")
         for service in self.service_requests.keys():
             per_service_sats[service] = 1.0 * self.service_satisfied[service] / self.service_requests[service]
@@ -1012,6 +1017,7 @@ class RepoStatsLatencyCollector(DataCollector):
             repo_overtime = open(self.logs_path + repo_overtime_file, 'a')
             repo_incoming_BW = open(self.logs_path + repo_incoming_file, 'a')
             repo_outgoing_BW = open(self.logs_path + repo_outgoing_file, 'a')
+            repo_cloud_BW = open(self.logs_path + repo_cloud_file, 'a')
             r_replicas = open(self.logs_path + r_replicas_file, 'a')
             s_replicas = open(self.logs_path + s_replicas_file, 'a')
             r_labels_dist = open(self.logs_path + r_labels_dist_file, 'a')
@@ -1061,6 +1067,11 @@ class RepoStatsLatencyCollector(DataCollector):
                 outgoing_bw[node] = self.view.storage_nodes()[node].getMeanStorageUploadBW()
                 repo_outgoing_BW.write(str(outgoing_bw[node]) + ", ")
             repo_outgoing_BW.write("\n")
+
+            for node in self.view.model.storageSize:
+                cloud_bw[node] = self.view.storage_nodes()[node].getMeanCloudUploadBW()
+                repo_cloud_BW.write(str(cloud_bw[node]) + ", ")
+            repo_cloud_BW.write("\n")
 
 
             # TODO: Modify the following, to include ALL NODES, no matter what!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -37,7 +37,7 @@ RESULTS_FORMAT = 'TXT'
 
 # Number of times each experiment is replicated
 # This is necessary for extracting confidence interval of selected metrics
-N_REPLICATIONS = 3
+N_REPLICATIONS = 1
 
 # Logging parameters and variables
 LOGGING_PATHS = ['/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city',
