@@ -84,7 +84,7 @@ N_CONTENTS = [1500, 3000]
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = [300, 500, 1000]
+NETWORK_REQUEST_RATE = [300, 1000]
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
@@ -159,7 +159,7 @@ CONTENT_LOCATIONS = dir_path + 'content_locations.csv'
 # Storage data parameters for workload:
 DATA_GEN_DIST_MODE = "RAND"
 DATA_GEN_DIST = None
-DATA_RATE = [100, 200, 500]
+DATA_RATE = [200, 500]
 STOR_SHELF = 150
 STOR_SCOPE = 2
 N_STOR_WARMUP = 0
@@ -186,7 +186,7 @@ default['computation_placement']['name'] = 'UNIFORM_REPO'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
 default['computation_placement']['storage_budget'] = 10000000000
-STORAGE_BUDGETS = [700000000, 7000000000, 1000000000]
+STORAGE_BUDGETS = [7000000000, 1000000000]
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
 #default['content_placement']['name'] = 'WEIGHTED_REPO'
