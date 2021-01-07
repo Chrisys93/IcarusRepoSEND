@@ -147,6 +147,8 @@ After saveing the results in pickle format you can extract them in a human
 readable format using the `printresults.py` script from the `scripts` folder. Example usage could be:
 
     $ python scripts/printresults.py results.pickle > results.txt
+    
+**NOTE:** The new results format is available in just text format, strictly for statistical readings; for the purpose of academic and research implementations, evaluations and development.
 
 Icarus also provides a set of helper functions for plotting results. Have a look at the `examples`
 folder for plot examples.
@@ -163,6 +165,13 @@ Networking (ICN), in Proc. of SIMUTOOLS'14, Lisbon, Portugal, March 2014.
 \[[PDF](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.pdf)\],
 \[[Slides](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14-slides.pdf)\],
 \[[BibTex](http://www.ee.ucl.ac.uk/~lsaino/publications/icarus-simutools14.bib)\]
+
+Further implementations and ideas, provided for the purpose of the current version of code were developed in:
+
+A.-C. Nicolaescu, S. Mastorakis, and I. Psaras, “Store edge networkeddata (SEND): a data and performance driven edge storage framework,”inIEEE  INFOCOM  2021  -  IEEE  Conference  on  Computer  Communi-cations (INFOCOM 2021), Vancouver, Canada, May 2021
+[resources to be added]
+
+We encourage ideas and developments based on this design and 
 
 Otherwise, please browse the source code. It is very well documented and easy to
 understand.
