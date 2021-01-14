@@ -23,7 +23,7 @@ a workload determines the arrival rate and placement of initial requests.
 
 Example strategies are located under models/strategy/. The service.py in the examples contains strategies for edge-computing implemented 
 for the following papers:
- * In [Store Edge Networked Data (SEND): A Data and Performance Driven Edge Storage Framework]([provide link after publication])
+ * In [Store Edge Networked Data (SEND): A Data and Performance Driven Edge Storage Framework](https://www.researchgate.net/publication/346643946_Store_Edge_Networked_Data_SEND_A_Data_and_Performance_Driven_Edge_Storage_Framework) - provide official link after publication
  * In [Uncoordinated placement for edge-clouds](http://discovery.ucl.ac.uk/10027134/1/Pavlou_Ascig-17-cloudcom.pdf)
  * In [Fogspot: Spot pricing for application provisioning in edge/fog computing](https://www.researchgate.net/publication/330609355_FogSpot_Spot_Pricing_for_Application_Provisioning_in_EdgeFog_Computing) 
  
