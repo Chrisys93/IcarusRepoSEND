@@ -30,6 +30,10 @@ for the following papers:
 ###  Cache resource configuration:
 
 These configurations include placement of caches and content (see ./scenarios/cacheplacement.py and ./scenarios/contentplacement.py), total storage budget (in number of content), total number of contents. A cache model comprises policies that manage how content is replaces under ./models/cache/ containing replacement policies. The placement and retrieval of content to/from caches at run-time is determined by a strategy.
+ 
+###  SEND - Storage resource configuration:
+
+These configurations include placement of storage and content in storage (as in cache - see ./scenarios/contentplacement.py), total storage budget (in Bytes), total number of contents. A cache model comprises policies that manage how content is replaces under ./models/cache/ containing replacement policies. The placement and retrieval of content to/from caches at run-time is determined by a strategy.
 
 ### Compute resources configuration:
 
@@ -43,6 +47,8 @@ The topology determines the connectivity of the network. Available topologies in
 ones such as Rocketfuel (please see /resources/topologies). 
 
 This document explains how to configure and run the simulator.
+
+**SEND NOTE:** Some more, Repo-(EDR-)specific versions of the previously implemented topologies are also available.
 
 ## Download and installation
 
@@ -130,6 +136,9 @@ example configuration. You can even use the configuration file as it is just
 to get started. Alternatively, have a look at the `examples` folder which
 contains examples of configuration files for various use cases.
 
+**SEND NOTE:** Note that this distribution of icarus is modified to run with repositories, thus the normal configuration needs to be changed in order for the whole system to work appropriately.
+The configurations in the `examples/repo-mgmt` folder all work well and were used for the evaluation of the SEND system, as per the second cited paper, below. If you want to use the original features of icarus, please `git clone` and develop based on the above git repository or the most appropriate distribution for you.
+
 Second, run Icarus by running the script `icarus.py` using the following syntax
 
     $ python icarus.py --results RESULTS_FILE CONF_FILE
@@ -142,13 +151,15 @@ where:
 Example usage could be:
 
     $ python icarus.py --results results.pickle config.py
+    
+**SEND NOTE:** Alternatively, there are bash scripts you can check, edit and/or run directly from the examples folder. These should also help you with any implementation of icarus or further development you may want to make for this distribution.
 
 After saveing the results in pickle format you can extract them in a human
 readable format using the `printresults.py` script from the `scripts` folder. Example usage could be:
 
     $ python scripts/printresults.py results.pickle > results.txt
     
-**NOTE:** The new results format is available in just text format, strictly for statistical readings; for the purpose of academic and research implementations, evaluations and development.
+**SEND NOTE:** The new results format is available in just text format, strictly for statistical readings; for the purpose of academic and research implementations, evaluations and development.
 
 Icarus also provides a set of helper functions for plotting results. Have a look at the `examples`
 folder for plot examples.
