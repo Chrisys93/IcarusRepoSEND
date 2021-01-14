@@ -1,4 +1,4 @@
-# IcarusEdgeSim – An edge computing simulator based on Icarus 
+# IcarusRepoSEND – An edge storage and computing simulator based on Icarus and IcarusEdgeSim 
 
 IcarusEdgeSim is a Python-based discrete-event simulator for evaluating the 
 performance of both networks with both cache and compute resources based on 
