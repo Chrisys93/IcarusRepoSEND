@@ -20,7 +20,7 @@ PARALLEL_EXECUTION = True
 
 # Number of processes used to run simulations in parallel.
 # This option is ignored if PARALLEL_EXECUTION = False
-N_PROCESSES = 6 #cpu_count()
+N_PROCESSES = 8 #cpu_count()
 
 # Granularity of caching.
 # Currently, only OBJECT is supported
@@ -40,16 +40,16 @@ RESULTS_FORMAT = 'TXT'
 N_REPLICATIONS = 1
 
 # Logging parameters and variables
-LOGGING_PATHS = ['/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments1',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments2',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments3',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments4',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments5',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments6',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments7',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments8',
-                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_experiments9']
+LOGGING_PATHS = ['/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city1',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city2',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city3',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city4',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city5',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city6',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city7',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city8',
+                  '/home/chrisys/Icarus-repos/IcarusEdgeSim/examples/transfer_city9']
 
 
 # List of metrics to be measured in the experiments
@@ -84,7 +84,7 @@ N_CONTENTS = [1500, 3000]
 N_SERVICES = N_CONTENTS
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = [300, 1000]
+NETWORK_REQUEST_RATE = [300, 500, 1000]
 
 # Number of cores for each node in the experiment
 NUM_CORES = 50
@@ -103,7 +103,7 @@ MINS = 5.5 #5.5
 
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
-TOPOLOGIES = ['REPO_MESH']
+TOPOLOGIES = ['REPO_TREE']
 REC_ROUTE = 5  # (of each, receivers and routers)
 SOURCES = 1
 NUM_NODES = int(REC_ROUTE+SOURCES)
@@ -159,7 +159,7 @@ CONTENT_LOCATIONS = dir_path + 'content_locations.csv'
 # Storage data parameters for workload:
 DATA_GEN_DIST_MODE = "RAND"
 DATA_GEN_DIST = None
-DATA_RATE = [200, 500]
+DATA_RATE = [100, 200, 500]
 STOR_SHELF = 150
 STOR_SCOPE = 2
 N_STOR_WARMUP = 0
@@ -186,7 +186,7 @@ default['computation_placement']['name'] = 'UNIFORM_REPO'
 #default['computation_placement']['name'] = 'CENTRALITY'
 default['computation_placement']['service_budget'] = NUM_CORES*NUM_NODES*3 #   N_SERVICES/2 #N_SERVICES/2
 default['computation_placement']['storage_budget'] = 10000000000
-STORAGE_BUDGETS = [7000000000, 1000000000]
+STORAGE_BUDGETS = [700000000, 7000000000, 1000000000]
 default['cache_placement']['network_cache'] = default['computation_placement']['service_budget']
 default['computation_placement']['computation_budget'] = (NUM_NODES)*NUM_CORES  # NUM_CORES for each node
 #default['content_placement']['name'] = 'WEIGHTED_REPO'

@@ -22,6 +22,7 @@ of all relevant events.
 import random
 import logging
 import sys
+import time
 
 import networkx as nx
 import fnss
@@ -268,7 +269,13 @@ class NetworkView(object):
         if type(k) is dict:
             if k['content'] == '':
                 return self.labels_sources(labels)
-            return self.model.content_source[k['content']]
+            if k['content'] not in self.model.content_source:
+                for n in self.model.comp_size:
+                    if type(self.model.comp_size[n]) is not int and self.model.comp_size[n] is not None:
+                        cloud_source = n
+                        return cloud_source
+            else:
+                return self.model.content_source[k['content']]
         else:
             for i in self.model.content_source:
                 if i == k:
@@ -296,20 +303,32 @@ class NetworkView(object):
                         if "src" in node:
                             return node
             else:
-                for node in self.model.content_source[k['content']]:
+                if k['content'] not in self.model.content_source:
+                    for n in self.model.comp_size:
+                        if type(self.model.comp_size[n]) is not int and self.model.comp_size[n] is not None:
+                            cloud_source = n
+                            return cloud_source
+                else:
+                    for node in self.model.content_source[k['content']]:
+                        if type(node) != int:
+                            if "src" in node:
+                                return node
+                    else:
+                        return None
+
+        else:
+            if k not in self.model.content_source:
+                for n in self.model.comp_size:
+                    if type(self.model.comp_size[n]) is not int and self.model.comp_size[n] is not None:
+                        cloud_source = n
+                        return cloud_source
+            else:
+                for node in self.model.content_source[k]:
                     if type(node) != int:
                         if "src" in node:
                             return node
                 else:
                     return None
-
-        else:
-            for node in self.model.content_source[k]:
-                if type(node) != int:
-                    if "src" in node:
-                        return node
-            else:
-                return None
 
 
     def closest_source(self, node, k):
@@ -326,9 +345,10 @@ class NetworkView(object):
             The node persistently storing the given content or None if the
             source is unavailable
         """
+        cache = False
         if type(k) is dict:
             hops = 100
-            if node in self.content_source(k, k['labels']):
+            if type(self.content_source(k, k['labels'])) is not str and node in self.content_source(k, k['labels']):
                 if self.has_cache(node):
                     if self.cache_lookup(node, k['content']) or self.local_cache_lookup(node, k['content']):
                         cache = True
@@ -337,16 +357,35 @@ class NetworkView(object):
                 else:
                     cache = False
                 return node, cache
+            elif node == self.content_source(k, k['labels']):
+                if self.has_cache(node):
+                    if self.cache_lookup(node, k['content']) or self.local_cache_lookup(node, k['content']):
+                        cache = True
+                    else:
+                        cache = False
+                else:
+                    cache = False
+                return node, cache
+            res = None
             for n in self.content_source(k, k['labels']):
+                if type(n) is str:
+                    n = 'src_0'
                 content = self.model.repoStorage[n].hasMessage(k['content'], k['labels'])
                 if len(self.shortest_path(node, n)) < hops:
                     hops = len(self.shortest_path(node, n))
                     res = n
+
+            else:
+                if not res:
+                    for n in self.model.comp_size:
+                        if type(self.model.comp_size[n]) is not int and self.model.comp_size[n] is not None:
+                            res = n
             if self.has_cache(res):
-                if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
-                    cache = True
-                else:
-                    cache = False
+                if content is not None:
+                    if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
+                        cache = True
+                    else:
+                        cache = False
             else:
                 cache = False
         else:
@@ -354,7 +393,7 @@ class NetworkView(object):
             content['content'] = k
             content['labels'] = []
             hops = 100
-            if node in self.content_source(content, content['labels']):
+            if type(self.content_source(content, content['labels'])) is not str and node in self.content_source(content, content['labels']):
                 if self.has_cache(node):
                     if self.cache_lookup(node, content['content']) or self.local_cache_lookup(node, content['content']):
                         cache = True
@@ -363,11 +402,27 @@ class NetworkView(object):
                 else:
                     cache = False
                 return node, cache
+            elif node == self.content_source(content, content['labels']):
+                if self.has_cache(node):
+                    if self.cache_lookup(node, content['content']) or self.local_cache_lookup(node, content['content']):
+                        cache = True
+                    else:
+                        cache = False
+                else:
+                    cache = False
+                return node, cache
+            res = None
             for n in self.content_source(content, content['labels']):
-                content = self.model.contents[n][k]
+                if type(n) is str:
+                    n = 'src_0'
                 if len(self.shortest_path(node, n)) < hops:
                     hops = len(self.shortest_path(node, n))
                     res = n
+            else:
+                if not res:
+                    for n in self.model.comp_size:
+                        if type(self.model.comp_size[n]) is not int and self.model.comp_size[n] is not None:
+                            res = n
             if self.has_cache(res):
                 if self.cache_lookup(res, content['content']) or self.local_cache_lookup(res, content['content']):
                     cache = True
@@ -1057,6 +1112,9 @@ class NetworkModel(object):
         shortest_path : dict of dict, optional
             The all-pair shortest paths of the network
         """
+
+        #Starting time
+        self.start_time = time.time()
         # Filter inputs
         if not isinstance(topology, fnss.Topology):
             raise ValueError('The topology argument must be an instance of '
@@ -1204,7 +1262,7 @@ class NetworkModel(object):
                                 else:
                                     self.content_source[content] = [node]
             elif stack_name == 'source' and 'router' not in extra_types:
-                self.storageSize[node] = float('inf')
+                self.storageSize[node] = 15000000000
                 self.comp_size[node] = float('inf')
                 self.service_size[node] = float('inf')
                 if stack_props and stack_props.has_key('contents'):
@@ -1732,19 +1790,51 @@ class NetworkController(object):
             calculate latency correctly in multicast cases. Default value is
             *True*
         """
-        self.model.repoStorage[s].addToStoredMessages(content)
-        for c in self.model.content_source:
-            if content['content'] == c:
-                if s not in self.model.content_source[content['content']]:
-                    self.model.content_source[content['content']].append(s)
-                if s in self.model.contents:
-                    if content['content'] in self.model.contents[s]:
-                        self.model.contents[s][content['content']].update(content)
-                    else:
-                        self.model.contents[s][content['content']] = content
+        curTime = time.time()
+        if type(content) is dict and content['service_type'].lower() == 'processed':
+            if 'freshness_per' in content and 'shelf_life' in content:
+                if content['freshness_per'] > curTime - content['receiveTime']:
+                    content['Fresh'] = True
+                    content['Shelf'] = True
+                elif content['shelf_life'] > curTime - content['receiveTime']:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
                 else:
-                    self.model.contents[s] = dict()
-                    self.model.contents[s][content['content']] = content
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+            else:
+                content['Fresh'] = False
+                content['Shelf'] = True
+            content['receiveTime'] = curTime
+            content['service_type'] = "processed"
+        elif type(content) is dict and not content['service_type'].lower() == 'non-proc' and not content['service_type'].lower() == 'proc':
+            if 'freshness_per' in content and 'shelf_life' in content:
+                if content['freshness_per'] > curTime - content['receiveTime']:
+                    content['Fresh'] = True
+                    content['Shelf'] = True
+                elif content['shelf_life'] > curTime - content['receiveTime']:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+                else:
+                    content['Fresh'] = False
+                    content['Shelf'] = True
+            else:
+                content['Fresh'] = False
+                content['Shelf'] = True
+            content['receiveTime'] = curTime
+            content['service_type'] = "processed"
+        self.model.repoStorage[s].addToStoredMessages(content)
+        if s not in self.model.content_source[content['content']]:
+            self.model.content_source[content['content']].append(s)
+        if s in self.model.contents:
+            if content['content'] in self.model.contents[s]:
+                self.model.contents[s][content['content']].update(content)
+            else:
+                self.model.contents[s][content['content']] = content
+        else:
+            self.model.contents[s] = dict()
+            self.model.contents[s][content['content']] = content
+
 
     def add_storage_labels_to_node(self, s, content):
         """Forward a content from node *s* to node *t* over the provided path.

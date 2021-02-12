@@ -24,6 +24,7 @@ __all__ = [
 REQUEST = 0
 RESPONSE = 1
 TASK_COMPLETE = 2
+STORE = 3
 # Admission results:
 DEADLINE_MISSED = 0
 CONGESTION = 1
@@ -761,6 +762,8 @@ class Hybrid(Strategy):
                 self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, REQUEST)
                 if deadline_metric > 0:
                     self.cand_deadline_metric[node][service['content']] += deadline_metric
+        elif status == STORE:
+            pass
         else:
             print ("Error: unrecognised status value : " + repr(status))
 
@@ -1056,6 +1059,8 @@ class MostFrequentlyUsed(Strategy):
                 self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, REQUEST)
                 if deadline_metric > 0:
                     self.cand_deadline_metric[node][service['content']] += deadline_metric
+        elif status == STORE:
+            pass
         else:
             print ("Error: unrecognised status value : " + repr(status))
 
@@ -1369,6 +1374,8 @@ class StrictestDeadlineFirst(Strategy):
                 self.controller.add_event(time+delay, receiver, service, labels, next_node, flow_id, deadline, rtt_delay, REQUEST)
                 if deadline_metric > 0:
                     self.cand_deadline_metric[node][service['content']] += deadline_metric
+        elif status == STORE:
+            pass
         else:
             print ("Error: unrecognised status value : " + repr(status))
 

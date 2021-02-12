@@ -73,14 +73,17 @@ class RepoStorage(object):
         self.depletedCloudMessages = 0
         self.oldDepletedCloudMessagesSize = 0
         self.depletedCloudMessagesSize = 0
+        self.StorageUploadSize = 0
+        self.oldStorageUploadSize = 0
         self.cachedMessages = 0
         if self.model.comp_size[node]:
             # self.processSize = processSize
             self.compressionRate = compressionRate
-            processedRatio = self.compressionRate * 2
-            self.processedSize = self.storageSize / processedRatio
+            processedRatio = self.compressionRate/ 2
+            self.processedSize = self.storageSize * processedRatio
         if contents is not None:
             for content in contents:
+                contents[content]['receiveTime'] = time.time()
                 self.addToStoredMessages(contents[content])
 
     def getTotalStorageSpace(self):
@@ -125,6 +128,7 @@ class RepoStorage(object):
 
             elif sm["service_type"].lower() == "processed":
                 self.processedMessages.append(sm)
+                self.Size += sm['msg_size']
 
             elif (sm["service_type"]).lower() == "unprocessed":
                 self.Messages.append(sm)
@@ -173,6 +177,17 @@ class RepoStorage(object):
         if self.mStorTimeMax < sm['storTime']:
             self.mStorTimeMax = sm['storTime']
 
+    def addReceivedMessage(self, sm):
+        self.totalReceivedMessages += 1
+        if type(sm) is not dict:
+            msg = dict()
+            msg['content'] = sm
+            msg['msg_size'] = 1000000
+            self.totalReceivedMessagesSize += msg['msg_size']
+        else:
+            self.totalReceivedMessagesSize += sm['msg_size']
+
+
     def addToDeplProcMessages(self, sm):
         if (sm is not None):
             self.depletedProcMessages += 1
@@ -185,7 +200,7 @@ class RepoStorage(object):
                 self.depletedUnProcMessages += 1
                 self.depletedUnProcMessagesSize += sm['msg_size']
 
-                if (sm['storTime'] is not None):
+                if ('storTime' in sm):
                     self.mStorTimeNo += 1
                     self.mStorTime += sm['storTime']
                 if (self.mStorTimeMax < sm['storTime']):
@@ -214,7 +229,7 @@ class RepoStorage(object):
                 self.mSatisfied += 1
             else:
                 self.mUnSatisfied += 1
-            if (sm['storTime'] is not None):
+            if ('storTime' in sm):
                 self.mStorTimeNo += 1
                 self.mStorTime += sm['storTime']
             if (self.mStorTimeMax < sm['storTime']):
@@ -239,6 +254,14 @@ class RepoStorage(object):
                 self.depletedUnProcMessages += 1
             self.depletedUnProcMessagesSize += sm['msg_size']
             self.mUnProcessed += 1
+
+    def addToStorageUploadSize(self, sm):
+        """
+        Add the size of a message to be accounted for in the logs,
+        when checking storage exhange BW
+        """
+        if sm and type(sm) is dict:
+            self.StorageUploadSize += sm['msg_size']
 
     def getMessage(self, MessageId):
         Message = None
@@ -292,7 +315,7 @@ class RepoStorage(object):
         size = 0
         for m in self.Messages:
             retrieval = m['receiveTime']
-            if m['shelf_life'] is not None and m['shelf_life'] <= curTime - retrieval:
+            if 'shelf_life' in m and m['shelf_life'] <= curTime - retrieval:
                 size += m['msg_size']
         return size
 
@@ -386,7 +409,7 @@ class RepoStorage(object):
         for i in range(0, len(self.Messages)-1):
             if (self.Messages[i]["content"] == MessageId):
                 self.Size -= self.Messages[i]['msg_size']
-                self.Messages.remove(i)
+                del self.Messages[i]
                 return True
         return False
 
@@ -401,10 +424,10 @@ class RepoStorage(object):
 	"""
 
     def deleteProcMessage(self, MessageId):
-        for i in (0, len(self.processMessages)-1):
-            if (self.processMessages[i]['content'] == MessageId):
+        for i in range(0, len(self.processMessages)):
+            if self.processMessages[i]['content'] == MessageId:
                 self.processSize -= self.processMessages[i]['msg_size']
-                self.processMessages.remove(self.processMessages[i])
+                del self.processMessages[i]
                 return True
 
         return False
@@ -425,15 +448,25 @@ class RepoStorage(object):
             if m["service_type"].lower() == "proc" and self.deleteProcMessage(MessageId):
                 return True
 
-            elif m["service_type"].lower() == "nonproc" and self.deleteMessage(MessageId):
+            elif m["service_type"].lower() == "non-proc" and self.deleteMessage(MessageId):
                 return True
 
             elif m["service_type"].lower() == "unprocessed" and self.deleteMessage(MessageId):
                 return True
 
+            elif m["service_type"].lower() == "processed" and self.deleteMessage(MessageId):
+                return True
+
             if not self.model.repoStorage[self.node]:
                 self.nrofDeletedMessages += 1
                 self.deletedMessagesSize += m['msg_size']
+            for message in self.Messages:
+                if MessageId == message['content']:
+                    break
+            else:
+                if MessageId in self.model.source_node[self.node] and self.node in self.model.content_source[MessageId]:
+                    self.model.source_node[self.node].remove(MessageId)
+                    self.model.content_source[MessageId].remove(self.node)
 
         return False
 
@@ -465,23 +498,23 @@ class RepoStorage(object):
                 self.depletedCloudProcMessages += 1
                 self.depletedCloudProcMessagesSize += self.processedMessages[i]['msg_size']
                 if (report):
-                    if (self.processedMessages[i]['overtime'] is not None):
+                    if 'overtime' in self.processedMessages[i]:
                         if (self.processedMessages[i]['overtime']):
                             self.mOvertime += 1
 
-                    if (self.processedMessages[i]['satisfied'] is not None):
+                    if ('satisfied' in self.processedMessages[i]):
                         if (self.processedMessages[i]['satisfied']):
                             self.mSatisfied += 1
                         else:
                             self.mUnSatisfied += 1
 
-                    if (self.processedMessages[i]['Fresh'] is not None):
+                    if ('Fresh' in self.processedMessages[i]):
                         if (self.processedMessages[i]['Fresh']):
                             self.mFresh += 1
                         elif (not self.processedMessages[i]['Fresh']):
                             self.mStale += 1
 
-                self.processedMessages.remove(i)
+                self.deleteAnyMessage(MessageId)
                 return True
         return False
 
@@ -525,10 +558,10 @@ class RepoStorage(object):
         return self.depletedCloudMessages
 
     def getOverallMeanIncomingMesssageNo(self):
-        return (self.totalReceivedMessages / time.time())
+        return (self.totalReceivedMessages / (time.time() - self.model.start_time))
 
     def getOverallMeanIncomingSpeed(self):
-        return (self.totalReceivedMessagesSize / time.time())
+        return (self.totalReceivedMessagesSize / (time.time() - self.model.start_time))
 
     """
 	*Method
@@ -592,6 +625,30 @@ class RepoStorage(object):
             self.oldDepletedUnProcMessagesSize = self.depletedUnProcMessagesSize
         return (procBW)
 
+
+
+
+    def getStorageUploadBW(self, reporting):
+        """
+        Get BW for messages sent to other repositories for storage.
+
+        reporting : flag for updating old storage upload
+        """
+
+        storageBW = self.StorageUploadSize - self.oldStorageUploadSize
+        if (reporting):
+            self.oldStorageUploadSize = self.StorageUploadSize
+        return (storageBW)
+
+
+    def getMeanStorageUploadBW(self):
+        """
+        Get BW for messages sent to other repositories for storage.
+
+        reporting : flag for updating old storage upload
+        """
+        return self.StorageUploadSize/(time.time()-self.model.start_time)
+
     """
 	*Method
 	that
@@ -652,6 +709,21 @@ class RepoStorage(object):
         if (reporting):
             self.oldDepletedCloudMessagesSize = self.depletedCloudMessagesSize
 
+        return (statBW)
+
+
+
+
+    def getMeanCloudUploadBW(self):
+        """
+        Provides the mean overall BW, to the point of reading, upstream of the repo.
+
+        Returns
+        -------
+        The overall mean Cloud-bound BW up to this point : float
+            List of contents currently in the cache
+        """
+        statBW = (self.depletedCloudMessagesSize + self.depletedCloudProcMessagesSize)/(time.time() - self.model.start_time)
         return (statBW)
 
     """
@@ -772,7 +844,7 @@ class RepoStorage(object):
             return False
 
     def isProcessedEmpty(self):
-        usedProc = self.getProcessedMessagesSize
+        usedProc = self.getProcessedMessagesSize()
         # try:
         # System.setOut( PrStream( FileOutputStream("log.txt")))
         # catch(Exception e):
@@ -801,13 +873,13 @@ class RepoStorage(object):
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
-                if (m["service_type"] is not None and m['Fresh'] is None):
+                if ("service_type" in m and 'Fresh' in m):
                     if not (m["service_type"]).lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
                         oldest = m
 
-                elif oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m['Fresh'] is None:
-                    if not m["service_type"].lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
-                        oldest = m
+            elif oldest['receiveTime'] > m['receiveTime'] and 'service_type' in m and 'Fresh' not in m:
+                if not m["service_type"].lower() == "unprocessed" and not (m["service_type"]).lower() == "processed":
+                    oldest = m
 
         return oldest
 
@@ -817,16 +889,15 @@ class RepoStorage(object):
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
-                if (m["service_type"] is not None and m['shelf_life'] is not None):
+                if ("service_type" in m and 'shelf_life' in m):
                     if ((m["service_type"]).lower() == "proc" and (
                             m['shelf_life']) <= curTime - m['receiveTime']):
                         oldest = m
 
-                elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None and m.getProperty(
-                        "shelfLife") is not None):
-                    if ((m["service_type"]).lower() == "proc" and (
-                            m['shelf_life']) <= curTime - m['receiveTime']):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and "service_type" in m and "shelf_life" in m):
+                if ((m["service_type"]).lower() == "proc" and (
+                        m['shelf_life']) <= curTime - m['receiveTime']):
+                    oldest = m
 
         return oldest
 
@@ -835,12 +906,12 @@ class RepoStorage(object):
         oldest = None
         for m in self.Messages:
             if (oldest is None):
-                if (m["service_type"] is not None):
+                if ("service_type" in m):
                     if ((m["service_type"]).lower() == "unprocessed"):
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m["service_type"] is not None):
-                    if ((m["service_type"]).lower() == "unprocessed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and "service_type" in m):
+                if ((m["service_type"]).lower() == "unprocessed"):
+                    oldest = m
 
         return oldest
 
@@ -849,13 +920,12 @@ class RepoStorage(object):
         newest = None
         for m in self.processMessages:
             if (newest is None):
-                if (m["service_type"] is not None and m['Fresh'] is None):
+                if ('service_type' in m and 'Fresh' not in m):
                     if ((m["service_type"]).lower() == "proc"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m["service_type"] is not None and m[
-                    'Fresh'] is None):
-                    if ((m["service_type"]).lower() == "proc"):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and "service_type" in m and m['Fresh'] is None):
+                if ((m["service_type"]).lower() == "proc"):
+                    newest = m
 
         return newest
 
@@ -877,13 +947,12 @@ class RepoStorage(object):
         oldest = None
         for m in self.processedMessages:
             if (oldest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and 'Fresh' in m and "service_type" in m):
+                if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    oldest = m
 
         return oldest
 
@@ -893,13 +962,12 @@ class RepoStorage(object):
         newest = None
         for m in self.processedMessages:
             if newest is None:
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and 'Fresh' in m and 'service_type' in m):
+                if ((m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    newest = m
 
         return newest
 
@@ -909,13 +977,12 @@ class RepoStorage(object):
         oldest = None
         for m in self.processedMessages:
             if (oldest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if not (m['Fresh']) and (m["service_type"]).lower() == "processed":
                         oldest = m
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and 'Fresh' in m and 'service_type'in m):
+                if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
+                    oldest = m
 
         return oldest
 
@@ -925,13 +992,12 @@ class RepoStorage(object):
         newest = None
         for m in self.processedMessages:
             if (newest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if (not (m['Fresh']) and (m["service_type"]).lower() == "processed"):
                         newest = m
-                elif (newest['receiveTime'] < m['receiveTime'] and m['Fresh'] is not None and m[
-                    "service_type"] is not None):
-                    if (not (m['Fresh'] and (m["service_type"]).lower() == "processed")):
-                        newest = m
+            elif (newest['receiveTime'] < m['receiveTime'] and 'Fresh' in m and 'service_type' in m):
+                if (not (m['Fresh'] and (m["service_type"]).lower() == "processed")):
+                    newest = m
 
         return newest
 
@@ -942,7 +1008,7 @@ class RepoStorage(object):
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if ((m['Fresh']) and m["service_type"] <= curTime):
                         oldest = m
                 elif (oldest['receiveTime'] > m['receiveTime'] and m['Fresh'] is not None and m.getProperty(
@@ -958,7 +1024,7 @@ class RepoStorage(object):
         newest = None
         for m in self.processMessages:
             if (newest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if ((m['Fresh']) and m["service_type"] <= curTime):
                         newest = m
 
@@ -975,7 +1041,7 @@ class RepoStorage(object):
         oldest = None
         for m in self.processMessages:
             if (oldest is None):
-                if (m['Fresh'] is not None and m["service_type"] is not None):
+                if ('Fresh' in m and "service_type" in m):
                     if (not (m['Fresh']) and m["service_type"] <= curTime):
                         oldest = m
 
@@ -992,7 +1058,7 @@ class RepoStorage(object):
         newest = None
         for m in self.processMessages:
             if newest is None:
-                if m['Fresh'] is not None and m["service_type"] is not None:
+                if m['Fresh'] is not None and "service_type" in m:
                     if not (m['Fresh']) and m["service_type"] <= curTime:
                         newest = m
 
@@ -1021,13 +1087,13 @@ class RepoStorage(object):
         oldest = None
         for m in self.Messages:
             if (oldest is None):
-                if (m['shelf_life'] is not None):
+                if ('shelf_life' in m):
                     if ((m['shelf_life']) <= curTime - m['receiveTime']):
                         oldest = m
 
-                elif (oldest['receiveTime'] > m['receiveTime'] and m['shelf_life'] is not None):
-                    if ((m['shelf_life']) <= curTime - m['receiveTime']):
-                        oldest = m
+            elif (oldest['receiveTime'] > m['receiveTime'] and 'shelf_life' in m):
+                if ((m['shelf_life']) <= curTime - m['receiveTime']):
+                    oldest = m
 
         return oldest
 

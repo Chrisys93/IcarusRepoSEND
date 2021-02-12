@@ -10,6 +10,7 @@ TODO: Work on the content generation and all the labels, characteristics and
 """
 import random
 import collections
+import time
 
 from fnss.util import random_from_pdf
 from icarus.registry import register_content_placement
@@ -262,11 +263,11 @@ def weighted_repo_content_placement(topology, contents, freshness_per, shelf_lif
             placed_data[contents[c]['content']].update(shelf_life=shelf_life)
         if max_replications:
             placed_data[contents[c]['content']].update(max_replications=max_replications)
-            placed_data[contents[c]['content']].update(replications=0)
+            placed_data[contents[c]['content']].update(replicas=0)
         service_association[random_from_pdf(service_labels_pdf)].add(c)
         placed_data[contents[c]['content']].update(content=c)
         placed_data[contents[c]['content']].update(msg_size=msg_size)
-        placed_data[contents[c]['content']]["receiveTime"] = 0
+        placed_data[contents[c]['content']]["receiveTime"] = time.time()
         placed_data[contents[c]['content']]['labels'] = contents[c]['labels']
         placed_data[contents[c]['content']]['service_type'] = "non-proc"
         if not placed_data[contents[c]['content']]['labels']:

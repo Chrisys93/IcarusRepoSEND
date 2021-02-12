@@ -155,7 +155,7 @@ class Scheduler(object):
     Information on running tasks, their finish times, etc. on each core of the CPU.
     """
     
-    def __init__(self, sched_policy, cs): 
+    def __init__(self, sched_policy, cs):
         ### Number of CPU cores that can run VMs in parallel
         self.numOfCores = cs.numOfCores
         ### Hypothetical finish curTime of the last request (i.e., tail of the queue) #
@@ -509,10 +509,10 @@ class Scheduler(object):
                 else:
                     if debug:
                         print("No idle VMs for service: " + str(aTask.service))
-                    if (len(self.idleVMs[aTask.service]) + len(self.busyVMs[aTask.service])) <= 0:
-                        print ("This should not happen in scheduler: no instances, task:")
-                        aTask.print_task()
-#                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
+#                     if (len(self.idleVMs[aTask.service]) + len(self.busyVMs[aTask.service])) <= 0:
+#                         print ("This should not happen in scheduler: no instances, task:")
+#                         aTask.print_task()
+# #                        raise ValueError("Error in schedule(): unable to find a VM for a service" + str(aTask.service))
                     self.cs.insufficientVMEvents[aTask.service] += 1
         return None
 
@@ -762,7 +762,8 @@ class ComputationSpot(object):
             taskToExecute = self.schedulerCopy.schedule_without_vm_allocation(curTime,  upcomingVMStartEvents, numVMs, numStartingVMs, fail_if_no_vm, debug)
             #if fail_if_no_vm is False and taskToExecute is not None and taskToExecute.completionTime == float('inf'):
             if taskToExecute is not None and taskToExecute.completionTime == float('inf'):
-                break
+                self.schedulerCopy.removeFromTaskQueue(taskToExecute)
+                taskToExecute = None
             if debug:
                 print ("Time = " + str(curTime))
                 if taskToExecute is not None:
@@ -820,7 +821,7 @@ class ComputationSpot(object):
 
         serviceTime = self.services[service].service_time
         if self.is_cloud:
-            aTask = Task(curTime,  Task.TASK_TYPE_SERVICE, deadline, rtt_delay, self.node, service, serviceTime, flow_id, receiver)
+            aTask = Task(curTime,  Task.TASK_TYPE_SERVICE, deadline, rtt_delay, self.node, service, labels, serviceTime, flow_id, receiver)
             controller.add_event(curTime+serviceTime, receiver, service, labels, self.node, flow_id, deadline, rtt_delay, TASK_COMPLETE, aTask)
             controller.execute_service(flow_id, service, self.node, curTime,  self.is_cloud)
             if debug:
@@ -851,8 +852,10 @@ class ComputationSpot(object):
             if task.taskType == Task.TASK_TYPE_VM_START:
                 continue
             if task.completionTime is None:
-                print("Error: a task with invalid completion curTime: " + repr(task.completionTime))
-                raise ValueError("Task completion curTime is invalid")
+                self.schedulerCopy.removeFromTaskQueue(task)
+                self.scheduler.removeFromTaskQueue(task)
+                # print("Error: a task with invalid completion curTime: " + repr(task.completionTime))
+                # raise ValueError("Task completion curTime is invalid")
             if (task.expiry - task.rtt_delay) < task.completionTime:
                 self.missed_requests[service] += 1
                 if debug:
@@ -923,9 +926,10 @@ class ComputationSpot(object):
                 task.print_task()
             if task.taskType == Task.TASK_TYPE_VM_START:
                 continue
-            if task.completionTime is None: 
+            if task.completionTime is None:
+                self.schedulerCopy.removeFromTaskQueue(task)
                 print("Error: a task with invalid completion curTime: " + repr(task.completionTime))
-                raise ValueError("Task completion curTime is invalid")
+                # raise ValueError("Task completion curTime is invalid")
             if (task.expiry - task.rtt_delay) < task.completionTime:
                 self.missed_requests[service] += 1
                 if debug:
@@ -996,9 +1000,10 @@ class ComputationSpot(object):
                         task.print_task()
                     if task.taskType == Task.TASK_TYPE_VM_START:
                         continue
-                    if task.completionTime is None: 
+                    if task.completionTime is None:
+                        self.schedulerCopy.removeFromTaskQueue(taskToExecute)
                         print("Error: a task with invalid completion curTime: " + repr(task.completionTime))
-                        raise ValueError("Task completion curTime is invalid")
+                        # raise ValueError("Task completion curTime is invalid")
                     if (task.expiry - task.rtt_delay) < task.completionTime:
                         if debug:
                             print("Refusing TASK: Congestion")
@@ -1015,9 +1020,10 @@ class ComputationSpot(object):
                     task.print_task()
                 if task.taskType == Task.TASK_TYPE_VM_START:
                     continue
-                if task.completionTime is None: 
+                if task.completionTime is None:
+                    self.schedulerCopy.removeFromTaskQueue(task)
                     print("Error: a task with invalid completion curTime: " + repr(task.completionTime))
-                    raise ValueError("Task completion curTime is invalid")
+                    # raise ValueError("Task completion curTime is invalid")
                 if (task.expiry - task.rtt_delay) < task.completionTime:
                     if debug:
                         print("Refusing TASK: Congestion")

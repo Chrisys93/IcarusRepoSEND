@@ -62,7 +62,7 @@ ALPHA = 0.75 #0.75
 NETWORK_CACHE = 0.05
 
 # Number of content objects
-N_CONTENTS = 150
+N_CONTENTS = 500
 #N_CONTENTS = 1000
 
 N_SERVICES = N_CONTENTS
@@ -131,7 +131,7 @@ MAX_REQUESTED_LABELS = 3
 # MAX_REPLICATIONS defines the maximum number of times a content should be replicated within the repository system,
 # before it is not deemed safe/efficient to do so, anymore.
 # Note: MAX REPLICATIONS should be used for both the WORKLOAD and CONTENT_PLACEMENT definitions
-MAX_REPLICATIONS = None
+MAX_REPLICATIONS = 5
 
 ALPHA_LABELS = 0.5
 DATA_TOPICS = ["traffic", "home_IoT", "office_IoT", "security"]
@@ -199,6 +199,8 @@ default['repo_policy']['name'] = REPO_POLICY
 default['sched_policy']['name'] = SCHED_POLICY
 default['strategy']['replacement_interval'] = REPLACEMENT_INTERVAL
 default['strategy']['n_replacements'] = NUM_REPLACEMENTS
+default['strategy']['max_stor'] = 0.85
+default['strategy']['proc_max_rep'] = 5
 default['topology']['name'] = 'REPO_TREE'
 default['topology']['k'] = BRANCH_FACTOR
 default['topology']['h'] = TREE_DEPTH
